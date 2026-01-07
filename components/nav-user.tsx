@@ -22,6 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useKeycloak } from "@/lib/keycloak"
 
 export function NavUser({
   user,
@@ -32,6 +33,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { logout } = useKeycloak()
 
   return (
     <SidebarMenu>
@@ -79,7 +81,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>
               <IconLogout />
               Sair
             </DropdownMenuItem>
