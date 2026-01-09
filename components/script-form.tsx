@@ -90,7 +90,7 @@ export function ScriptForm({ serviceSubTypeId, scriptId, initialData, onSuccess,
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
       const url = isEditing
         ? `${apiUrl}/scripts/${scriptId}`
         : `${apiUrl}/scripts/byServiceSubType/${serviceSubTypeId}`

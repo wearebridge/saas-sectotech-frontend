@@ -35,7 +35,8 @@ export function CompanyRegistrationForm() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + "/public/register/company", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/public/register/company`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

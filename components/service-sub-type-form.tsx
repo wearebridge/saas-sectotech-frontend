@@ -59,7 +59,7 @@ export function ServiceSubTypeForm({ serviceTypeId, onSuccess }: ServiceSubTypeF
 
     try {
       // POST /service-sub-types/byServiceType/{serviceTypeId}
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
       const response = await fetch(
         `${apiUrl}/service-sub-types/byServiceType/${serviceTypeId}`,
         {
