@@ -1,7 +1,7 @@
+import { DashboardTable } from "@/components/dashboard-table";
+
 export default function Home() {
   return (
-    <div className="">
-      Painel
-    </div>
+    <DashboardTable />
   );
 }
