@@ -1,0 +1,347 @@
+"use client"
+
+import { useState, useRef, useCallback } from "react"
+import { useKeycloak } from "@/lib/keycloak"
+import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis"
+import { ScriptSelector } from "./script-selector"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { toast } from "sonner"
+import { Upload, FileAudio, Loader2, CheckCircle, XCircle } from "lucide-react"
+
+export function AnalysisForm() {
+  const [selectedScript, setSelectedScript] = useState<Script | null>(null)
+  const [clientName, setClientName] = useState("")
+  const [transcription, setTranscription] = useState("")
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [scriptAnswers, setScriptAnswers] = useState<Record<string, string>>({})
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { token } = useKeycloak()
+
+  const handleScriptSelect = useCallback((script: Script | null) => {
+    setSelectedScript(script)
+    setScriptAnswers({})
+    setAnalysisResult(null)
+    
+    if (script?.scriptItems) {
+      const initialAnswers: Record<string, string> = {}
+      script.scriptItems.forEach(item => {
+        initialAnswers[item.id] = item.answer || ""
+      })
+      setScriptAnswers(initialAnswers)
+    }
+  }, [])
+
+  const handleAnswerChange = (itemId: string, answer: string) => {
+    setScriptAnswers(prev => ({
+      ...prev,
+      [itemId]: answer
+    }))
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Verificar se é um arquivo de áudio
+      const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/m4a']
+      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+        toast.error("Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A)")
+        return
+      }
+      setAudioFile(file)
+      setTranscription("") // Limpar transcrição manual se arquivo for selecionado
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!token) {
+      toast.error("Você não está autenticado")
+      return
+    }
+
+    if (!selectedScript) {
+      toast.error("Por favor, selecione um script")
+      return
+    }
+
+    if (!clientName.trim()) {
+      toast.error("Por favor, informe o nome do cliente")
+      return
+    }
+
+    if (!audioFile && !transcription.trim()) {
+      toast.error("Por favor, forneça um arquivo de áudio ou uma transcrição")
+      return
+    }
+
+    // Verificar se todas as respostas foram preenchidas
+    const unansweredQuestions = selectedScript.scriptItems?.filter(item => 
+      !scriptAnswers[item.id]?.trim()
+    )
+    
+    if (unansweredQuestions && unansweredQuestions.length > 0) {
+      toast.error("Por favor, responda todas as perguntas do script")
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAnalysisResult(null)
+
+    try {
+      const formData = new FormData()
+      
+      // Preparar dados do request
+      const requestData: AnalysisRequest = {
+        clientName: clientName.trim(),
+        transcription: transcription.trim() || undefined,
+        scriptItems: selectedScript.scriptItems?.map(item => ({
+          question: item.question,
+          answer: scriptAnswers[item.id].trim()
+        })) || []
+      }
+
+      formData.append('data', new Blob([JSON.stringify(requestData)], {
+        type: 'application/json'
+      }))
+
+      if (audioFile) {
+        formData.append('file', audioFile)
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/analyze/generate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao realizar análise: ${response.statusText}`)
+      }
+
+      const result: AnalysisResult = await response.json()
+      setAnalysisResult(result)
+      toast.success("Análise realizada com sucesso!")
+
+    } catch (error) {
+      console.error("Erro na análise:", error)
+      toast.error("Erro ao realizar análise. Tente novamente.")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const resetForm = () => {
+    setSelectedScript(null)
+    setClientName("")
+    setTranscription("")
+    setAudioFile(null)
+    setScriptAnswers({})
+    setAnalysisResult(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <ScriptSelector 
+        onScriptSelect={handleScriptSelect} 
+        selectedScript={selectedScript}
+      />
+
+      {selectedScript && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados da Análise</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="clientName">Nome do Cliente *</Label>
+              <Input
+                id="clientName"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Digite o nome do cliente"
+              />
+            </div>
+
+            <div>
+              <Label>Arquivo de Áudio (opcional)</Label>
+              <div className="mt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {audioFile ? audioFile.name : "Selecionar arquivo de áudio"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                {audioFile && (
+                  <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                    <FileAudio className="w-4 h-4 mr-1" />
+                    Arquivo selecionado: {audioFile.name}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {!audioFile && (
+              <div>
+                <Label htmlFor="transcription">Transcrição Manual</Label>
+                <Textarea
+                  id="transcription"
+                  value={transcription}
+                  onChange={(e) => setTranscription(e.target.value)}
+                  placeholder="Digite a transcrição do áudio (obrigatório se não enviar arquivo de áudio)"
+                  rows={4}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedScript && selectedScript.scriptItems && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Script: {selectedScript.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {selectedScript.scriptItems.map((item, index) => (
+                <div key={item.id} className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Pergunta {index + 1}
+                  </Label>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm">{item.question}</p>
+                  </div>
+                  <Label htmlFor={`answer-${item.id}`} className="text-sm font-medium">
+                    Resposta Esperada *
+                  </Label>
+                  <Textarea
+                    id={`answer-${item.id}`}
+                    value={scriptAnswers[item.id] || ""}
+                    onChange={(e) => handleAnswerChange(item.id, e.target.value)}
+                    placeholder="Digite a resposta esperada para esta pergunta"
+                    rows={2}
+                  />
+                  {index < selectedScript.scriptItems!.length - 1 && (
+                    <Separator className="mt-4" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedScript && (
+        <div className="flex gap-4">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isAnalyzing}
+            className="flex-1"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analisando...
+              </>
+            ) : (
+              "Realizar Análise"
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={resetForm}
+            disabled={isAnalyzing}
+          >
+            Limpar
+          </Button>
+        </div>
+      )}
+
+      {analysisResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Resultado da Análise
+              <Badge variant={analysisResult.approved ? "default" : "destructive"}>
+                {analysisResult.approved ? (
+                  <>
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Aprovado
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Reprovado
+                  </>
+                )}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysisResult.transcription && (
+              <div>
+                <Label className="text-sm font-medium">Transcrição</Label>
+                <div className="p-3 bg-muted rounded-md mt-1">
+                  <p className="text-sm">{analysisResult.transcription}</p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium">Análise por Pergunta</Label>
+              <div className="space-y-3 mt-2">
+                {analysisResult.output.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Pergunta {index + 1}</span>
+                      <Badge variant={item.correct ? "default" : "destructive"}>
+                        {item.correct ? "Correto" : "Incorreto"}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Pergunta:</span>
+                        <p className="text-sm">{item.question}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Resposta:</span>
+                        <p className="text-sm">{item.answer}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Análise:</span>
+                        <p className="text-sm">{item.analysis}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}

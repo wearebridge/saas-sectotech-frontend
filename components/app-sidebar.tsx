@@ -8,7 +8,8 @@ import {
   IconListDetails,
   IconUsers,
   IconBriefcase,
-  IconPigMoney
+  IconPigMoney,
+  IconHistory
 
 } from "@tabler/icons-react"
 
@@ -35,6 +36,11 @@ const data = {
       title: "Painel",
       url: "/",
       icon: IconDashboard,
+    },
+    {
+      title: "Histórico",
+      url: "/analise/historico",
+      icon: IconHistory,
     },
     {
       title: "Scripts",
