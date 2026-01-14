@@ -1,8 +1,9 @@
+import { UsersTable } from '@/components/users-table'
 import React from 'react'
 
 function Page() {
   return (
-    <div>Página de usuários</div>
+    <UsersTable />
   )
 }
 
