@@ -18,23 +18,18 @@ export interface ServiceSubType {
   description?: string
 }
 
-interface ServiceSubTypeListProps {
-  serviceTypeId: string
-  refreshTrigger?: number
-}
-
-export function ServiceSubTypeList({ serviceTypeId, refreshTrigger = 0 }: ServiceSubTypeListProps) {
+export function ServiceSubTypeList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const [subTypes, setSubTypes] = useState<ServiceSubType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { token, authenticated } = useKeycloak()
 
   const fetchSubTypes = useCallback(async () => {
-    if (!token || !serviceTypeId) return
+    if (!token) return
 
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const response = await fetch(`${apiUrl}/service-sub-types/byServiceType/${serviceTypeId}`, {
+      const response = await fetch(`${apiUrl}/service-sub-types`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,13 +47,13 @@ export function ServiceSubTypeList({ serviceTypeId, refreshTrigger = 0 }: Servic
     } finally {
       setIsLoading(false)
     }
-  }, [token, serviceTypeId])
+  }, [token])
 
   useEffect(() => {
-    if (authenticated && serviceTypeId) {
+    if (authenticated) {
       fetchSubTypes()
     }
-  }, [authenticated, serviceTypeId, fetchSubTypes, refreshTrigger])
+  }, [authenticated, fetchSubTypes, refreshTrigger])
 
   if (isLoading) {
     return (
@@ -82,7 +77,7 @@ export function ServiceSubTypeList({ serviceTypeId, refreshTrigger = 0 }: Servic
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {subTypes.map((subType) => (
-        <Link href={`/servicos/${serviceTypeId}/${subType.id}`} key={subType.id} className="block h-full"> 
+        <Link href={`/servicos/${subType.id}`} key={subType.id} className="block h-full"> 
           <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
             <CardHeader>
               <CardTitle>{subType.name}</CardTitle>

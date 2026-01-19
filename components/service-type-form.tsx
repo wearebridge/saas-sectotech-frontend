@@ -35,10 +35,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface ServiceTypeFormProps {
+  serviceSubTypeId: string
   onSuccess: () => void
 }
 
-export function ServiceTypeForm({ onSuccess }: ServiceTypeFormProps) {
+export function ServiceTypeForm({ serviceSubTypeId, onSuccess }: ServiceTypeFormProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { token } = useKeycloak()
@@ -55,7 +56,8 @@ export function ServiceTypeForm({ onSuccess }: ServiceTypeFormProps) {
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const response = await fetch(`${apiUrl}/service-types`, {
+      // Changed to use byServiceSubType
+      const response = await fetch(`${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +70,7 @@ export function ServiceTypeForm({ onSuccess }: ServiceTypeFormProps) {
         throw new Error("Falha ao criar tipo de serviço")
       }
 
-      toast.success("Tipo de serviço criado com sucesso!")
+      toast.success("Serviço criado com sucesso!")
       form.reset()
       setOpen(false)
       onSuccess()

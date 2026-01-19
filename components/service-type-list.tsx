@@ -19,21 +19,23 @@ export interface ServiceType {
 }
 
 interface ServiceTypeListProps {
-  refreshTrigger: number
+  serviceSubTypeId: string
+  refreshTrigger?: number
 }
 
-export function ServiceTypeList({ refreshTrigger }: ServiceTypeListProps) {
+export function ServiceTypeList({ serviceSubTypeId, refreshTrigger = 0 }: ServiceTypeListProps) {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { token, authenticated } = useKeycloak()
 
   const fetchServiceTypes = useCallback(async () => {
-    if (!token) return
+    if (!token || !serviceSubTypeId) return
 
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const response = await fetch(`${apiUrl}/service-types`, {
+      // Now fetching by ServiceSubType
+      const response = await fetch(`${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -51,13 +53,13 @@ export function ServiceTypeList({ refreshTrigger }: ServiceTypeListProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [token])
+  }, [token, serviceSubTypeId])
 
   useEffect(() => {
-    if (authenticated) {
+    if (authenticated && serviceSubTypeId) {
       fetchServiceTypes()
     }
-  }, [authenticated, fetchServiceTypes, refreshTrigger])
+  }, [authenticated, serviceSubTypeId, fetchServiceTypes, refreshTrigger])
 
   if (isLoading) {
     return (
@@ -81,7 +83,8 @@ export function ServiceTypeList({ refreshTrigger }: ServiceTypeListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {serviceTypes.map((service) => (
-        <Link href={`/servicos/${service.id}`} key={service.id} className="block h-full">
+        // Link to Script Page: /servicos/[serviceSubTypeId]/[serviceTypeId]
+        <Link href={`/servicos/${serviceSubTypeId}/${service.id}`} key={service.id} className="block h-full">
           <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
             <CardHeader>
               <CardTitle>{service.name}</CardTitle>

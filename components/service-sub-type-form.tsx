@@ -35,11 +35,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface ServiceSubTypeFormProps {
-  serviceTypeId: string
   onSuccess: () => void
 }
 
-export function ServiceSubTypeForm({ serviceTypeId, onSuccess }: ServiceSubTypeFormProps) {
+export function ServiceSubTypeForm({ onSuccess }: ServiceSubTypeFormProps) {
   const [open, setOpen] = useState(false)
   const { token } = useKeycloak()
 
@@ -58,10 +57,10 @@ export function ServiceSubTypeForm({ serviceTypeId, onSuccess }: ServiceSubTypeF
     }
 
     try {
-      // POST /service-sub-types/byServiceType/{serviceTypeId}
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      // Changed to root endpoint
       const response = await fetch(
-        `${apiUrl}/service-sub-types/byServiceType/${serviceTypeId}`,
+        `${apiUrl}/service-sub-types`,
         {
           method: "POST",
           headers: {
@@ -76,7 +75,7 @@ export function ServiceSubTypeForm({ serviceTypeId, onSuccess }: ServiceSubTypeF
         throw new Error("Falha ao criar subtipo de serviço")
       }
 
-      toast.success("Subtipo criado com sucesso")
+      toast.success("Categoria criada com sucesso")
       form.reset()
       setOpen(false)
       onSuccess()

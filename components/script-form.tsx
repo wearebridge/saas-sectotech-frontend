@@ -41,7 +41,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface ScriptFormProps {
-  serviceSubTypeId?: string
+  serviceTypeId?: string
   scriptId?: string
   initialData?: FormValues
   onSuccess: () => void
@@ -49,7 +49,7 @@ interface ScriptFormProps {
   onOpenChange?: (open: boolean) => void
 }
 
-export function ScriptForm({ serviceSubTypeId, scriptId, initialData, onSuccess, open: controlledOpen, onOpenChange: setControlledOpen }: ScriptFormProps) {
+export function ScriptForm({ serviceTypeId, scriptId, initialData, onSuccess, open: controlledOpen, onOpenChange: setControlledOpen }: ScriptFormProps) {
   const [internalOpen, setInternalOpen] = useState(false)
   const { token } = useKeycloak()
 
@@ -93,7 +93,7 @@ export function ScriptForm({ serviceSubTypeId, scriptId, initialData, onSuccess,
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
       const url = isEditing
         ? `${apiUrl}/scripts/${scriptId}`
-        : `${apiUrl}/scripts/byServiceSubType/${serviceSubTypeId}`
+        : `${apiUrl}/scripts/byServiceType/${serviceTypeId}`
       
       const method = isEditing ? "PUT" : "POST"
 

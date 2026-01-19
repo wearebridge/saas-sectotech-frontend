@@ -27,24 +27,24 @@ export interface Script {
 }
 
 interface ScriptListProps {
-  serviceSubTypeId: string
+  serviceTypeId: string
   refreshTrigger: number
 }
 
-export function ScriptList({ serviceSubTypeId, refreshTrigger }: ScriptListProps) {
+export function ScriptList({ serviceTypeId, refreshTrigger }: ScriptListProps) {
   const [scripts, setScripts] = useState<Script[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingScript, setEditingScript] = useState<Script | null>(null)
   const { token, authenticated } = useKeycloak()
 
   const fetchScripts = useCallback(async () => {
-    if (!token || !serviceSubTypeId) return
+    if (!token || !serviceTypeId) return
 
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
       const response = await fetch(
-        `${apiUrl}/scripts/byServiceSubType/${serviceSubTypeId}`,
+        `${apiUrl}/scripts/byServiceType/${serviceTypeId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -64,13 +64,13 @@ export function ScriptList({ serviceSubTypeId, refreshTrigger }: ScriptListProps
     } finally {
       setIsLoading(false)
     }
-  }, [token, serviceSubTypeId])
+  }, [token, serviceTypeId])
 
   useEffect(() => {
-    if (authenticated && serviceSubTypeId) {
+    if (authenticated && serviceTypeId) {
       fetchScripts()
     }
-  }, [authenticated, serviceSubTypeId, fetchScripts, refreshTrigger])
+  }, [authenticated, serviceTypeId, fetchScripts, refreshTrigger])
   
   const handleEditSuccess = () => {
     setEditingScript(null)
@@ -120,7 +120,7 @@ export function ScriptList({ serviceSubTypeId, refreshTrigger }: ScriptListProps
 
       {editingScript && (
         <ScriptForm 
-            serviceSubTypeId={serviceSubTypeId}
+            serviceTypeId={serviceTypeId}
             scriptId={editingScript.id}
             initialData={{
                 name: editingScript.name,
