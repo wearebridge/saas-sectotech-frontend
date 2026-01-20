@@ -1,6 +1,6 @@
 "use client"
 
-import { AnalysisHistory } from "@/components/analysis-history"
+import { DashboardTable } from "@/components/dashboard-table"
 
 function HistoricoPage() {
   return (
@@ -12,7 +12,7 @@ function HistoricoPage() {
         </p>
       </div>
       
-      <AnalysisHistory />
+      <DashboardTable />
     </div>
   )
 }

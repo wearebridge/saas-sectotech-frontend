@@ -31,35 +31,11 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
   const fetchingRef = useRef(false)
 
-  const fetchServiceTypes = useCallback(async () => {
+  const fetchServiceSubTypes = useCallback(async () => {
     if (!token) return
 
     try {
-      const response = await fetch(`${apiUrl}/service-types`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Falha ao carregar tipos de serviço")
-      }
-
-      const data = await response.json()
-      setServiceTypes(data)
-    } catch (error) {
-      console.error(error)
-      toast.error("Erro ao carregar tipos de serviço")
-    }
-  }, [token, apiUrl])
-
-  const fetchServiceSubTypes = useCallback(async (serviceTypeId: string) => {
-    if (!token || !serviceTypeId || fetchingRef.current) return
-
-    setIsLoading(true)
-    fetchingRef.current = true
-    try {
-      const response = await fetch(`${apiUrl}/service-sub-types/byServiceType/${serviceTypeId}`, {
+      const response = await fetch(`${apiUrl}/service-sub-types`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,19 +50,43 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
     } catch (error) {
       console.error(error)
       toast.error("Erro ao carregar subtipos de serviço")
+    }
+  }, [token, apiUrl])
+
+  const fetchServiceTypes = useCallback(async (serviceSubTypeId: string) => {
+    if (!token || !serviceSubTypeId || fetchingRef.current) return
+
+    setIsLoading(true)
+    fetchingRef.current = true
+    try {
+      const response = await fetch(`${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao carregar tipos de serviço")
+      }
+
+      const data = await response.json()
+      setServiceTypes(data)
+    } catch (error) {
+      console.error(error)
+      toast.error("Erro ao carregar tipos de serviço")
     } finally {
       setIsLoading(false)
       fetchingRef.current = false
     }
   }, [token, apiUrl])
 
-  const fetchScripts = useCallback(async (serviceSubTypeId: string) => {
-    if (!token || !serviceSubTypeId || fetchingRef.current) return
+  const fetchScripts = useCallback(async (serviceTypeId: string) => {
+    if (!token || !serviceTypeId || fetchingRef.current) return
 
     setIsLoading(true)
     fetchingRef.current = true
     try {
-      const response = await fetch(`${apiUrl}/scripts/byServiceSubType/${serviceSubTypeId}`, {
+      const response = await fetch(`${apiUrl}/scripts/byServiceType/${serviceTypeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,27 +109,27 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
 
   useEffect(() => {
     if (authenticated) {
-      fetchServiceTypes()
+      fetchServiceSubTypes()
     }
-  }, [authenticated, fetchServiceTypes])
-
-  useEffect(() => {
-    if (selectedServiceType) {
-      setServiceSubTypes([])
-      setScripts([])
-      setSelectedServiceSubType("")
-      onScriptSelect(null)
-      fetchServiceSubTypes(selectedServiceType)
-    }
-  }, [selectedServiceType]) // Removendo fetchServiceSubTypes da dependência
+  }, [authenticated, fetchServiceSubTypes])
 
   useEffect(() => {
     if (selectedServiceSubType) {
+      setServiceTypes([])
+      setScripts([])
+      setSelectedServiceType("")
+      onScriptSelect(null)
+      fetchServiceTypes(selectedServiceSubType)
+    }
+  }, [selectedServiceSubType]) // Removendo fetchServiceTypes da dependência
+
+  useEffect(() => {
+    if (selectedServiceType) {
       setScripts([])
       onScriptSelect(null)
-      fetchScripts(selectedServiceSubType)
+      fetchScripts(selectedServiceType)
     }
-  }, [selectedServiceSubType]) // Removendo fetchScripts da dependência
+  }, [selectedServiceType]) // Removendo fetchScripts da dependência
 
   const handleScriptSelect = useCallback((scriptId: string) => {
     const script = scripts.find(s => s.id === scriptId)
@@ -151,35 +151,35 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className="text-sm font-medium">Tipo de Serviço</label>
-          <Select value={selectedServiceType} onValueChange={handleServiceTypeChange}>
+          <label className="text-sm font-medium">Subtipo de Serviço</label>
+          <Select value={selectedServiceSubType} onValueChange={handleServiceSubTypeChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione um tipo de serviço" />
+              <SelectValue placeholder="Selecione um subtipo de serviço" />
             </SelectTrigger>
             <SelectContent>
-              {serviceTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name}
+              {serviceSubTypes.map((subType) => (
+                <SelectItem key={subType.id} value={subType.id}>
+                  {subType.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {selectedServiceType && (
+        {selectedServiceSubType && (
           <div>
-            <label className="text-sm font-medium">Subtipo de Serviço</label>
+            <label className="text-sm font-medium">Tipo de Serviço</label>
             {isLoading ? (
               <Skeleton className="h-10 w-full" />
             ) : (
-              <Select value={selectedServiceSubType} onValueChange={handleServiceSubTypeChange}>
+              <Select value={selectedServiceType} onValueChange={handleServiceTypeChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um subtipo de serviço" />
+                  <SelectValue placeholder="Selecione um tipo de serviço" />
                 </SelectTrigger>
                 <SelectContent>
-                  {serviceSubTypes.map((subType) => (
-                    <SelectItem key={subType.id} value={subType.id}>
-                      {subType.name}
+                  {serviceTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -188,7 +188,7 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
           </div>
         )}
 
-        {selectedServiceSubType && (
+        {selectedServiceType && (
           <div>
             <label className="text-sm font-medium">Script</label>
             {isLoading ? (

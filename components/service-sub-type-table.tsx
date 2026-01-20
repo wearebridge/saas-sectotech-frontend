@@ -62,27 +62,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ServiceForm } from "./forms/service-form"
 import { useKeycloak } from "@/lib/keycloak"
-import { ServiceType } from "@/types/service"
+import { ServiceSubType } from "@/types/service"
+import { ServiceSubTypeForm } from "./service-sub-type-form"
 import Link from "next/link"
 
-type ServicesTableProps = {
-  serviceSubTypeId?: string
-}
-
-export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
+export function ServiceSubTypeTable() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { token, authenticated } = useKeycloak()
 
-  const [data, setData] = React.useState<ServiceType[]>([])
-
-
+  const [data, setData] = React.useState<ServiceSubType[]>([])
   const [loading, setLoading] = React.useState(true)
 
-  const [service, setService] = React.useState(searchParams.get("service") ?? "")
-  const [subType, setSubType] = React.useState(searchParams.get("subType") ?? "")
+  const [name, setName] = React.useState(searchParams.get("name") ?? "")
   const [status, setStatus] = React.useState(searchParams.get("status") ?? "all")
   const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10)
@@ -91,91 +84,85 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
     Number(searchParams.get("page") ?? 0)
   )
   const [openDialog, setOpenDialog] = React.useState(false)
-  const [editingService, setEditingService] = React.useState<ServiceType | null>(null)
+  const [editingItem, setEditingItem] = React.useState<ServiceSubType | null>(null)
 
-  const columns: ColumnDef<ServiceType>[] = React.useMemo(() => [
-  {
-    accessorKey: "name",
-    header: "Serviço",
-    cell: ({ row }) => (
-      <Link 
-        href={`/servicos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/${row.original.id}`} 
-        className="font-medium hover:underline text-primary"
-      >
-        {row.original.name}
-      </Link>
-    ),
-  },
-  {
-    accessorKey: "serviceSubTypeName",
+  const columns: ColumnDef<ServiceSubType>[] = React.useMemo(() => [
+    {
+      accessorKey: "name",
+      header: "Nome",
+      cell: ({ row }) => (
+        <Link 
+          href={`/servicos/${row.original.id}`} 
+          className="font-medium hover:underline text-primary"
+        >
+          {row.original.name}
+        </Link>
+      ),
+    },
+    {
+        accessorKey: "description",
+        header: "Descrição",
+        cell: ({ row }) => (
+            <span className="text-muted-foreground truncate max-w-[300px] block" title={row.original.description}>
+                {row.original.description || "-"}
+            </span>
+        )
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="flex items-center gap-1 px-1.5 text-muted-foreground"
+        >
+          {row.original.status ? (
+            <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
+          ) : (
+            <IconCircleXFilled className="h-4 w-4 fill-destructive" />
+          )}
+          {row.original.status ? "Ativo" : "Inativo"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => {
+                setEditingItem(row.original)
+                setOpenDialog(true)
+            }}>Editar</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive">
+              Deletar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ], [])
 
-    header: "Sub-tipo",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="px-1.5 text-muted-foreground">
-        {row.original.serviceSubTypeName || "N/A"}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className="flex items-center gap-1 px-1.5 text-muted-foreground"
-      >
-        {row.original.status ? (
-          <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
-        ) : (
-          <IconCircleXFilled className="h-4 w-4 fill-destructive" />
-        )}
-        {row.original.status ? "Ativo" : "Inativo"}
-      </Badge>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => {
-              setEditingService(row.original)
-              setOpenDialog(true)
-          }}>Editar</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            Deletar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-], [serviceSubTypeId])
-
-  const fetchServices = React.useCallback(async () => {
+  const fetchServiceSubTypes = React.useCallback(async () => {
       if (!token) return
 
       try {
         setLoading(true)
         const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-        
-        const url = serviceSubTypeId 
-            ? `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`
-            : `${apiUrl}/service-types`
-
-        const response = await fetch(url, {
+        const response = await fetch(`${apiUrl}/service-sub-types`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
         })
 
-        if (!response.ok) throw new Error("Failed to fetch services")
+        if (!response.ok) throw new Error("Failed to fetch service sub types")
         
         const result = await response.json()
         setData(result)
@@ -184,23 +171,19 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
       } finally {
           setLoading(false)
       }
-  }, [token, serviceSubTypeId])
-
+  }, [token])
 
   React.useEffect(() => {
     if (authenticated) {
-        fetchServices()
+        fetchServiceSubTypes()
     }
-  }, [authenticated, fetchServices])
+  }, [authenticated, fetchServiceSubTypes])
   
   const filteredData = React.useMemo(() => {
       let filtered = [...data]
       
-      if (service) {
-         filtered = filtered.filter(item => item.name === service)
-      }
-      if (subType) {
-          filtered = filtered.filter(item => item.serviceSubTypeName === subType)
+      if (name) {
+         filtered = filtered.filter(item => item.name === name)
       }
       if (status !== "all") {
           const isActive = status === "active"
@@ -208,24 +191,21 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
       }
       
       return filtered
-  }, [data, service, subType, status])
+  }, [data, name, status])
   
   // Extract unique values for filters
-  const uniqueServices = React.useMemo(() => [...new Set(data.map(d => d.name))], [data])
-  const uniqueSubTypes = React.useMemo(() => [...new Set(data.map(d => d.serviceSubTypeName).filter(Boolean))], [data])
+  const uniqueNames = React.useMemo(() => [...new Set(data.map(d => d.name))], [data])
 
   React.useEffect(() => {
     const params = new URLSearchParams()
 
-    if (service) params.set("service", service)
-    if (subType) params.set("subType", subType)
+    if (name) params.set("name", name)
     if (status !== "all") params.set("status", status)
     params.set("page", String(pageIndex))
     params.set("pageSize", String(pageSize))
     router.replace(`?${params.toString()}`)
   }, [
-    service,
-    subType,
+    name,
     status,
     pageIndex,
     pageSize,
@@ -237,9 +217,6 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
     columns,
     state: {
       pagination: { pageIndex, pageSize },
-      columnVisibility: {
-          serviceSubTypeName: !serviceSubTypeId
-      }
     },
     onPaginationChange: (updater) => {
       const next =
@@ -266,24 +243,24 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                   size="sm"
                   className={cn(
                     "flex w-[200px] items-center justify-between text-sm",
-                    !service && "text-muted-foreground"
+                    !name && "text-muted-foreground"
                   )}
                 >
-                  <span className="truncate">{service || "Serviço"}</span>
+                  <span className="truncate">{name || "Nome"}</span>
                   <IconChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar serviço..." />
+                  <CommandInput placeholder="Buscar por nome..." />
                   <CommandEmpty>Nenhum resultado.</CommandEmpty>
                   <CommandGroup>
-                    {uniqueServices.map((item) => (
+                    {uniqueNames.map((item) => (
                       <CommandItem
                         key={item}
                         value={item}
                         onSelect={() =>
-                          setService((prev) =>
+                          setName((prev) =>
                             prev === item ? "" : item
                           )
                         }
@@ -291,7 +268,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                         <IconCheck
                           className={cn(
                             "mr-2 h-4 w-4",
-                            service === item ? "opacity-100" : "opacity-0"
+                            name === item ? "opacity-100" : "opacity-0"
                           )}
                         />
                         <span className="text-sm">{item}</span>
@@ -301,51 +278,6 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                 </Command>
               </PopoverContent>
             </Popover>
-
-            {!serviceSubTypeId && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "flex w-[200px] items-center justify-between text-sm",
-                    !subType && "text-muted-foreground"
-                  )}
-                >
-                  <span className="truncate">{subType || "Sub-tipo"}</span>
-                  <IconChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar sub-tipo..." />
-                  <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                  <CommandGroup>
-                    {uniqueSubTypes.map((item) => (
-                      <CommandItem
-                        key={item}
-                        value={item}
-                        onSelect={() =>
-                          setSubType((prev) =>
-                            prev === item ? "" : item
-                          )
-                        }
-                      >
-                        <IconCheck
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            subType === item ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <span className="text-sm">{item}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            )}
 
             <Tabs value={status} onValueChange={setStatus} className="ml-2">
               <TabsList>
@@ -390,10 +322,13 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setOpenDialog(true)}
+              onClick={() => {
+                  setEditingItem(null)
+                  setOpenDialog(true)
+              }}
             >
               <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo serviço</span>
+              <span className="hidden lg:inline">Novo Subtipo</span>
             </Button>
           </div>
         </div>
@@ -416,18 +351,32 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
             </TableHeader>
 
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {loading ? (
+                  <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                          Carregando...
+                      </TableCell>
+                  </TableRow>
+              ) : table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="px-4">
+                        {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                        )}
+                        </TableCell>
+                    ))}
+                    </TableRow>
+                ))
+              ) : (
+                  <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
+                          Nenhum resultado encontrado.
+                      </TableCell>
+                  </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
@@ -454,7 +403,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
 
           <div className="flex items-center gap-6">
             <span className="text-sm font-medium">
-              Página {pageIndex + 1} de {table.getPageCount()}
+              Página {pageIndex + 1} de {table.getPageCount() || 1}
             </span>
 
             <div className="flex items-center gap-1">
@@ -463,6 +412,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
               >
                 <IconChevronsLeft className="h-4 w-4" />
               </Button>
@@ -471,6 +421,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setPageIndex((p) => Math.max(p - 1, 0))}
+                disabled={!table.getCanPreviousPage()}
               >
                 <IconChevronLeft className="h-4 w-4" />
               </Button>
@@ -483,6 +434,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                     Math.min(p + 1, table.getPageCount() - 1)
                   )
                 }
+                disabled={!table.getCanNextPage()}
               >
                 <IconChevronRight className="h-4 w-4" />
               </Button>
@@ -490,9 +442,10 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() =>
+                 onClick={() =>
                   setPageIndex(table.getPageCount() - 1)
                 }
+                disabled={!table.getCanNextPage()}
               >
                 <IconChevronsRight className="h-4 w-4" />
               </Button>
@@ -501,23 +454,20 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
         </div>
       </div>
 
-      <ServiceForm 
+      <ServiceSubTypeForm 
         open={openDialog} 
         onOpenChange={(open) => {
             setOpenDialog(open)
-            if (!open) setEditingService(null)
+            if (!open) setEditingItem(null)
         }} 
-        onSuccess={fetchServices} 
-        defaultSubTypeId={serviceSubTypeId}
-        serviceId={editingService?.id}
-        initialData={editingService ? {
-            name: editingService.name,
-            description: editingService.description || "",
-            subtypeId: editingService.serviceSubTypeId,
-            status: editingService.status ? "active" : "inactive"
+        onSuccess={fetchServiceSubTypes} 
+        subTypeId={editingItem?.id}
+        initialData={editingItem ? {
+            name: editingItem.name,
+            description: editingItem.description || "",
+            status: editingItem.status ? "active" : "inactive"
         } : undefined}
       />
     </>
   )
 }
-

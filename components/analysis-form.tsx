@@ -17,7 +17,6 @@ import { Upload, FileAudio, Loader2, CheckCircle, XCircle } from "lucide-react"
 export function AnalysisForm() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null)
   const [clientName, setClientName] = useState("")
-  const [transcription, setTranscription] = useState("")
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [scriptAnswers, setScriptAnswers] = useState<Record<string, string>>({})
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -56,7 +55,6 @@ export function AnalysisForm() {
         return
       }
       setAudioFile(file)
-      setTranscription("") // Limpar transcrição manual se arquivo for selecionado
     }
   }
 
@@ -76,8 +74,8 @@ export function AnalysisForm() {
       return
     }
 
-    if (!audioFile && !transcription.trim()) {
-      toast.error("Por favor, forneça um arquivo de áudio ou uma transcrição")
+    if (!audioFile) {
+      toast.error("Por favor, forneça um arquivo de áudio")
       return
     }
 
@@ -100,7 +98,7 @@ export function AnalysisForm() {
       // Preparar dados do request
       const requestData: AnalysisRequest = {
         clientName: clientName.trim(),
-        transcription: transcription.trim() || undefined,
+        scriptId: selectedScript.id,
         scriptItems: selectedScript.scriptItems?.map(item => ({
           question: item.question,
           answer: scriptAnswers[item.id].trim()
@@ -143,7 +141,6 @@ export function AnalysisForm() {
   const resetForm = () => {
     setSelectedScript(null)
     setClientName("")
-    setTranscription("")
     setAudioFile(null)
     setScriptAnswers({})
     setAnalysisResult(null)
@@ -202,19 +199,6 @@ export function AnalysisForm() {
                 )}
               </div>
             </div>
-
-            {!audioFile && (
-              <div>
-                <Label htmlFor="transcription">Transcrição Manual</Label>
-                <Textarea
-                  id="transcription"
-                  value={transcription}
-                  onChange={(e) => setTranscription(e.target.value)}
-                  placeholder="Digite a transcrição do áudio (obrigatório se não enviar arquivo de áudio)"
-                  rows={4}
-                />
-              </div>
-            )}
           </CardContent>
         </Card>
       )}

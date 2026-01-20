@@ -3,8 +3,10 @@
 import { useEffect, useState, startTransition } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useKeycloak } from "@/lib/keycloak"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Popover,
   PopoverContent,
@@ -28,41 +30,79 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
-type SubType = {
-  id: string
-  name: string
-}
+import { ServiceSubType } from "@/types/service"
 
 type SubTypeSelectProps = {
   value?: string
-  onChange: (value: string) => void
+  onValueChange: (value: string) => void
+  disabled?: boolean
 }
 
-export function SubTypeSelect({ value, onChange }: SubTypeSelectProps) {
+export function SubTypeSelect({ value, onValueChange, disabled }: SubTypeSelectProps) {
   const [open, setOpen] = useState(false)
-  const [subTypes, setSubTypes] = useState<SubType[]>([])
+  const [subTypes, setSubTypes] = useState<ServiceSubType[]>([])
   const [newSubType, setNewSubType] = useState("")
+  const [newDescription, setNewDescription] = useState("")
+  const { token, authenticated } = useKeycloak()
+
+  async function handleCreateSubType() {
+    if (!token || !newSubType.trim()) return
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/service-sub-types`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newSubType, description: newDescription, status: true }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create sub type")
+      }
+
+      const created = await response.json()
+      setSubTypes((prev) => [...prev, created])
+      onValueChange(created.id)
+      setNewSubType("")
+      setNewDescription("")
+      setOpen(false)
+    } catch (error) {
+      console.error("Error creating sub type:", error)
+    }
+  }
 
   useEffect(() => {
-    setSubTypes([
-      { id: "1", name: "Tributário" },
-      { id: "2", name: "Previdenciário" },
-    ])
-  }, [])
+    async function fetchSubTypes() {
+      if (!token) return
 
-  const selected = subTypes.find((item) => item.id === value)
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+        const response = await fetch(`${apiUrl}/service-sub-types`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
 
-  const handleCreateSubType = () => {
-    const created = {
-      id: crypto.randomUUID(),
-      name: newSubType,
+        if (!response.ok) {
+           throw new Error("Failed to fetch sub types")
+        }
+        
+        const data = await response.json()
+        setSubTypes(data)
+      } catch (error) {
+        console.error("Error fetching sub types:", error)
+      }
     }
 
-    setSubTypes((prev) => [...prev, created])
-    onChange(created.id)
-    setNewSubType("")
-  }
+    if (authenticated) {
+        fetchSubTypes()
+    }
+  }, [token, authenticated])
+
+  const selected = subTypes.find((item) => item.id === value)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -74,6 +114,7 @@ export function SubTypeSelect({ value, onChange }: SubTypeSelectProps) {
             "w-full justify-between",
             !selected && "text-muted-foreground"
           )}
+          disabled={disabled}
         >
           <span className="truncate">
             {selected ? selected.name : "Selecione um sub-tipo"}
@@ -94,7 +135,7 @@ export function SubTypeSelect({ value, onChange }: SubTypeSelectProps) {
                   key={item.id}
                   value={item.name}
                   onSelect={() => {
-                    onChange(item.id)
+                    onValueChange(item.id)
                     setOpen(false)
                   }}
                 >
@@ -126,6 +167,12 @@ export function SubTypeSelect({ value, onChange }: SubTypeSelectProps) {
                     placeholder="Nome do sub-tipo"
                     value={newSubType}
                     onChange={(e) => setNewSubType(e.target.value)}
+                  />
+
+                  <Textarea
+                    placeholder="Descrição do sub-tipo (opcional)"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
                   />
 
                   <AlertDialogFooter>

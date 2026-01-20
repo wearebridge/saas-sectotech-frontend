@@ -14,6 +14,7 @@ export interface Script {
 export interface AnalysisRequest {
   clientName: string
   transcription?: string
+  scriptId: string
   scriptItems: {
     question: string
     answer: string
@@ -35,10 +36,12 @@ export interface ServiceType {
   id: string
   name: string
   description?: string
+  status: boolean
 }
 
 export interface ServiceSubType {
   id: string
   name: string
   description?: string
+  status: boolean
 }

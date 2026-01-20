@@ -67,34 +67,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useKeycloak } from "@/lib/keycloak"
+import { toast } from "sonner"
 
 type Item = {
-  id: number
+  id: string
   date: Date
   clientName: string
   service: string
   subType: string
   approved: boolean
-  user: string
 }
-
-const services = [
-  "Aposentadoria por Tempo de Contribuição",
-  "Auxílio Doença",
-  "Pensão por Morte",
-]
-
-const subTypes = ["Previdenciário", "Tributário"]
-
-const data: Item[] = Array.from({ length: 15 }).map((_, i) => ({
-  id: i + 1,
-  date: new Date(2026, 0, i + 1),
-  clientName: `Nome do Cliente da Silva ${i + 1}`,
-  service: services[i % services.length],
-  subType: subTypes[i % subTypes.length],
-  approved: i % 3 !== 0,
-  user: "Nome do Usuário",
-}))
 
 const columns: ColumnDef<Item>[] = [
   {
@@ -141,10 +124,6 @@ const columns: ColumnDef<Item>[] = [
     ),
   },
   {
-    accessorKey: "user",
-    header: "Usuário",
-  },
-  {
     id: "actions",
     enableHiding: false,
     cell: () => (
@@ -170,6 +149,10 @@ const columns: ColumnDef<Item>[] = [
 export function DashboardTable() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { token, authenticated } = useKeycloak()
+  const [data, setData] = React.useState<Item[]>([])
+  const [services, setServices] = React.useState<string[]>([])
+  const [subTypes, setSubTypes] = React.useState<string[]>([])
 
   const [date, setDate] = React.useState<Date | undefined>(
     searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined
@@ -180,9 +163,6 @@ export function DashboardTable() {
   const [service, setService] = React.useState(searchParams.get("service") ?? "")
   const [subType, setSubType] = React.useState(searchParams.get("subType") ?? "")
   const [status, setStatus] = React.useState(searchParams.get("status") ?? "all")
-  const [userSearch, setUserSearch] = React.useState(
-    searchParams.get("user") ?? ""
-  )
   const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10)
   )
@@ -192,12 +172,69 @@ export function DashboardTable() {
   const [openDialog, setOpenDialog] = React.useState(false)
 
   React.useEffect(() => {
+    const fetchData = async () => {
+      if (!authenticated || !token) return
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Falha ao carregar dados")
+        }
+
+        const result = await response.json()
+        const mappedData: Item[] = result.map((item: any) => ({
+          id: item.id,
+          date: new Date(item.createdAt),
+          clientName: item.clientName,
+          service: item.serviceTypeName || "-",
+          subType: item.serviceSubTypeName || "-",
+          approved: item.approved,
+        }))
+
+        // Ordenar por data (mais recente primeiro)
+        mappedData.sort((a, b) => b.date.getTime() - a.date.getTime())
+
+        setData(mappedData)
+
+        const uniqueServices = Array.from(new Set(mappedData.map(d => d.service).filter(s => s !== "-"))) as string[]
+        const uniqueSubTypes = Array.from(new Set(mappedData.map(d => d.subType).filter(s => s !== "-"))) as string[]
+        setServices(uniqueServices)
+        setSubTypes(uniqueSubTypes)
+
+      } catch (error) {
+        console.error(error)
+        toast.error("Erro ao carregar histórico de análises")
+      }
+    }
+
+    fetchData()
+  }, [token, authenticated])
+
+  const filteredData = React.useMemo(() => {
+    return data.filter((item) => {
+      if (date && format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")) return false
+      if (clientSearch && !item.clientName.toLowerCase().includes(clientSearch.toLowerCase())) return false
+      if (service && item.service !== service) return false
+      if (subType && item.subType !== subType) return false
+      
+      if (status === "approved") return item.approved
+      if (status === "rejected") return !item.approved
+      
+      return true
+    })
+  }, [data, date, clientSearch, service, subType, status])
+
+  React.useEffect(() => {
     const params = new URLSearchParams()
     if (date) params.set("date", date.toISOString())
     if (clientSearch) params.set("client", clientSearch)
     if (service) params.set("service", service)
     if (subType) params.set("subType", subType)
-    if (userSearch) params.set("user", userSearch)
     if (status !== "all") params.set("status", status)
     params.set("page", String(pageIndex))
     params.set("pageSize", String(pageSize))
@@ -207,7 +244,6 @@ export function DashboardTable() {
     clientSearch,
     service,
     subType,
-    userSearch,
     status,
     pageIndex,
     pageSize,
@@ -215,7 +251,7 @@ export function DashboardTable() {
   ])
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     state: {
       pagination: { pageIndex, pageSize },
@@ -365,16 +401,6 @@ export function DashboardTable() {
                 <TabsTrigger value="rejected">Reprovados</TabsTrigger>
               </TabsList>
             </Tabs>
-
-            <div className="relative ml-2">
-              <IconSearch className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                placeholder="Buscar por usuário"
-                className="h-8 w-[220px] pl-8 text-sm leading-none"
-              />
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
