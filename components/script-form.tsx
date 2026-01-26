@@ -34,7 +34,7 @@ const scriptItemSchema = z.object({
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome do script deve ter pelo menos 2 caracteres"),
-  status: z.boolean().default(true),
+  status: z.boolean(),
   scriptItems: z.array(scriptItemSchema).optional(),
 })
 

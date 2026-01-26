@@ -45,7 +45,7 @@ export const serviceSchema = z.object({
   description: z.string().optional(),
   subtypeId: z.string().min(1, "Selecione um sub-tipo"),
   status: z.enum(["active", "inactive"], {
-    required_error: "Selecione um status",
+    message: "Selecione um status",
   }),
 })
 
