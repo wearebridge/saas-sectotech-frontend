@@ -60,6 +60,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "sonner"
 import { useKeycloak } from "@/lib/keycloak"
 import { Script } from "@/types/service"
 import { ScriptForm } from "./script-form"
@@ -79,7 +80,7 @@ export function ScriptsTable({ serviceTypeId }: ScriptsTableProps) {
   const [name, setName] = React.useState(searchParams.get("name") ?? "")
   const [selectedType, setSelectedType] = React.useState(searchParams.get("type") ?? "")
   const [selectedSubType, setSelectedSubType] = React.useState(searchParams.get("subType") ?? "")
-  const [status, setStatus] = React.useState(searchParams.get("status") ?? "all")
+  const [status, setStatus] = React.useState(searchParams.get("status") ?? "active")
   const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10)
   )
@@ -88,6 +89,62 @@ export function ScriptsTable({ serviceTypeId }: ScriptsTableProps) {
   )
   const [openDialog, setOpenDialog] = React.useState(false)
   const [editingItem, setEditingItem] = React.useState<Script | null>(null)
+
+  const fetchScripts = React.useCallback(async () => {
+    if (!token) return
+
+    try {
+      setLoading(true)
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const url = serviceTypeId 
+        ? `${apiUrl}/scripts/byServiceType/${serviceTypeId}`
+        : `${apiUrl}/scripts`
+
+      const response = await fetch(url, {
+          headers: {
+              Authorization: `Bearer ${token}`,
+          },
+      })
+
+      if (!response.ok) throw new Error("Failed to fetch scripts")
+      
+      const result = await response.json()
+      setData(result)
+    } catch (error) {
+        console.error(error)
+    } finally {
+        setLoading(false)
+    }
+  }, [token, serviceTypeId])
+
+  const handleDelete = React.useCallback(async (item: Script) => {
+    if (!token) return
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/scripts/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            ...item,
+            status: false
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao desativar script")
+      }
+
+      toast.success("Script desativado com sucesso")
+      fetchScripts()
+    } catch (error) {
+      console.error(error)
+      toast.error("Erro ao desativar script")
+    }
+  }, [token, fetchScripts])
 
   const columns: ColumnDef<Script>[] = React.useMemo(() => [
     {
@@ -135,41 +192,20 @@ export function ScriptsTable({ serviceTypeId }: ScriptsTableProps) {
                 setOpenDialog(true)
             }}>Editar</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => handleDelete(row.original)}
+            >
               Deletar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
-  ], [])
+  ], [handleDelete])
 
-  const fetchScripts = React.useCallback(async () => {
-    if (!token) return
 
-    try {
-      setLoading(true)
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const url = serviceTypeId 
-        ? `${apiUrl}/scripts/byServiceType/${serviceTypeId}`
-        : `${apiUrl}/scripts`
 
-      const response = await fetch(url, {
-          headers: {
-              Authorization: `Bearer ${token}`,
-          },
-      })
-
-      if (!response.ok) throw new Error("Failed to fetch scripts")
-      
-      const result = await response.json()
-      setData(result)
-    } catch (error) {
-        console.error(error)
-    } finally {
-        setLoading(false)
-    }
-  }, [token, serviceTypeId])
 
   React.useEffect(() => {
     if (authenticated) {

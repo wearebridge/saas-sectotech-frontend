@@ -19,7 +19,7 @@ export default function ServiceTypesPage() {
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Serviços</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tipos de Serviços</h1>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export function CompanyRegistrationForm() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     companyName: "",
@@ -53,6 +55,8 @@ export function CompanyRegistrationForm() {
       toast.success("Empresa registrada com sucesso!", {
         description: data.message || "Verifique seu email para ativação.",
       })
+      
+      router.push("/")
       
       // Reset form on success
       setFormData({

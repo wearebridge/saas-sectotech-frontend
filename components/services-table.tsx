@@ -62,6 +62,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "sonner"
 import { ServiceForm } from "./forms/service-form"
 import { useKeycloak } from "@/lib/keycloak"
 import { ServiceType } from "@/types/service"
@@ -83,7 +84,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
 
   const [service, setService] = React.useState(searchParams.get("service") ?? "")
   const [subType, setSubType] = React.useState(searchParams.get("subType") ?? "")
-  const [status, setStatus] = React.useState(searchParams.get("status") ?? "all")
+  const [status, setStatus] = React.useState(searchParams.get("status") ?? "active")
   const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10)
   )
@@ -92,6 +93,63 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   )
   const [openDialog, setOpenDialog] = React.useState(false)
   const [editingService, setEditingService] = React.useState<ServiceType | null>(null)
+
+  const fetchServices = React.useCallback(async () => {
+      if (!token) return
+
+      try {
+        setLoading(true)
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+        
+        const url = serviceSubTypeId 
+            ? `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`
+            : `${apiUrl}/service-types`
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+
+        if (!response.ok) throw new Error("Failed to fetch services")
+        
+        const result = await response.json()
+        setData(result)
+      } catch (error) {
+          console.error(error)
+      } finally {
+          setLoading(false)
+      }
+  }, [token, serviceSubTypeId])
+
+  const handleDelete = React.useCallback(async (item: ServiceType) => {
+    if (!token) return
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/service-types/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+            ...item,
+            status: false
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao desativar serviço")
+      }
+
+      toast.success("Serviço desativado com sucesso")
+      fetchServices()
+    } catch (error) {
+      console.error(error)
+      toast.error("Erro ao desativar serviço")
+    }
+  }, [token, fetchServices])
 
   const columns: ColumnDef<ServiceType>[] = React.useMemo(() => [
   {
@@ -149,42 +207,20 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
               setOpenDialog(true)
           }}>Editar</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            Deletar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-], [serviceSubTypeId])
+<DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => handleDelete(row.original)}
+            >
+              Deletar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ], [serviceSubTypeId, handleDelete])
 
-  const fetchServices = React.useCallback(async () => {
-      if (!token) return
 
-      try {
-        setLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-        
-        const url = serviceSubTypeId 
-            ? `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`
-            : `${apiUrl}/service-types`
 
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) throw new Error("Failed to fetch services")
-        
-        const result = await response.json()
-        setData(result)
-      } catch (error) {
-          console.error(error)
-      } finally {
-          setLoading(false)
-      }
-  }, [token, serviceSubTypeId])
 
 
   React.useEffect(() => {

@@ -62,6 +62,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "sonner"
 import { useKeycloak } from "@/lib/keycloak"
 import { ServiceSubType } from "@/types/service"
 import { ServiceSubTypeForm } from "./service-sub-type-form"
@@ -76,7 +77,7 @@ export function ServiceSubTypeTable() {
   const [loading, setLoading] = React.useState(true)
 
   const [name, setName] = React.useState(searchParams.get("name") ?? "")
-  const [status, setStatus] = React.useState(searchParams.get("status") ?? "all")
+  const [status, setStatus] = React.useState(searchParams.get("status") ?? "active")
   const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10)
   )
@@ -85,6 +86,58 @@ export function ServiceSubTypeTable() {
   )
   const [openDialog, setOpenDialog] = React.useState(false)
   const [editingItem, setEditingItem] = React.useState<ServiceSubType | null>(null)
+
+  const fetchServiceSubTypes = React.useCallback(async () => {
+      if (!token) return
+
+      try {
+        setLoading(true)
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+        const response = await fetch(`${apiUrl}/service-sub-types`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+
+        if (!response.ok) throw new Error("Failed to fetch service sub types")
+        
+        const result = await response.json()
+        setData(result)
+      } catch (error) {
+          console.error(error)
+      } finally {
+          setLoading(false)
+      }
+  }, [token])
+
+  const handleDelete = React.useCallback(async (item: ServiceSubType) => {
+    if (!token) return
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/service-sub-types/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+           ...item,
+            status: false
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Falha ao desativar subtipo")
+      }
+
+      toast.success("Subtipo desativado com sucesso")
+      fetchServiceSubTypes()
+    } catch (error) {
+      console.error(error)
+      toast.error("Erro ao desativar subtipo")
+    }
+  }, [token, fetchServiceSubTypes])
 
   const columns: ColumnDef<ServiceSubType>[] = React.useMemo(() => [
     {
@@ -141,37 +194,20 @@ export function ServiceSubTypeTable() {
                 setOpenDialog(true)
             }}>Editar</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => handleDelete(row.original)}
+            >
               Deletar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
-  ], [])
+  ], [handleDelete])
 
-  const fetchServiceSubTypes = React.useCallback(async () => {
-      if (!token) return
 
-      try {
-        setLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-        const response = await fetch(`${apiUrl}/service-sub-types`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
 
-        if (!response.ok) throw new Error("Failed to fetch service sub types")
-        
-        const result = await response.json()
-        setData(result)
-      } catch (error) {
-          console.error(error)
-      } finally {
-          setLoading(false)
-      }
-  }, [token])
 
   React.useEffect(() => {
     if (authenticated) {

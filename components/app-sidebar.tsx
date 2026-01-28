@@ -48,7 +48,7 @@ const data = {
       icon: IconListDetails,
     },
     {
-      title: "Serviços",
+      title: "Subtipos de Serviços",
       url: "/servicos",
       icon: IconFolder,
     },
