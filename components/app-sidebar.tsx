@@ -9,8 +9,8 @@ import {
   IconUsers,
   IconBriefcase,
   IconPigMoney,
-  IconHistory
-
+  IconHistory,
+  IconPackage
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -25,8 +25,9 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
+import { useKeycloak } from "@/lib/keycloak"
 
-const data = {
+const baseData = {
   user: {
     name: "Usuário",
     credits: 1337,
@@ -71,6 +72,23 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { keycloak } = useKeycloak()
+  const isAdmin = keycloak?.hasRealmRole('SYSTEM_ADMIN')
+
+  const navItems = [...baseData.navMain]
+
+  if (isAdmin) {
+    // Only add if not already present (though component re-render recreates the array)
+    // Actually we can just push
+    if (!navItems.find(item => item.title === "Gerenciar Pacotes")) {
+        navItems.push({
+            title: "Gerenciar Pacotes",
+            url: "/pacotes", 
+            icon: IconPackage
+        })
+    }
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -89,10 +107,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={baseData.user} />
       </SidebarFooter>
     </Sidebar>
   )
