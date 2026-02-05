@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconDashboard,
   IconFolder,
@@ -10,11 +10,12 @@ import {
   IconBriefcase,
   IconPigMoney,
   IconHistory,
-  IconPackage
-} from "@tabler/icons-react"
+  IconPackage,
+} from "@tabler/icons-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/sidebar/nav-main";
+import { NavUser } from "@/components/sidebar/nav-user";
+
 import {
   Sidebar,
   SidebarContent,
@@ -23,9 +24,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
-import { useKeycloak } from "@/lib/keycloak"
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { useKeycloak } from "@/lib/keycloak";
 
 const baseData = {
   user: {
@@ -69,23 +70,23 @@ const baseData = {
       icon: IconPigMoney,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { keycloak } = useKeycloak()
-  const isAdmin = keycloak?.hasRealmRole('SYSTEM_ADMIN')
+  const { keycloak } = useKeycloak();
+  const isAdmin = keycloak?.hasRealmRole("SYSTEM_ADMIN");
 
-  const navItems = [...baseData.navMain]
+  const navItems = [...baseData.navMain];
 
   if (isAdmin) {
     // Only add if not already present (though component re-render recreates the array)
     // Actually we can just push
-    if (!navItems.find(item => item.title === "Gerenciar Pacotes")) {
-        navItems.push({
-            title: "Gerenciar Pacotes",
-            url: "/pacotes", 
-            icon: IconPackage
-        })
+    if (!navItems.find((item) => item.title === "Gerenciar Pacotes")) {
+      navItems.push({
+        title: "Gerenciar Pacotes",
+        url: "/pacotes",
+        icon: IconPackage,
+      });
     }
   }
 
@@ -113,5 +114,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={baseData.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
