@@ -149,69 +149,71 @@ export function ScriptSelector({ onScriptSelect, selectedScript }: ScriptSelecto
       <CardHeader>
         <CardTitle>Selecionar Script</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">Subtipo de Serviço</label>
-          <Select value={selectedServiceSubType} onValueChange={handleServiceSubTypeChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um subtipo de serviço" />
-            </SelectTrigger>
-            <SelectContent>
-              {serviceSubTypes.map((subType) => (
-                <SelectItem key={subType.id} value={subType.id}>
-                  {subType.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <CardContent className="space-y-4 md:space-y-0">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="text-sm font-medium">Subtipo de Serviço</label>
+            <Select value={selectedServiceSubType} onValueChange={handleServiceSubTypeChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um subtipo de serviço" />
+              </SelectTrigger>
+              <SelectContent>
+                {serviceSubTypes.map((subType) => (
+                  <SelectItem key={subType.id} value={subType.id}>
+                    {subType.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedServiceSubType && (
+            <div className="flex-1">
+              <label className="text-sm font-medium">Tipo de Serviço</label>
+              {isLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select value={selectedServiceType} onValueChange={handleServiceTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um tipo de serviço" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
+
+          {selectedServiceType && (
+            <div className="flex-1">
+              <label className="text-sm font-medium">Script</label>
+              {isLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select 
+                  value={selectedScript?.id || ""} 
+                  onValueChange={handleScriptSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um script" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scripts.filter(script => script.status).map((script) => (
+                      <SelectItem key={script.id} value={script.id}>
+                        {script.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
         </div>
-
-        {selectedServiceSubType && (
-          <div>
-            <label className="text-sm font-medium">Tipo de Serviço</label>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select value={selectedServiceType} onValueChange={handleServiceTypeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um tipo de serviço" />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        )}
-
-        {selectedServiceType && (
-          <div>
-            <label className="text-sm font-medium">Script</label>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select 
-                value={selectedScript?.id || ""} 
-                onValueChange={handleScriptSelect}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um script" />
-                </SelectTrigger>
-                <SelectContent>
-                  {scripts.filter(script => script.status).map((script) => (
-                    <SelectItem key={script.id} value={script.id}>
-                      {script.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   )

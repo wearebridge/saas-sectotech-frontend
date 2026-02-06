@@ -183,7 +183,7 @@ export function ScriptForm({ serviceTypeId, scriptId, initialData, onSuccess, op
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <FormLabel>Itens do Script</FormLabel>
+                <FormLabel>Perguntas do Script</FormLabel>
                 <Button
                   type="button"
                   variant="outline"
@@ -191,7 +191,7 @@ export function ScriptForm({ serviceTypeId, scriptId, initialData, onSuccess, op
                   onClick={() => append({ question: "" })}
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Adicionar Item
+                  Adicionar Pergunta
                 </Button>
               </div>
               
@@ -206,7 +206,7 @@ export function ScriptForm({ serviceTypeId, scriptId, initialData, onSuccess, op
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Input placeholder="Item do Script" {...field} />
+                                <Input placeholder="Pergunta" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

@@ -12,17 +12,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { Upload, FileAudio, Loader2, CheckCircle, XCircle } from "lucide-react"
+import { Upload, FileAudio, Loader2, CheckCircle, XCircle, CreditCard } from "lucide-react"
+import { useCredit } from "@/lib/credit-context"
 
 export function AnalysisForm() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null)
   const [clientName, setClientName] = useState("")
   const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [audioDuration, setAudioDuration] = useState<number | null>(null)
+  const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null)
+  const [isCalculatingCredits, setIsCalculatingCredits] = useState(false)
   const [scriptAnswers, setScriptAnswers] = useState<Record<string, string>>({})
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token } = useKeycloak()
+  const { refreshCredits } = useCredit()
 
   const handleScriptSelect = useCallback((script: Script | null) => {
     setSelectedScript(script)
@@ -45,7 +50,52 @@ export function AnalysisForm() {
     }))
   }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const getAudioDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio()
+      audio.src = URL.createObjectURL(file)
+      
+      audio.addEventListener('loadedmetadata', () => {
+        URL.revokeObjectURL(audio.src)
+        resolve(audio.duration)
+      })
+      
+      audio.addEventListener('error', () => {
+        URL.revokeObjectURL(audio.src)
+        reject(new Error('Erro ao carregar áudio'))
+      })
+    })
+  }
+
+  const calculateEstimatedCredits = async (durationInSeconds: number) => {
+    if (!token) return null
+
+    try {
+      setIsCalculatingCredits(true)
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      const response = await fetch(`${apiUrl}/analyze/calculate-credits?duration=${durationInSeconds}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao calcular créditos')
+      }
+
+      const result = await response.json()
+      return result.estimatedCredits
+    } catch (error) {
+      console.error('Erro ao calcular créditos:', error)
+      toast.error('Erro ao calcular custo estimado')
+      return null
+    } finally {
+      setIsCalculatingCredits(false)
+    }
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       // Verificar se é um arquivo de áudio
@@ -54,7 +104,21 @@ export function AnalysisForm() {
         toast.error("Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A)")
         return
       }
+
       setAudioFile(file)
+      setAudioDuration(null)
+      setEstimatedCredits(null)
+
+      try {
+        const duration = await getAudioDuration(file)
+        setAudioDuration(duration)
+
+        const credits = await calculateEstimatedCredits(duration)
+        setEstimatedCredits(credits)
+      } catch (error) {
+        console.error('Erro ao processar áudio:', error)
+        toast.error('Erro ao processar arquivo de áudio')
+      }
     }
   }
 
@@ -130,6 +194,9 @@ export function AnalysisForm() {
       setAnalysisResult(result)
       toast.success("Análise realizada com sucesso!")
 
+      // Atualizar créditos após análise bem-sucedida
+      await refreshCredits()
+
     } catch (error) {
       console.error("Erro na análise:", error)
       toast.error("Erro ao realizar análise. Tente novamente.")
@@ -142,6 +209,8 @@ export function AnalysisForm() {
     setSelectedScript(null)
     setClientName("")
     setAudioFile(null)
+    setAudioDuration(null)
+    setEstimatedCredits(null)
     setScriptAnswers({})
     setAnalysisResult(null)
     if (fileInputRef.current) {
@@ -157,50 +226,95 @@ export function AnalysisForm() {
       />
 
       {selectedScript && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados da Análise</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="clientName">Nome do Cliente *</Label>
-              <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Digite o nome do cliente"
-              />
-            </div>
-
-            <div>
-              <Label>Arquivo de Áudio (opcional)</Label>
-              <div className="mt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {audioFile ? audioFile.name : "Selecionar arquivo de áudio"}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="audio/*,.mp3,.wav,.ogg,.m4a"
-                  onChange={handleFileSelect}
-                  className="hidden"
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados da Análise</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="clientName">Nome do Cliente *</Label>
+                <Input
+                  id="clientName"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  placeholder="Digite o nome do cliente"
                 />
-                {audioFile && (
-                  <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                    <FileAudio className="w-4 h-4 mr-1" />
-                    Arquivo selecionado: {audioFile.name}
-                  </div>
-                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              <div>
+                <Label>Arquivo de Áudio (opcional)</Label>
+                <div className="mt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                    disabled={isCalculatingCredits}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {audioFile ? audioFile.name : "Selecionar arquivo de áudio"}
+                    {isCalculatingCredits && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {audioFile && (
+                    <div className="mt-2">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <FileAudio className="w-4 h-4 mr-1" />
+                        Arquivo selecionado: {audioFile.name}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {audioFile && audioDuration !== null && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  Estimativa de Custo
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Duração do áudio: <span className="font-medium">{Math.ceil(audioDuration)} segundos</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Taxa: 1 crédito por 60 segundos
+                    </p>
+                  </div>
+                  
+                  <div className="text-right">
+                    {isCalculatingCredits ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        <span className="text-sm text-muted-foreground">Calculando...</span>
+                      </div>
+                    ) : estimatedCredits !== null ? (
+                      <div className="space-y-1">
+                        <Badge variant="default" className="text-base px-3 py-1 bg-blue-600 hover:bg-blue-700">
+                          {estimatedCredits} {estimatedCredits === 1 ? 'Crédito' : 'Créditos'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">serão descontados</p>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {selectedScript && selectedScript.scriptItems && (
