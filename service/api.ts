@@ -14,15 +14,19 @@ export async function GET(
       return new CustomError("EMPTY_FIELD");
     }
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...header,
+    };
+
+    if (auth) {
+      headers.Authorization = `Bearer ${auth}`;
+    }
+
     const response = await fetch(`${baseUrl}${url}`, {
       method: "GET",
       mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth}`,
-
-        ...header,
-      },
+      headers,
     });
 
     if (response.status === 403) {
@@ -50,15 +54,19 @@ export async function POST(
       return new CustomError("EMPTY_FIELD");
     }
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...header,
+    };
+
+    if (auth) {
+      headers.Authorization = `Bearer ${auth}`;
+    }
+
     const response = await fetch(`${baseUrl}${url}`, {
       method: "POST",
       mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth}`,
-
-        ...header,
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
