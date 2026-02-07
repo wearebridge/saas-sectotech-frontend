@@ -1,0 +1,113 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ServiceSubType } from "@/types/service";
+import {
+  IconCircleCheckFilled,
+  IconCircleXFilled,
+  IconDotsVertical,
+} from "@tabler/icons-react";
+import { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
+
+interface ServiceColumnsProps {
+  setEditingItem: (item: ServiceSubType) => void;
+  setOpenDialog: (open: boolean) => void;
+  handleDelete: (item: ServiceSubType) => void;
+}
+
+export const serviceColumns = ({
+  handleDelete,
+  setEditingItem,
+  setOpenDialog,
+}: ServiceColumnsProps) => {
+  const columns: ColumnDef<ServiceSubType>[] = [
+    {
+      accessorKey: "name",
+      header: "Nome",
+      cell: ({ row }) => (
+        <Link
+          href={`/servicos/subtipos/${row.original.id}`}
+          className="font-medium hover:underline text-primary"
+        >
+          {row.original.name}
+        </Link>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: "Descrição",
+      cell: ({ row }) => (
+        <span
+          className="text-muted-foreground truncate max-w-[300px] block"
+          title={row.original.description}
+        >
+          {row.original.description || "-"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="flex items-center gap-1 px-1.5 text-muted-foreground"
+        >
+          {row.original.status ? (
+            <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
+          ) : (
+            <IconCircleXFilled className="h-4 w-4 fill-destructive" />
+          )}
+          {row.original.status ? "Ativo" : "Inativo"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                setEditingItem(row.original);
+                setOpenDialog(true);
+              }}
+            >
+              Editar
+            </DropdownMenuItem>
+
+            <Link href={`/servicos/subtipos/${row.original.id}`}>
+              <DropdownMenuItem className="cursor-pointer">
+                Tipos de Serviços
+              </DropdownMenuItem>
+            </Link>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive cursor-pointer"
+              onClick={() => handleDelete(row.original)}
+            >
+              Deletar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  return columns;
+};

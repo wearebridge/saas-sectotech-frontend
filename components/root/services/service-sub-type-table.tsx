@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
@@ -13,9 +12,6 @@ import {
   IconChevronDown,
   IconLayoutColumns,
   IconPlus,
-  IconCircleCheckFilled,
-  IconCircleXFilled,
-  IconDotsVertical,
   IconChevronsLeft,
   IconChevronLeft,
   IconChevronRight,
@@ -24,7 +20,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -43,8 +38,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -65,171 +58,86 @@ import {
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { ServiceSubType } from "@/types/service";
-import { ServiceSubTypeForm } from "../../service-sub-type-form";
-import Link from "next/link";
+import { ServiceSubTypeForm } from "./service-sub-type-form";
+
+import { serviceColumns } from "./columns";
+import {
+  deleteServiceSubType,
+  getServiceSubTypes,
+} from "@/service/subtypes-service";
 
 export function ServiceSubTypeTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, authenticated } = useKeycloak();
 
-  const [data, setData] = React.useState<ServiceSubType[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [data, setData] = useState<ServiceSubType[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [name, setName] = React.useState(searchParams.get("name") ?? "");
-  const [status, setStatus] = React.useState(
-    searchParams.get("status") ?? "active",
-  );
-  const [pageSize, setPageSize] = React.useState(
+  const [name, setName] = useState(searchParams.get("name") ?? "");
+  const [status, setStatus] = useState(searchParams.get("status") ?? "active");
+  const [pageSize, setPageSize] = useState(
     Number(searchParams.get("pageSize") ?? 10),
   );
-  const [pageIndex, setPageIndex] = React.useState(
+  const [pageIndex, setPageIndex] = useState(
     Number(searchParams.get("page") ?? 0),
   );
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<ServiceSubType | null>(
-    null,
-  );
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState<ServiceSubType | null>(null);
 
-  const fetchServiceSubTypes = React.useCallback(async () => {
+  const handleGetSubTypes = useCallback(async () => {
     if (!token) return;
 
     try {
-      setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const response = await fetch(`${apiUrl}/service-sub-types`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const data = await getServiceSubTypes({ token });
 
-      if (!response.ok) throw new Error("Failed to fetch service sub types");
+      if (data instanceof Error) {
+        toast.error(data.message);
+        return;
+      }
 
-      const result = await response.json();
-      setData(result);
-    } catch (error) {
-      console.error(error);
+      setData(data as ServiceSubType[]);
+    } catch {
+      toast.error("Erro ao buscar subtipos de serviço.");
     } finally {
       setLoading(false);
     }
   }, [token]);
 
-  const handleDelete = React.useCallback(
+  const handleDelete = useCallback(
     async (item: ServiceSubType) => {
       if (!token) return;
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-        const response = await fetch(`${apiUrl}/service-sub-types/${item.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...item,
-            status: false,
-          }),
-        });
+        const response = await deleteServiceSubType({ item, token });
 
-        if (!response.ok) {
-          throw new Error("Falha ao desativar subtipo");
+        if (response instanceof Error) {
+          toast.error(response.message);
+          return;
         }
 
-        toast.success("Subtipo desativado com sucesso");
-        fetchServiceSubTypes();
-      } catch (error) {
-        console.error(error);
-        toast.error("Erro ao desativar subtipo");
+        toast.success(response);
+        handleGetSubTypes();
+      } catch {
+        toast.error("Erro ao deletar subtipo de serviço.");
       }
     },
-    [token, fetchServiceSubTypes],
+    [token, handleGetSubTypes],
   );
 
-  const columns: ColumnDef<ServiceSubType>[] = React.useMemo(
-    () => [
-      {
-        accessorKey: "name",
-        header: "Nome",
-        cell: ({ row }) => (
-          <Link
-            href={`/servicos/${row.original.id}`}
-            className="font-medium hover:underline text-primary"
-          >
-            {row.original.name}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: "description",
-        header: "Descrição",
-        cell: ({ row }) => (
-          <span
-            className="text-muted-foreground truncate max-w-[300px] block"
-            title={row.original.description}
-          >
-            {row.original.description || "-"}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => (
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 px-1.5 text-muted-foreground"
-          >
-            {row.original.status ? (
-              <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
-            ) : (
-              <IconCircleXFilled className="h-4 w-4 fill-destructive" />
-            )}
-            {row.original.status ? "Ativo" : "Inativo"}
-          </Badge>
-        ),
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditingItem(row.original);
-                  setOpenDialog(true);
-                }}
-              >
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => handleDelete(row.original)}
-              >
-                Deletar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-      },
-    ],
-    [handleDelete],
-  );
+  const columns = serviceColumns({
+    handleDelete,
+    setEditingItem,
+    setOpenDialog,
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (authenticated) {
-      fetchServiceSubTypes();
+      handleGetSubTypes();
     }
-  }, [authenticated, fetchServiceSubTypes]);
+  }, [authenticated, handleGetSubTypes]);
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     let filtered = [...data];
 
     if (name) {
@@ -244,12 +152,12 @@ export function ServiceSubTypeTable() {
   }, [data, name, status]);
 
   // Extract unique values for filters
-  const uniqueNames = React.useMemo(
+  const uniqueNames = useMemo(
     () => [...new Set(data.map((d) => d.name))],
     [data],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams();
 
     if (name) params.set("name", name);
@@ -505,7 +413,7 @@ export function ServiceSubTypeTable() {
           setOpenDialog(open);
           if (!open) setEditingItem(null);
         }}
-        onSuccess={fetchServiceSubTypes}
+        onSuccess={handleGetSubTypes}
         subTypeId={editingItem?.id}
         initialData={
           editingItem

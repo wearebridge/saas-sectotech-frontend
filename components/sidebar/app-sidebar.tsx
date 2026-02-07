@@ -50,7 +50,7 @@ const baseData = {
       icon: IconListDetails,
     },
     {
-      title: "Subtipos de Serviços",
+      title: "Serviços",
       url: "/servicos",
       icon: IconFolder,
     },

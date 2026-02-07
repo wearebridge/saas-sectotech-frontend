@@ -29,6 +29,10 @@ export async function GET(
       return new CustomError("PERMISSION_DND");
     }
 
+    if (response.status === 400) {
+      return new CustomError("BAD_REQUEST");
+    }
+
     return response;
   } catch {
     return new CustomError("API_PROBLEM");
@@ -120,6 +124,10 @@ export async function DELETE(
 
     if (response.status === 403) {
       return new CustomError("PERMISSION_DND");
+    }
+
+    if (response.status === 400) {
+      return new CustomError("BAD_REQUEST");
     }
 
     return response;
