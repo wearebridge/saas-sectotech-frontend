@@ -45,6 +45,14 @@ const formSchema = z.object({
   active: z.boolean().default(true),
 })
 
+type FormData = {
+  name: string;
+  identifier: string;
+  priceInCents: number;
+  credits: number;
+  active: boolean;
+}
+
 export function PackagesManagement() {
   const { token } = useKeycloak()
   const [packages, setPackages] = useState<CreditPackage[]>([])
@@ -52,8 +60,8 @@ export function PackagesManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingPackage, setEditingPackage] = useState<CreditPackage | null>(null)
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       name: "",
       identifier: "",
