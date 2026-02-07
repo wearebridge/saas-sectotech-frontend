@@ -2,8 +2,9 @@
 
 import * as api from "@/service/api";
 import { CustomError } from "@/lib/errors/custom-errors";
-import { ServiceSubType } from "@/types/service";
+
 import { tokenProps } from "@/types/token";
+import { ServiceSubType } from "@/types/analysis";
 
 const baseUrl = "/service-sub-types";
 
@@ -20,7 +21,7 @@ export async function createServiceSubType({
   if (!token) {
     return new CustomError(
       "PERMISSION_DND",
-      "Erro ao criar subtipo de serviço.",
+      "Erro ao criar o subtipo do serviço.",
     );
   }
 
@@ -37,20 +38,20 @@ export async function createServiceSubType({
     if (response instanceof CustomError) {
       return new CustomError(
         "BAD_REQUEST",
-        "Erro ao criar subtipo de serviço.",
+        "Erro ao criar subtipo do serviço.",
       );
     }
 
     if (!response.ok) {
       return new CustomError(
         "BAD_REQUEST",
-        "Erro ao criar subtipo de serviço.",
+        "Erro ao criar subtipo do serviço.",
       );
     }
 
     return "Subtipo de serviço criado com sucesso";
   } catch (error) {
-    console.error("Error creating service subtype:", error);
+    console.error("Error creating service:", error);
     return new CustomError("BAD_REQUEST", "Erro ao criar subtipo de serviço.");
   }
 }
@@ -62,7 +63,7 @@ interface UpdateServiceSubTypeProps extends tokenProps {
   status: string;
 }
 
-export async function updateServiceSubTypes({
+export async function updateServiceSubType({
   id,
   name,
   status,
@@ -72,7 +73,7 @@ export async function updateServiceSubTypes({
   if (!token) {
     return new CustomError(
       "PERMISSION_DND",
-      "Erro ao criar subtipo de serviço.",
+      "Erro ao atualizar subtipo de serviço.",
     );
   }
 
@@ -93,28 +94,25 @@ export async function updateServiceSubTypes({
     if (response instanceof CustomError) {
       return new CustomError(
         "BAD_REQUEST",
-        "Erro ao atualizar subtipo de serviço.",
+        "Erro ao atualizar o subtipo de serviço.",
       );
     }
 
     if (!response.ok) {
       return new CustomError(
         "BAD_REQUEST",
-        "Erro ao atualizar subtipo de serviço.",
+        "Erro ao atualizar o subtipo de serviço.",
       );
     }
 
     return "Subtipo de serviço atualizado com sucesso";
   } catch (error) {
-    console.error("Error updating service subtype:", error);
-    return new CustomError(
-      "BAD_REQUEST",
-      "Erro ao atualizar subtipo de serviço.",
-    );
+    console.error("Error updating service sub type:", error);
+    return new CustomError("BAD_REQUEST", "Erro ao atualizar serviço.");
   }
 }
 
-export async function getServiceSubTypes({
+export async function getSubTypeService({
   token,
 }: tokenProps): Promise<ServiceSubType[] | CustomError> {
   try {
@@ -138,7 +136,7 @@ export async function getServiceSubTypes({
 
     return data as ServiceSubType[];
   } catch (error) {
-    console.error("Error fetching service subtypes:", error);
+    console.error("Error fetching sub types of service:", error);
     return new CustomError(
       "BAD_REQUEST",
       "Erro ao buscar subtipos de serviço.",
@@ -158,7 +156,7 @@ export async function deleteServiceSubType({
     if (!token) {
       return new CustomError(
         "PERMISSION_DND",
-        "Erro ao buscar subtipos de serviço.",
+        "Erro ao deletar subtipo de serviço.",
       );
     }
 
@@ -182,9 +180,9 @@ export async function deleteServiceSubType({
       );
     }
 
-    return "Subtipo desativado com sucesso";
+    return "Subtipo de serviço desativado com sucesso";
   } catch (error) {
-    console.error("Error deleting service subtype:", error);
+    console.error("Error deleting service sub type:", error);
     return new CustomError(
       "BAD_REQUEST",
       "Erro ao deletar subtipo de serviço.",

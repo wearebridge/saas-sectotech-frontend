@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import * as React from "react";
 import {
+  ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
@@ -20,6 +21,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -56,96 +58,129 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ServiceForm } from "../../../forms/service-form";
 import { useKeycloak } from "@/lib/keycloak";
-import { ServiceSubType } from "@/types/service";
-import { ServiceSubTypeForm } from "./service-sub-type-form";
+import { ServiceType } from "@/types/service";
+import Link from "next/link";
+import { serviceColumns } from "./services-sub-type-columns";
 
-import { serviceColumns } from "./columns";
-import {
-  deleteServiceSubType,
-  getSubTypeService,
-} from "@/service/services-sub-type";
+type ServicesTableProps = {
+  serviceSubTypeId?: string;
+};
 
-export function ServiceSubTypeTable() {
+export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, authenticated } = useKeycloak();
 
-  const [data, setData] = useState<ServiceSubType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = React.useState<ServiceType[]>([]);
 
-  const [name, setName] = useState(searchParams.get("name") ?? "");
-  const [status, setStatus] = useState(searchParams.get("status") ?? "active");
-  const [pageSize, setPageSize] = useState(
+  const [loading, setLoading] = React.useState(true);
+
+  const [service, setService] = React.useState(
+    searchParams.get("service") ?? "",
+  );
+  const [subType, setSubType] = React.useState(
+    searchParams.get("subType") ?? "",
+  );
+  const [status, setStatus] = React.useState(
+    searchParams.get("status") ?? "active",
+  );
+  const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10),
   );
-  const [pageIndex, setPageIndex] = useState(
+  const [pageIndex, setPageIndex] = React.useState(
     Number(searchParams.get("page") ?? 0),
   );
-  const [openDialog, setOpenDialog] = useState(false);
-  const [editingItem, setEditingItem] = useState<ServiceSubType | null>(null);
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [editingService, setEditingService] =
+    React.useState<ServiceType | null>(null);
 
-  const handleGetSubTypes = useCallback(async () => {
+  const fetchServices = React.useCallback(async () => {
     if (!token) return;
 
     try {
-      const data = await getSubTypeService({ token });
+      setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-      if (data instanceof Error) {
-        toast.error(data.message);
-        return;
-      }
+      const url = serviceSubTypeId
+        ? `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`
+        : `${apiUrl}/service-types`;
 
-      setData(data as ServiceSubType[]);
-    } catch {
-      toast.error("Erro ao buscar os subtipos de serviço.");
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch services");
+
+      const result = await response.json();
+      setData(result);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, serviceSubTypeId]);
 
-  const handleDelete = useCallback(
-    async (item: ServiceSubType) => {
+  const handleDelete = React.useCallback(
+    async (item: ServiceType) => {
       if (!token) return;
 
       try {
-        const response = await deleteServiceSubType({ item, token });
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        const response = await fetch(`${apiUrl}/service-types/${item.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...item,
+            status: false,
+          }),
+        });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
-          return;
+        if (!response.ok) {
+          throw new Error("Falha ao desativar serviço");
         }
 
-        toast.success(response);
-        handleGetSubTypes();
-      } catch {
-        toast.error("Erro ao deletar subtipo de serviço.");
+        toast.success("Serviço desativado com sucesso");
+        fetchServices();
+      } catch (error) {
+        console.error(error);
+        toast.error("Erro ao desativar serviço");
       }
     },
-    [token, handleGetSubTypes],
+    [token, fetchServices],
   );
 
-  const columns = useMemo(
+  const columns: ColumnDef<ServiceType>[] = React.useMemo(
     () =>
       serviceColumns({
         handleDelete,
-        setEditingItem,
+        setEditingService,
         setOpenDialog,
+        serviceSubTypeId,
       }),
-    [handleDelete, setEditingItem, setOpenDialog],
+    [serviceSubTypeId, handleDelete],
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (authenticated) {
-      handleGetSubTypes();
+      fetchServices();
     }
-  }, [authenticated, handleGetSubTypes]);
+  }, [authenticated, fetchServices]);
 
-  const filteredData = useMemo(() => {
+  const filteredData = React.useMemo(() => {
     let filtered = [...data];
 
-    if (name) {
-      filtered = filtered.filter((item) => item.name === name);
+    if (service) {
+      filtered = filtered.filter((item) => item.name === service);
+    }
+    if (subType) {
+      filtered = filtered.filter((item) => item.serviceSubTypeName === subType);
     }
     if (status !== "all") {
       const isActive = status === "active";
@@ -153,29 +188,37 @@ export function ServiceSubTypeTable() {
     }
 
     return filtered;
-  }, [data, name, status]);
+  }, [data, service, subType, status]);
 
   // Extract unique values for filters
-  const uniqueNames = useMemo(
+  const uniqueServices = React.useMemo(
     () => [...new Set(data.map((d) => d.name))],
     [data],
   );
+  const uniqueSubTypes = React.useMemo(
+    () => [...new Set(data.map((d) => d.serviceSubTypeName).filter(Boolean))],
+    [data],
+  );
 
-  useEffect(() => {
+  React.useEffect(() => {
     const params = new URLSearchParams();
 
-    if (name) params.set("name", name);
+    if (service) params.set("service", service);
+    if (subType) params.set("subType", subType);
     if (status !== "all") params.set("status", status);
     params.set("page", String(pageIndex));
     params.set("pageSize", String(pageSize));
     router.replace(`?${params.toString()}`);
-  }, [name, status, pageIndex, pageSize, router]);
+  }, [service, subType, status, pageIndex, pageSize, router]);
 
   const table = useReactTable({
     data: filteredData,
     columns,
     state: {
       pagination: { pageIndex, pageSize },
+      columnVisibility: {
+        serviceSubTypeName: !serviceSubTypeId,
+      },
     },
     onPaginationChange: (updater) => {
       const next =
@@ -201,30 +244,30 @@ export function ServiceSubTypeTable() {
                   size="sm"
                   className={cn(
                     "flex w-[200px] items-center justify-between text-sm",
-                    !name && "text-muted-foreground",
+                    !service && "text-muted-foreground",
                   )}
                 >
-                  <span className="truncate">{name || "Nome"}</span>
+                  <span className="truncate">{service || "Serviço"}</span>
                   <IconChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar por nome..." />
+                  <CommandInput placeholder="Buscar serviço..." />
                   <CommandEmpty>Nenhum resultado.</CommandEmpty>
                   <CommandGroup>
-                    {uniqueNames.map((item) => (
+                    {uniqueServices.map((item) => (
                       <CommandItem
                         key={item}
                         value={item}
                         onSelect={() =>
-                          setName((prev) => (prev === item ? "" : item))
+                          setService((prev) => (prev === item ? "" : item))
                         }
                       >
                         <IconCheck
                           className={cn(
                             "mr-2 h-4 w-4",
-                            name === item ? "opacity-100" : "opacity-0",
+                            service === item ? "opacity-100" : "opacity-0",
                           )}
                         />
                         <span className="text-sm">{item}</span>
@@ -234,6 +277,49 @@ export function ServiceSubTypeTable() {
                 </Command>
               </PopoverContent>
             </Popover>
+
+            {!serviceSubTypeId && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex w-[200px] items-center justify-between text-sm",
+                      !subType && "text-muted-foreground",
+                    )}
+                  >
+                    <span className="truncate">{subType || "Sub-tipo"}</span>
+                    <IconChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar sub-tipo..." />
+                    <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                    <CommandGroup>
+                      {uniqueSubTypes.map((item) => (
+                        <CommandItem
+                          key={item}
+                          value={item}
+                          onSelect={() =>
+                            setSubType((prev) => (prev === item ? "" : item))
+                          }
+                        >
+                          <IconCheck
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              subType === item ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="text-sm">{item}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
 
             <Tabs value={status} onValueChange={setStatus} className="ml-2">
               <TabsList>
@@ -277,13 +363,10 @@ export function ServiceSubTypeTable() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setEditingItem(null);
-                setOpenDialog(true);
-              }}
+              onClick={() => setOpenDialog(true)}
             >
               <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo Subtipo</span>
+              <span className="hidden lg:inline">Novo serviço</span>
             </Button>
           </div>
         </div>
@@ -306,38 +389,18 @@ export function ServiceSubTypeTable() {
             </TableHeader>
 
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    Carregando...
-                  </TableCell>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-4">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              ) : table.getRowModel().rows.length > 0 ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-4">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    Nenhum resultado encontrado.
-                  </TableCell>
-                </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>
@@ -364,7 +427,7 @@ export function ServiceSubTypeTable() {
 
           <div className="flex items-center gap-6">
             <span className="text-sm font-medium">
-              Página {pageIndex + 1} de {table.getPageCount() || 1}
+              Página {pageIndex + 1} de {table.getPageCount()}
             </span>
 
             <div className="flex items-center gap-1">
@@ -373,7 +436,6 @@ export function ServiceSubTypeTable() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
               >
                 <IconChevronsLeft className="h-4 w-4" />
               </Button>
@@ -382,7 +444,6 @@ export function ServiceSubTypeTable() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setPageIndex((p) => Math.max(p - 1, 0))}
-                disabled={!table.getCanPreviousPage()}
               >
                 <IconChevronLeft className="h-4 w-4" />
               </Button>
@@ -393,7 +454,6 @@ export function ServiceSubTypeTable() {
                 onClick={() =>
                   setPageIndex((p) => Math.min(p + 1, table.getPageCount() - 1))
                 }
-                disabled={!table.getCanNextPage()}
               >
                 <IconChevronRight className="h-4 w-4" />
               </Button>
@@ -402,7 +462,6 @@ export function ServiceSubTypeTable() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
               >
                 <IconChevronsRight className="h-4 w-4" />
               </Button>
@@ -411,20 +470,22 @@ export function ServiceSubTypeTable() {
         </div>
       </div>
 
-      <ServiceSubTypeForm
+      <ServiceForm
         open={openDialog}
         onOpenChange={(open) => {
           setOpenDialog(open);
-          if (!open) setEditingItem(null);
+          if (!open) setEditingService(null);
         }}
-        onSuccess={handleGetSubTypes}
-        subTypeId={editingItem?.id}
+        onSuccess={fetchServices}
+        defaultSubTypeId={serviceSubTypeId}
+        serviceId={editingService?.id}
         initialData={
-          editingItem
+          editingService
             ? {
-                name: editingItem.name,
-                description: editingItem.description || "",
-                status: editingItem.status ? "active" : "inactive",
+                name: editingService.name,
+                description: editingService.description || "",
+                subtypeId: editingService.serviceSubTypeId,
+                status: editingService.status ? "active" : "inactive",
               }
             : undefined
         }

@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ServiceSubType } from "@/types/service";
+import { ServiceType } from "@/types/service";
 import {
   IconCircleCheckFilled,
   IconCircleXFilled,
@@ -17,23 +17,25 @@ import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 
 interface ServiceColumnsProps {
-  setEditingItem: (item: ServiceSubType) => void;
+  serviceSubTypeId?: string;
+  handleDelete: (service: ServiceType) => void;
+  setEditingService: (service: ServiceType) => void;
   setOpenDialog: (open: boolean) => void;
-  handleDelete: (item: ServiceSubType) => void;
 }
 
-export const serviceColumns = ({
+export function serviceColumns({
   handleDelete,
-  setEditingItem,
+  setEditingService,
   setOpenDialog,
-}: ServiceColumnsProps) => {
-  const columns: ColumnDef<ServiceSubType>[] = [
+  serviceSubTypeId,
+}: ServiceColumnsProps): ColumnDef<ServiceType>[] {
+  return [
     {
       accessorKey: "name",
-      header: "Nome",
+      header: "Serviço",
       cell: ({ row }) => (
         <Link
-          href={`/subtipos-servicos/tipos/${row.original.id}`}
+          href={`/servicos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/${row.original.id}`}
           className="font-medium hover:underline text-primary"
         >
           {row.original.name}
@@ -41,15 +43,13 @@ export const serviceColumns = ({
       ),
     },
     {
-      accessorKey: "description",
-      header: "Descrição",
+      accessorKey: "serviceSubTypeName",
+
+      header: "Sub-tipo",
       cell: ({ row }) => (
-        <span
-          className="text-muted-foreground truncate max-w-[300px] block"
-          title={row.original.description}
-        >
-          {row.original.description || "-"}
-        </span>
+        <Badge variant="outline" className="px-1.5 text-muted-foreground">
+          {row.original.serviceSubTypeName || "N/A"}
+        </Badge>
       ),
     },
     {
@@ -81,24 +81,16 @@ export const serviceColumns = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              className="cursor-pointer"
               onClick={() => {
-                setEditingItem(row.original);
+                setEditingService(row.original);
                 setOpenDialog(true);
               }}
             >
               Editar
             </DropdownMenuItem>
-
-            <Link href={`/subtipos-servicos/tipos/${row.original.id}`}>
-              <DropdownMenuItem className="cursor-pointer">
-                Tipos de Serviços
-              </DropdownMenuItem>
-            </Link>
-
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-destructive cursor-pointer"
+              className="text-destructive"
               onClick={() => handleDelete(row.original)}
             >
               Deletar
@@ -108,6 +100,4 @@ export const serviceColumns = ({
       ),
     },
   ];
-
-  return columns;
-};
+}

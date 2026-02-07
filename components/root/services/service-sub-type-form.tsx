@@ -34,8 +34,8 @@ import {
 } from "@/components/ui/select";
 import {
   createServiceSubType,
-  updateServiceSubTypes,
-} from "@/service/subtypes-service";
+  updateServiceSubType,
+} from "@/service/services-sub-type";
 
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -102,12 +102,10 @@ export function ServiceSubTypeForm({
     try {
       if (isEditing) {
         if (!subTypeId) {
-          return toast.error(
-            "ID do subtipo de serviço é necessário para edição.",
-          );
+          return toast.error("ID do serviço é necessário para edição.");
         }
 
-        const response = await updateServiceSubTypes({
+        const response = await updateServiceSubType({
           id: subTypeId,
           name: values.name,
           description: values.description,
@@ -138,7 +136,7 @@ export function ServiceSubTypeForm({
     } catch (error) {
       console.error(error);
       toast.error(
-        `Ocorreu um erro ao ${isEditing ? "atualizar" : "criar"} o subtipo`,
+        `Ocorreu um erro ao ${isEditing ? "atualizar" : "criar"} o subtipo de serviço.`,
       );
     } finally {
       setIsLoading(false);
