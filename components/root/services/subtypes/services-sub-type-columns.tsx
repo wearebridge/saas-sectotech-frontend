@@ -35,7 +35,7 @@ export function serviceColumns({
       header: "Serviço",
       cell: ({ row }) => (
         <Link
-          href={`/servicos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/${row.original.id}`}
+          href={`/subtipos-servicos/tipos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/scripts/${row.original.id}`}
           className="font-medium hover:underline text-primary"
         >
           {row.original.name}
@@ -88,6 +88,12 @@ export function serviceColumns({
             >
               Editar
             </DropdownMenuItem>
+
+            <Link
+              href={`/subtipos-servicos/tipos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/scripts/${row.original.id}`}
+            >
+              <DropdownMenuItem>Scripts</DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"

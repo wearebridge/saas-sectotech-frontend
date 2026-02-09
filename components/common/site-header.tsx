@@ -15,7 +15,6 @@ const navMain = [
   { title: "Nova análise", url: "/analise" },
 ];
 
-// nomes customizados
 const routeNames: Record<string, string> = {
   tipos: "Tipos do Serviço",
   novo: "Novo",
@@ -30,10 +29,25 @@ export function SiteHeader() {
 
   const rawSegments = pathname.split("/").filter(Boolean);
 
-  const segments = rawSegments.filter((seg) => !isId(seg));
+  const breadcrumbs: { title: string; url: string }[] = [];
 
-  const breadcrumbs = segments.map((segment, index) => {
-    const url = `/${segments.slice(0, index + 1).join("/")}`;
+  let i = 0;
+
+  while (i < rawSegments.length) {
+    const segment = rawSegments[i];
+
+    if (isId(segment)) {
+      i++;
+      continue;
+    }
+
+    let endIndex = i;
+
+    if (rawSegments[i + 1] && isId(rawSegments[i + 1])) {
+      endIndex = i + 1;
+    }
+
+    const url = `/${rawSegments.slice(0, endIndex + 1).join("/")}`;
 
     const found = navMain.find((item) => item.url === url);
 
@@ -42,8 +56,10 @@ export function SiteHeader() {
       routeNames[segment] ??
       segment.charAt(0).toUpperCase() + segment.slice(1);
 
-    return { title, url };
-  });
+    breadcrumbs.push({ title, url });
+
+    i = endIndex + 1;
+  }
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">

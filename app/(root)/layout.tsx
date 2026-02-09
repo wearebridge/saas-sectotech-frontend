@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/common/site-header";
 import { KeycloakProvider } from "@/lib/keycloak";
 import { CreditProvider } from "@/lib/credit-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
               </SidebarInset>
             </SidebarProvider>
           </CreditProvider>
+          <Toaster />
         </KeycloakProvider>
       </body>
     </html>

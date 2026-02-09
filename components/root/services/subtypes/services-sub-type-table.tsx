@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   ColumnDef,
   flexRender,
@@ -21,7 +20,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -58,11 +56,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ServiceForm } from "../../../forms/service-form";
+import { ServiceForm } from "./service-form";
 import { useKeycloak } from "@/lib/keycloak";
 import { ServiceType } from "@/types/service";
-import Link from "next/link";
 import { serviceColumns } from "./services-sub-type-columns";
+import { deleteService, getServices } from "@/service/services-type";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ServicesTableProps = {
   serviceSubTypeId?: string;
@@ -73,90 +72,80 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   const searchParams = useSearchParams();
   const { token, authenticated } = useKeycloak();
 
-  const [data, setData] = React.useState<ServiceType[]>([]);
+  const [data, setData] = useState<ServiceType[]>([]);
 
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [service, setService] = React.useState(
-    searchParams.get("service") ?? "",
-  );
-  const [subType, setSubType] = React.useState(
-    searchParams.get("subType") ?? "",
-  );
-  const [status, setStatus] = React.useState(
-    searchParams.get("status") ?? "active",
-  );
-  const [pageSize, setPageSize] = React.useState(
+  const [service, setService] = useState(searchParams.get("service") ?? "");
+  const [subType, setSubType] = useState(searchParams.get("subType") ?? "");
+  const [status, setStatus] = useState(searchParams.get("status") ?? "active");
+  const [pageSize, setPageSize] = useState(
     Number(searchParams.get("pageSize") ?? 10),
   );
-  const [pageIndex, setPageIndex] = React.useState(
+  const [pageIndex, setPageIndex] = useState(
     Number(searchParams.get("page") ?? 0),
   );
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [editingService, setEditingService] =
-    React.useState<ServiceType | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceType | null>(
+    null,
+  );
 
-  const fetchServices = React.useCallback(async () => {
+  const handleGetServices = useCallback(async () => {
     if (!token) return;
 
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-      const url = serviceSubTypeId
-        ? `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`
-        : `${apiUrl}/service-types`;
+      if (!serviceSubTypeId) {
+        toast.error("ID do sub-tipo de serviço não fornecido");
+        setLoading(false);
+        return;
+      }
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const result = await getServices({ token, serviceSubTypeId });
 
-      if (!response.ok) throw new Error("Failed to fetch services");
+      if (result instanceof Error) {
+        toast.error(result.message);
+        setLoading(false);
+        return;
+      }
 
-      const result = await response.json();
+      setLoading(false);
       setData(result);
     } catch (error) {
-      console.error(error);
-    } finally {
+      console.log(error);
       setLoading(false);
+      toast.error("Erro ao buscar os serviços");
     }
   }, [token, serviceSubTypeId]);
 
-  const handleDelete = React.useCallback(
+  const handleDelete = useCallback(
     async (item: ServiceType) => {
       if (!token) return;
 
+      setLoading(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-        const response = await fetch(`${apiUrl}/service-types/${item.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            ...item,
-            status: false,
-          }),
-        });
+        const result = await deleteService({ token, item });
 
-        if (!response.ok) {
-          throw new Error("Falha ao desativar serviço");
+        if (result instanceof Error) {
+          toast.error(result.message);
+          setLoading(false);
+          return;
         }
 
         toast.success("Serviço desativado com sucesso");
-        fetchServices();
+        setLoading(false);
+        handleGetServices();
       } catch (error) {
         console.error(error);
+        setLoading(false);
         toast.error("Erro ao desativar serviço");
       }
     },
-    [token, fetchServices],
+    [token, handleGetServices],
   );
 
-  const columns: ColumnDef<ServiceType>[] = React.useMemo(
+  const columns: ColumnDef<ServiceType>[] = useMemo(
     () =>
       serviceColumns({
         handleDelete,
@@ -167,13 +156,13 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
     [serviceSubTypeId, handleDelete],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (authenticated) {
-      fetchServices();
+      handleGetServices();
     }
-  }, [authenticated, fetchServices]);
+  }, [authenticated, handleGetServices]);
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     let filtered = [...data];
 
     if (service) {
@@ -191,16 +180,16 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   }, [data, service, subType, status]);
 
   // Extract unique values for filters
-  const uniqueServices = React.useMemo(
+  const uniqueServices = useMemo(
     () => [...new Set(data.map((d) => d.name))],
     [data],
   );
-  const uniqueSubTypes = React.useMemo(
+  const uniqueSubTypes = useMemo(
     () => [...new Set(data.map((d) => d.serviceSubTypeName).filter(Boolean))],
     [data],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams();
 
     if (service) params.set("service", service);
@@ -389,18 +378,29 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
             </TableHeader>
 
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Carregando...
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -476,7 +476,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
           setOpenDialog(open);
           if (!open) setEditingService(null);
         }}
-        onSuccess={fetchServices}
+        onSuccess={handleGetServices}
         defaultSubTypeId={serviceSubTypeId}
         serviceId={editingService?.id}
         initialData={

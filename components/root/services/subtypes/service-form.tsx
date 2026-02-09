@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as React from "react"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as React from "react";
 import {
   Form,
   FormControl,
@@ -18,27 +18,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { z } from "zod"
-import { useKeycloak } from "@/lib/keycloak"
-import { toast } from "sonner"
-import { SubTypeSelect } from "./subtype-select"
+} from "@/components/ui/select";
+import { z } from "zod";
+import { useKeycloak } from "@/lib/keycloak";
+import { toast } from "sonner";
+import { SubTypeSelect } from "../../../forms/subtype-select";
+import { createService, updateService } from "@/service/services-type";
 
 type ServiceFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
-  defaultSubTypeId?: string
-  serviceId?: string
-  initialData?: ServiceFormValues
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+  defaultSubTypeId?: string;
+  serviceId?: string;
+  initialData?: ServiceFormValues;
+};
 
 export const serviceSchema = z.object({
   name: z.string().min(1, "Nome do serviço é obrigatório"),
@@ -47,9 +48,9 @@ export const serviceSchema = z.object({
   status: z.enum(["active", "inactive"], {
     message: "Selecione um status",
   }),
-})
+});
 
-export type ServiceFormValues = z.infer<typeof serviceSchema>
+export type ServiceFormValues = z.infer<typeof serviceSchema>;
 
 export function ServiceForm({
   open,
@@ -59,8 +60,10 @@ export function ServiceForm({
   serviceId,
   initialData,
 }: ServiceFormProps) {
-  const { token } = useKeycloak()
-  const isEditing = !!serviceId
+  const { token } = useKeycloak();
+  const isEditing = !!serviceId;
+
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
@@ -70,75 +73,85 @@ export function ServiceForm({
       subtypeId: defaultSubTypeId || "",
       status: "active",
     },
-  })
+  });
 
   // Update default value if prop changes
   React.useEffect(() => {
-     if (initialData) {
-         form.reset(initialData)
-     } else {
-        if (defaultSubTypeId) {
-            form.setValue("subtypeId", defaultSubTypeId)
-        }
-        if (!isEditing && !initialData) {
-           // Reset to defaults if opening as new
-            form.reset({
-                name: "",
-                description: "",
-                subtypeId: defaultSubTypeId || "",
-                status: "active",
-            })
-        }
-     }
-  }, [defaultSubTypeId, form, initialData, isEditing, open])
-
+    if (initialData) {
+      form.reset(initialData);
+    } else {
+      if (defaultSubTypeId) {
+        form.setValue("subtypeId", defaultSubTypeId);
+      }
+      if (!isEditing && !initialData) {
+        // Reset to defaults if opening as new
+        form.reset({
+          name: "",
+          description: "",
+          subtypeId: defaultSubTypeId || "",
+          status: "active",
+        });
+      }
+    }
+  }, [defaultSubTypeId, form, initialData, isEditing, open]);
 
   const onSubmit = async (data: ServiceFormValues) => {
-    if (!token) return
+    if (!token) return;
+
+    setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      // The backend expects status as boolean
-      const payload = {
+      if (isEditing) {
+        const result = await updateService({
           name: data.name,
+          serviceId: serviceId,
+          status: data.status,
           description: data.description,
-          status: data.status === "active"
+          token: token,
+        });
+
+        if (result instanceof Error) {
+          toast.error(result.message);
+          setIsLoading(false);
+          return;
+        }
+
+        toast.success("Serviço alterado com sucesso!");
+      } else {
+        const result = await createService({
+          name: data.name,
+          subtypeId: data.subtypeId,
+          token: token,
+          description: data.description,
+        });
+
+        if (result instanceof Error) {
+          toast.error(result.message);
+          setIsLoading(false);
+          return;
+        }
+
+        toast.success("Serviço criado com sucesso!");
       }
 
-      const url = isEditing 
-        ? `${apiUrl}/service-types/${serviceId}`
-        : `${apiUrl}/service-types/byServiceSubType/${data.subtypeId}`
-      
-      const method = isEditing ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Falha ao ${isEditing ? "atualizar" : "criar"} serviço`)
-      }
-
-      toast.success(`Serviço ${isEditing ? "atualizado" : "criado"} com sucesso`)
-      onSuccess?.()
-      onOpenChange(false)
-      form.reset()
+      onSuccess?.();
+      onOpenChange(false);
+      form.reset();
+      setIsLoading(false);
     } catch (error) {
-      console.error(error)
-      toast.error("Erro ao salvar serviço")
+      setIsLoading(false);
+      console.error(error);
+      toast.error("Erro ao salvar serviço");
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Serviço" : "Novo Serviço"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Editar Serviço" : "Novo Serviço"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -149,7 +162,10 @@ export function ServiceForm({
                 <FormItem>
                   <FormLabel>Nome do Serviço</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Aposentadoria por Idade" {...field} />
+                    <Input
+                      placeholder="Ex: Aposentadoria por Idade"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,7 +230,10 @@ export function ServiceForm({
               )}
             />
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 flex-col">
+              <Button variant={"sectotech"} type="submit" isLoading={isLoading}>
+                Salvar
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -222,11 +241,10 @@ export function ServiceForm({
               >
                 Cancelar
               </Button>
-              <Button type="submit">Salvar</Button>
             </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

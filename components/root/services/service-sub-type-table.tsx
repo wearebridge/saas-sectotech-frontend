@@ -88,19 +88,21 @@ export function ServiceSubTypeTable() {
   const handleGetSubTypes = useCallback(async () => {
     if (!token) return;
 
+    setLoading(true);
     try {
       const data = await getSubTypeService({ token });
 
       if (data instanceof Error) {
         toast.error(data.message);
+        setLoading(false);
         return;
       }
 
       setData(data as ServiceSubType[]);
-    } catch {
-      toast.error("Erro ao buscar os subtipos de serviço.");
-    } finally {
       setLoading(false);
+    } catch {
+      setLoading(false);
+      toast.error("Erro ao buscar os subtipos de serviço.");
     }
   }, [token]);
 
@@ -108,18 +110,23 @@ export function ServiceSubTypeTable() {
     async (item: ServiceSubType) => {
       if (!token) return;
 
+      setLoading(true);
       try {
         const response = await deleteServiceSubType({ item, token });
 
         if (response instanceof Error) {
           toast.error(response.message);
+          setLoading(false);
           return;
         }
 
         toast.success(response);
+
         handleGetSubTypes();
+        setLoading(false);
       } catch {
         toast.error("Erro ao deletar subtipo de serviço.");
+        setLoading(false);
       }
     },
     [token, handleGetSubTypes],

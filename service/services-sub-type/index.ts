@@ -5,13 +5,13 @@ import { CustomError } from "@/lib/errors/custom-errors";
 
 import { tokenProps } from "@/types/token";
 import { ServiceSubType } from "@/types/analysis";
+import {
+  DeleteServiceSubTypeProps,
+  CreateServiceSubTypeProps,
+  UpdateServiceSubTypeProps,
+} from "@/service/services-sub-type/dto";
 
 const baseUrl = "/service-sub-types";
-
-interface CreateServiceSubTypeProps extends tokenProps {
-  name: string;
-  description?: string;
-}
 
 export async function createServiceSubType({
   token,
@@ -49,18 +49,11 @@ export async function createServiceSubType({
       );
     }
 
-    return "Subtipo de serviço criado com sucesso";
+    return "Subtipo de serviço criado com sucesso!";
   } catch (error) {
     console.error("Error creating service:", error);
     return new CustomError("BAD_REQUEST", "Erro ao criar subtipo de serviço.");
   }
-}
-
-interface UpdateServiceSubTypeProps extends tokenProps {
-  id: string;
-  name: string;
-  description?: string;
-  status: string;
 }
 
 export async function updateServiceSubType({
@@ -108,7 +101,10 @@ export async function updateServiceSubType({
     return "Subtipo de serviço atualizado com sucesso";
   } catch (error) {
     console.error("Error updating service sub type:", error);
-    return new CustomError("BAD_REQUEST", "Erro ao atualizar serviço.");
+    return new CustomError(
+      "BAD_REQUEST",
+      "Erro ao atualizar o subtipo de serviço.",
+    );
   }
 }
 
@@ -142,10 +138,6 @@ export async function getSubTypeService({
       "Erro ao buscar subtipos de serviço.",
     );
   }
-}
-
-interface DeleteServiceSubTypeProps extends tokenProps {
-  item: ServiceSubType;
 }
 
 export async function deleteServiceSubType({
