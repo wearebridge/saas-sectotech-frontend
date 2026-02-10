@@ -1,10 +1,7 @@
-import { ScriptsTable } from '@/components/scripts-table'
-import React from 'react'
+import { ScriptsTable } from "@/components/common/scripts/scripts-table";
 
 function Page() {
-  return (
-    <ScriptsTable />
-  )
+  return <ScriptsTable isPage={true} />;
 }
 
-export default Page
+export default Page;

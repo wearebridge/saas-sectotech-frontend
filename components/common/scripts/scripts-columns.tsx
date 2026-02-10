@@ -7,50 +7,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ServiceType } from "@/types/service";
 import {
   IconCircleCheckFilled,
   IconCircleXFilled,
   IconDotsVertical,
 } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
-import Link from "next/link";
+import { Script } from "@/types/service";
 
-interface ServiceColumnsProps {
-  serviceSubTypeId?: string;
-  handleDelete: (service: ServiceType) => void;
-  setEditingService: (service: ServiceType) => void;
+interface ScriptsColumnsProps {
+  setEditingItem: (item: Script) => void;
   setOpenDialog: (open: boolean) => void;
+  handleDelete: (item: Script) => void;
 }
 
-export function serviceColumns({
-  handleDelete,
-  setEditingService,
+export function scriptsColumns({
+  setEditingItem,
   setOpenDialog,
-  serviceSubTypeId,
-}: ServiceColumnsProps): ColumnDef<ServiceType>[] {
+  handleDelete,
+}: ScriptsColumnsProps): ColumnDef<Script>[] {
   return [
     {
       accessorKey: "name",
-      header: "Serviço",
-      cell: ({ row }) => (
-        <Link
-          href={`/subtipos-servicos/tipos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/scripts/${row.original.id}`}
-          className="font-medium hover:underline text-primary"
-        >
-          {row.original.name}
-        </Link>
-      ),
+      header: "Nome do Script",
+    },
+    {
+      accessorKey: "serviceTypeName",
+      header: "Tipo de Serviço",
     },
     {
       accessorKey: "serviceSubTypeName",
-
-      header: "Sub-tipo",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="px-1.5 text-muted-foreground">
-          {row.original.serviceSubTypeName || "N/A"}
-        </Badge>
-      ),
+      header: "Subtipo de Serviço",
     },
     {
       accessorKey: "status",
@@ -83,20 +70,12 @@ export function serviceColumns({
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => {
-                setEditingService(row.original);
+                setEditingItem(row.original);
                 setOpenDialog(true);
               }}
             >
               Editar
             </DropdownMenuItem>
-
-            <Link
-              href={`/subtipos-servicos/tipos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/scripts/${row.original.id}`}
-            >
-              <DropdownMenuItem className="cursor-pointer">
-                Scripts
-              </DropdownMenuItem>
-            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive cursor-pointer"

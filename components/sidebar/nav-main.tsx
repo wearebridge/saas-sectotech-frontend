@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import * as React from "react";
 
 export function NavMain({
   items,
@@ -22,9 +23,26 @@ export function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+
+  /**
+   * Descobre qual é o item mais específico da rota atual.
+   */
+  const activeItem = React.useMemo(() => {
+    const matches = items.filter(
+      (item) =>
+        pathname === item.url ||
+        (item.url.length > 1 && pathname.includes(item.url)),
+    );
+
+    if (!matches.length) return null;
+
+    return matches.sort((a, b) => b.url.length - a.url.length)[0];
+  }, [pathname, items]);
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
+        {/* Nova análise */}
         <SidebarMenu>
           <Link href="/analise">
             <SidebarMenuItem className="flex items-center gap-2">
@@ -38,11 +56,11 @@ export function NavMain({
             </SidebarMenuItem>
           </Link>
         </SidebarMenu>
+
+        {/* Itens principais */}
         <SidebarMenu>
           {items.map((item) => {
-            const isActive =
-              (pathname.includes(item.url) && item.url.length > 1) ||
-              pathname === item.url;
+            const isActive = activeItem?.url === item.url;
 
             return (
               <Link href={item.url} key={item.title}>

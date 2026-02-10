@@ -350,7 +350,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
             </DropdownMenu>
 
             <Button
-              variant="outline"
+              variant="sectotech"
               size="sm"
               onClick={() => setOpenDialog(true)}
             >

@@ -282,7 +282,7 @@ export function ServiceSubTypeTable() {
             </DropdownMenu>
 
             <Button
-              variant="outline"
+              variant="sectotech"
               size="sm"
               onClick={() => {
                 setEditingItem(null);
