@@ -78,7 +78,7 @@ export function NavUser({
     ? `${userProfile.firstName} ${userProfile.lastName}`.trim() || userProfile.email
     : user.name
     
-  const displayCredits = credits !== null ? credits : user.credits
+  const displayCredits = credits
   const loading = userLoading || creditsLoading
 
   return (

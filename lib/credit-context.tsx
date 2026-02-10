@@ -4,7 +4,7 @@ import { createContext, useContext, ReactNode } from "react"
 import { useCompanyCredits } from "@/hooks/use-company-credits"
 
 interface CreditContextType {
-  credits: number | null
+  credits: number
   loading: boolean
   refreshCredits: () => Promise<void>
 }
@@ -20,7 +20,7 @@ export function CreditProvider({ children }: CreditProviderProps) {
 
   return (
     <CreditContext.Provider value={{
-      credits,
+      credits: credits ?? 0,
       loading,
       refreshCredits
     }}>

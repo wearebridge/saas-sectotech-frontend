@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { useKeycloak } from "@/lib/keycloak"
 import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis"
+import { ClientResponse } from "@/types/client"
+import { ClientService } from "@/service/client/client-service"
 import { ScriptSelector } from "./script-selector"
+import { ClientForm } from "./client-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,13 +14,30 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { Upload, FileAudio, Loader2, CheckCircle, XCircle, CreditCard } from "lucide-react"
+import { Upload, FileAudio, Loader2, CheckCircle, XCircle, CreditCard, Plus, User } from "lucide-react"
 import { useCredit } from "@/lib/credit-context"
 
 export function AnalysisForm() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null)
-  const [clientName, setClientName] = useState("")
+  const [selectedClient, setSelectedClient] = useState<ClientResponse | null>(null)
+  const [clients, setClients] = useState<ClientResponse[]>([])
+  const [loadingClients, setLoadingClients] = useState(true)
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [audioDuration, setAudioDuration] = useState<number | null>(null)
   const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null)
@@ -28,6 +48,44 @@ export function AnalysisForm() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token } = useKeycloak()
   const { refreshCredits } = useCredit()
+
+  // Carregar clientes
+  const loadClients = useCallback(async () => {
+    if (!token) return
+    
+    try {
+      setLoadingClients(true)
+      const clientsData = await ClientService.findAll(token)
+      setClients(clientsData)
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error)
+      toast.error('Erro ao carregar clientes')
+    } finally {
+      setLoadingClients(false)
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (token) {
+      loadClients()
+    }
+  }, [token, loadClients])
+
+  const handleCreateClient = async (data: any) => {
+    if (!token) return
+    
+    try {
+      const newClient = await ClientService.create(data, token)
+      setClients(prev => [...prev, newClient])
+      setSelectedClient(newClient)
+      setIsClientDialogOpen(false)
+      toast.success('Cliente criado com sucesso')
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error)
+      toast.error('Falha ao criar cliente')
+      throw error
+    }
+  }
 
   const handleScriptSelect = useCallback((script: Script | null) => {
     setSelectedScript(script)
@@ -133,8 +191,8 @@ export function AnalysisForm() {
       return
     }
 
-    if (!clientName.trim()) {
-      toast.error("Por favor, informe o nome do cliente")
+    if (!selectedClient) {
+      toast.error("Por favor, selecione um cliente")
       return
     }
 
@@ -161,7 +219,7 @@ export function AnalysisForm() {
       
       // Preparar dados do request
       const requestData: AnalysisRequest = {
-        clientName: clientName.trim(),
+        clientId: selectedClient.id,
         scriptId: selectedScript.id,
         scriptItems: selectedScript.scriptItems?.map(item => ({
           question: item.question,
@@ -207,7 +265,7 @@ export function AnalysisForm() {
 
   const resetForm = () => {
     setSelectedScript(null)
-    setClientName("")
+    setSelectedClient(null)
     setAudioFile(null)
     setAudioDuration(null)
     setEstimatedCredits(null)
@@ -232,14 +290,56 @@ export function AnalysisForm() {
               <CardTitle>Dados da Análise</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="clientName">Nome do Cliente *</Label>
-                <Input
-                  id="clientName"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Digite o nome do cliente"
-                />
+              <div className="space-y-2">
+                <Label>Cliente *</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="col-span-3">
+                    <Select 
+                      value={selectedClient?.id || ""} 
+                      onValueChange={(value) => {
+                        const client = clients.find(c => c.id === value)
+                        setSelectedClient(client || null)
+                      }}
+                      disabled={loadingClients}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingClients ? "Carregando clientes..." : "Selecione um cliente"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              {client.name} {client.surname}
+                              {client.cpf && (
+                                <span className="text-xs text-muted-foreground">
+                                  - CPF: {client.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="default">
+                        <Plus className="w-4 h-4 mr-1" />
+                        Novo
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Criar Novo Cliente</DialogTitle>
+                      </DialogHeader>
+                      <ClientForm 
+                        onSubmit={handleCreateClient}
+                        onCancel={() => setIsClientDialogOpen(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
 
               <div>

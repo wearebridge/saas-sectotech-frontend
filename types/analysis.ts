@@ -12,7 +12,7 @@ export interface Script {
 }
 
 export interface AnalysisRequest {
-  clientName: string
+  clientId: string
   transcription?: string
   scriptId: string
   scriptItems: {

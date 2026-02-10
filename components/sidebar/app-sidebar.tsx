@@ -31,7 +31,7 @@ import { useKeycloak } from "@/lib/keycloak";
 const baseData = {
   user: {
     name: "Usuário",
-    credits: 1337,
+    credits: 0,
   },
   navMain: [
     {

@@ -1,0 +1,221 @@
+"use server";
+
+import * as api from "@/service/api";
+import { CustomError } from "@/lib/errors/custom-errors";
+import { Client } from "@/types/client";
+import { tokenProps } from "@/types/token";
+
+const baseUrl = "/clients";
+
+interface CreateClientProps extends tokenProps {
+  name: string;
+  surname: string;
+  birthDate?: string;
+  cpf?: string;
+  rg?: string;
+  address?: string;
+}
+
+export async function createClient({
+  token,
+  name,
+  surname,
+  birthDate,
+  cpf,
+  rg,
+  address,
+}: CreateClientProps): Promise<string | CustomError> {
+  if (!token) {
+    return new CustomError(
+      "PERMISSION_DND",
+      "Error creating client.",
+    );
+  }
+
+  try {
+    if (!name || !surname) {
+      return new CustomError(
+        "EMPTY_FIELD",
+        "Name and surname are required.",
+      );
+    }
+
+    const response = await api.POST(
+      `${baseUrl}`, 
+      { name, surname, birthDate, cpf, rg, address }, 
+      token
+    );
+
+    if (response instanceof CustomError) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error creating client.",
+      );
+    }
+
+    if (!response.ok) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error creating client.",
+      );
+    }
+
+    return "Client created successfully";
+  } catch (error) {
+    console.error("Error creating client:", error);
+    return new CustomError("BAD_REQUEST", "Error creating client.");
+  }
+}
+
+interface UpdateClientProps extends tokenProps {
+  id: string;
+  name: string;
+  surname: string;
+  birthDate?: string;
+  cpf?: string;
+  rg?: string;
+  address?: string;
+  status: string;
+}
+
+export async function updateClient({
+  id,
+  name,
+  surname,
+  birthDate,
+  cpf,
+  rg,
+  address,
+  status,
+  token,
+}: UpdateClientProps): Promise<string | CustomError> {
+  if (!token) {
+    return new CustomError(
+      "PERMISSION_DND",
+      "Error updating client.",
+    );
+  }
+
+  try {
+    if (!name || !surname || !id || status === undefined) {
+      return new CustomError(
+        "EMPTY_FIELD",
+        "Name, surname, ID and status are required.",
+      );
+    }
+
+    const response = await api.PUT(
+      `${baseUrl}/${id}`,
+      { 
+        name, 
+        surname, 
+        birthDate, 
+        cpf, 
+        rg, 
+        address, 
+        status: status === "active" 
+      },
+      token,
+    );
+
+    if (response instanceof CustomError) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error updating client.",
+      );
+    }
+
+    if (!response.ok) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error updating client.",
+      );
+    }
+
+    return "Client updated successfully";
+  } catch (error) {
+    console.error("Error updating client:", error);
+    return new CustomError(
+      "BAD_REQUEST",
+      "Error updating client.",
+    );
+  }
+}
+
+export async function getClients({
+  token,
+}: tokenProps): Promise<Client[] | CustomError> {
+  try {
+    if (!token) {
+      return new CustomError(
+        "PERMISSION_DND",
+        "Error fetching clients.",
+      );
+    }
+
+    const response = await api.GET(`${baseUrl}`, token);
+
+    if (response instanceof CustomError) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error fetching clients.",
+      );
+    }
+
+    const data = await response.json();
+
+    return data as Client[];
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    return new CustomError(
+      "BAD_REQUEST",
+      "Error fetching clients.",
+    );
+  }
+}
+
+interface DeleteClientProps extends tokenProps {
+  item: Client;
+}
+
+export async function deleteClient({
+  item,
+  token,
+}: DeleteClientProps): Promise<string | CustomError> {
+  try {
+    if (!token) {
+      return new CustomError(
+        "PERMISSION_DND",
+        "Error deleting client.",
+      );
+    }
+
+    const response = await api.PUT(
+      `${baseUrl}/${item.id}`,
+      { ...item, status: false },
+      token,
+    );
+
+    if (response instanceof CustomError) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error deleting client.",
+      );
+    }
+
+    if (!response.ok) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Error deleting client.",
+      );
+    }
+
+    return "Client deactivated successfully";
+  } catch (error) {
+    console.error("Error deleting client:", error);
+    return new CustomError(
+      "BAD_REQUEST",
+      "Error deleting client.",
+    );
+  }
+}
