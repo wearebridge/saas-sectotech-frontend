@@ -73,7 +73,10 @@ import { toast } from "sonner"
 type Item = {
   id: string
   date: Date
+  clientId?: string
   clientName: string
+  clientSurname?: string
+  clientCpf?: string
   service: string
   subType: string
   approved: boolean
@@ -90,7 +93,7 @@ const columns: ColumnDef<Item>[] = [
     accessorKey: "clientName",
     header: "Cliente",
     cell: ({ row }) => (
-      <span className="font-medium">{row.original.clientName}</span>
+      <span className="font-medium">{row.original.clientName} {row.original.clientSurname || ""}</span>
     ),
   },
   {
@@ -176,7 +179,9 @@ export function DashboardTable() {
       if (!authenticated || !token) return
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`, {
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`
+
+        const response = await fetch(url, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -190,7 +195,10 @@ export function DashboardTable() {
         const mappedData: Item[] = result.map((item: any) => ({
           id: item.id,
           date: new Date(item.createdAt),
-          clientName: item.clientName,
+          clientId: item.clientId,
+          clientName: item.clientName || "-",
+          clientSurname: item.clientSurname,
+          clientCpf: item.clientCpf,
           service: item.serviceTypeName || "-",
           subType: item.serviceSubTypeName || "-",
           approved: item.approved,
@@ -218,7 +226,13 @@ export function DashboardTable() {
   const filteredData = React.useMemo(() => {
     return data.filter((item) => {
       if (date && format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")) return false
-      if (clientSearch && !item.clientName.toLowerCase().includes(clientSearch.toLowerCase())) return false
+      if (clientSearch) {
+        const search = clientSearch.trim().toLowerCase()
+        const fullName = `${item.clientName} ${item.clientSurname || ''}`.toLowerCase()
+        const cpf = item.clientCpf?.replace(/\D/g, '') || ''
+        const searchDigits = search.replace(/\D/g, '')
+        if (!fullName.includes(search) && !(searchDigits && cpf.includes(searchDigits))) return false
+      }
       if (service && item.service !== service) return false
       if (subType && item.subType !== subType) return false
       
@@ -303,7 +317,7 @@ export function DashboardTable() {
               <Input
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
-                placeholder="Buscar cliente"
+                placeholder="Buscar por nome ou CPF"
                 className="h-8 w-[220px] pl-8 text-sm leading-none"
               />
             </div>

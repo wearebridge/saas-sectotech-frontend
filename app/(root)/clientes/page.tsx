@@ -22,6 +22,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
 
   const loadClients = async () => {
@@ -124,6 +125,8 @@ export default function ClientsPage() {
         loading={loading}
         onUpdate={handleUpdateClient}
         onDelete={handleDeleteClient}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
       />
     </div>
   )

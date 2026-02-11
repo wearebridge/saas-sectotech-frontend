@@ -70,6 +70,8 @@ interface ClientTableProps {
   loading?: boolean
   onUpdate?: (id: string, data: ClientRequest) => Promise<void>
   onDelete?: (id: string) => Promise<void>
+  statusFilter?: 'all' | 'active' | 'inactive'
+  onStatusFilterChange?: (filter: 'all' | 'active' | 'inactive') => void
 }
 
 const columns: ColumnDef<ClientResponse>[] = [
@@ -138,14 +140,6 @@ const columns: ColumnDef<ClientResponse>[] = [
       )
     },
   },
-  {
-    accessorKey: 'createdAt',
-    header: 'Criado em',
-    cell: ({ row }) => {
-      const createdAt = row.getValue('createdAt') as string
-      return formatDate(createdAt)
-    },
-  },
 ]
 
 export function ClientTable({
@@ -153,6 +147,8 @@ export function ClientTable({
   loading = false,
   onUpdate,
   onDelete,
+  statusFilter = 'all',
+  onStatusFilterChange,
 }: ClientTableProps) {
   const [selectedClient, setSelectedClient] = useState<ClientResponse | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -190,7 +186,7 @@ export function ClientTable({
   const columns: ColumnDef<ClientResponse>[] = [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: 'Nome',
       cell: ({ row }) => (
         <div className="font-medium">
           {row.getValue('name')} {row.original.surname}
@@ -221,7 +217,7 @@ export function ClientTable({
     },
     {
       accessorKey: 'birthDate',
-      header: 'Birth Date',
+      header: 'Data de Nascimento',
       cell: ({ row }) => {
         const birthDate = row.getValue('birthDate') as string
         return birthDate ? formatDate(birthDate) : <span className="text-muted-foreground">-</span>
@@ -229,7 +225,7 @@ export function ClientTable({
     },
     {
       accessorKey: 'address',
-      header: 'Address',
+      header: 'Endereço',
       cell: ({ row }) => {
         const address = row.getValue('address') as string
         return address ? (
@@ -248,22 +244,14 @@ export function ClientTable({
         const status = row.getValue('status') as boolean
         return (
           <Badge variant={status ? 'default' : 'secondary'}>
-            {status ? 'Active' : 'Inactive'}
+            {status ? 'Ativo' : 'Inativo'}
           </Badge>
         )
       },
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Created',
-      cell: ({ row }) => {
-        const createdAt = row.getValue('createdAt') as string
-        return formatDate(createdAt)
-      },
-    },
-    {
       id: 'actions',
-      header: 'Actions',
+      header: 'Ações',
       cell: ({ row }) => {
         const client = row.original
 
@@ -271,7 +259,7 @@ export function ClientTable({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menu</span>
                 <IconDotsVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -294,14 +282,48 @@ export function ClientTable({
     },
   ]
 
+  const filteredClients = React.useMemo(() => {
+    if (statusFilter === 'all') return clients
+    return clients.filter(c => statusFilter === 'active' ? c.status : !c.status)
+  }, [clients, statusFilter])
+
   return (
     <>
+      {onStatusFilterChange && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-muted-foreground">Filtrar por status:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onStatusFilterChange('all')}
+            >
+              Todos
+            </Button>
+            <Button
+              variant={statusFilter === 'active' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onStatusFilterChange('active')}
+            >
+              Ativos
+            </Button>
+            <Button
+              variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onStatusFilterChange('inactive')}
+            >
+              Inativos
+            </Button>
+          </div>
+        </div>
+      )}
+
       <DataTable
         columns={columns}
-        data={clients}
+        data={filteredClients}
         loading={loading}
         searchKey="name"
-        searchPlaceholder="Search clients..."
+        searchPlaceholder="Buscar clientes..."
       />
 
       {/* Edit Dialog */}

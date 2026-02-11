@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -22,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
@@ -30,7 +30,10 @@ import { Eye, CheckCircle, XCircle, Calendar, User, Search, Filter } from "lucid
 
 interface AnalysisHistoryItem {
   id: string
+  clientId?: string
   clientName: string
+  clientSurname?: string
+  clientCpf?: string
   audioFilename?: string
   transcription?: string
   script: any
@@ -43,7 +46,7 @@ export function AnalysisHistory() {
   const [analyses, setAnalyses] = useState<AnalysisHistoryItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisHistoryItem | null>(null)
-  const [clientNameFilter, setClientNameFilter] = useState("")
+  const [clientSearch, setClientSearch] = useState("")
   const [dateFilter, setDateFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const { token, authenticated } = useKeycloak()
@@ -54,7 +57,9 @@ export function AnalysisHistory() {
     setIsLoading(true)
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const response = await fetch(`${apiUrl}/analysis-results`, {
+      const url = `${apiUrl}/analysis-results`
+      
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -92,9 +97,13 @@ export function AnalysisHistory() {
 
   const filteredAnalyses = useMemo(() => {
     return analyses.filter(analysis => {
-      const matchesClientName = clientNameFilter === "" || 
-        analysis.clientName.toLowerCase().includes(clientNameFilter.toLowerCase())
-      
+      const search = clientSearch.trim().toLowerCase()
+      const matchesClient = search === "" ||
+        (analysis.clientName && analysis.clientName.toLowerCase().includes(search)) ||
+        (analysis.clientSurname && analysis.clientSurname.toLowerCase().includes(search)) ||
+        (`${analysis.clientName || ''} ${analysis.clientSurname || ''}`.toLowerCase().includes(search)) ||
+        (analysis.clientCpf && analysis.clientCpf.replace(/\D/g, '').includes(search.replace(/\D/g, '')))
+
       const matchesDate = dateFilter === "" || 
         analysis.createdAt.startsWith(dateFilter)
       
@@ -102,12 +111,12 @@ export function AnalysisHistory() {
         (statusFilter === "approved" && analysis.approved) ||
         (statusFilter === "rejected" && !analysis.approved)
       
-      return matchesClientName && matchesDate && matchesStatus
+      return matchesClient && matchesDate && matchesStatus
     })
-  }, [analyses, clientNameFilter, dateFilter, statusFilter])
+  }, [analyses, clientSearch, dateFilter, statusFilter])
 
   const clearFilters = () => {
-    setClientNameFilter("")
+    setClientSearch("")
     setDateFilter("")
     setStatusFilter("all")
   }
@@ -148,12 +157,12 @@ export function AnalysisHistory() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
-              <Label htmlFor="clientNameFilter">Nome do Cliente</Label>
+              <Label htmlFor="clientSearch">Cliente</Label>
               <Input
-                id="clientNameFilter"
-                placeholder="Buscar por nome..."
-                value={clientNameFilter}
-                onChange={(e) => setClientNameFilter(e.target.value)}
+                id="clientSearch"
+                placeholder="Buscar por nome ou CPF"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
               />
             </div>
             <div>
@@ -167,7 +176,7 @@ export function AnalysisHistory() {
             </div>
             <div>
               <Label htmlFor="statusFilter">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
@@ -182,7 +191,7 @@ export function AnalysisHistory() {
               Limpar Filtros
             </Button>
           </div>
-          {(clientNameFilter || dateFilter || statusFilter !== "all") && (
+          {(clientSearch.trim() !== "" || dateFilter || statusFilter !== "all") && (
             <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
               <Search className="h-4 w-4" />
               {filteredAnalyses.length} de {analyses.length} resultados encontrados
@@ -222,7 +231,7 @@ export function AnalysisHistory() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      {analysis.clientName}
+                      {analysis.clientName} {analysis.clientSurname || ""}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -283,7 +292,12 @@ export function AnalysisHistory() {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label className="text-sm font-medium">Cliente</Label>
-                                <p className="text-sm">{selectedAnalysis.clientName}</p>
+                                <p className="text-sm">{selectedAnalysis.clientName} {selectedAnalysis.clientSurname || ""}</p>
+                                {selectedAnalysis.clientCpf && (
+                                  <p className="text-xs text-muted-foreground">
+                                    CPF: {selectedAnalysis.clientCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <Label className="text-sm font-medium">Data/Hora</Label>

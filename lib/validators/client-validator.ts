@@ -31,9 +31,7 @@ export const clientSchema = z.object({
       (val) => !val || val.length <= 255,
       "Endereço deve ter no máximo 255 caracteres"
     ),
-  status: z.enum(["active", "inactive"], {
-    message: "Selecione um status",
-  }),
+  status: z.enum(["active", "inactive"]),
 });
 
 export type ClientFormValues = z.infer<typeof clientSchema>;
