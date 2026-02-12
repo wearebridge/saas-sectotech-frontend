@@ -18,6 +18,21 @@ export class ClientService {
     return response.json()
   }
 
+  static async findById(id: string, token: string): Promise<ClientResponse> {
+    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch client')
+    }
+
+    return response.json()
+  }
+
   static async create(data: ClientRequest, token: string): Promise<ClientResponse> {
     // Convert string status to boolean for backend
     const backendData = {

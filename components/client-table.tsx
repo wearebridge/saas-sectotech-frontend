@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -156,6 +157,7 @@ export function ClientTable({
   const [nameSearch, setNameSearch] = React.useState("")
   const [pageSize, setPageSize] = React.useState(10)
   const [pageIndex, setPageIndex] = React.useState(0)
+  const router = useRouter()
 
   const handleEdit = (client: ClientResponse) => {
     setSelectedClient(client)
@@ -188,9 +190,12 @@ export function ClientTable({
       accessorKey: 'name',
       header: 'Nome',
       cell: ({ row }) => (
-        <div className="font-medium">
+        <button
+          className="font-medium text-primary hover:underline cursor-pointer text-left"
+          onClick={() => router.push(`/clientes/${row.original.id}/analises`)}
+        >
           {row.getValue('name')} {row.original.surname}
-        </div>
+        </button>
       ),
     },
     {

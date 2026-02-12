@@ -23,6 +23,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconChevronsRight,
+  IconEye,
+  IconDownload,
 } from "@tabler/icons-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -31,6 +33,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import {
   Popover,
   PopoverContent,
@@ -53,6 +57,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -70,7 +80,7 @@ import {
 import { useKeycloak } from "@/lib/keycloak"
 import { toast } from "sonner"
 
-type Item = {
+type AnalysisItem = {
   id: string
   date: Date
   clientId?: string
@@ -79,83 +89,36 @@ type Item = {
   clientCpf?: string
   service: string
   subType: string
+  scriptName?: string
   approved: boolean
+  creditsUsed?: number
+  executedBy?: string
+  audioFilename?: string
+  audioUrl?: string
+  transcription?: string
+  aiOutput?: {
+    output?: {
+      question: string
+      answer: string
+      correct: boolean
+      analysis: string
+    }[]
+  }
 }
 
-const columns: ColumnDef<Item>[] = [
-  {
-    accessorKey: "date",
-    header: "Data",
-    cell: ({ row }) =>
-      format(row.original.date, "dd/MM/yyyy", { locale: ptBR }),
-  },
-  {
-    accessorKey: "clientName",
-    header: "Cliente",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.clientName} {row.original.clientSurname || ""}</span>
-    ),
-  },
-  {
-    accessorKey: "service",
-    header: "Serviço",
-  },
-  {
-    accessorKey: "subType",
-    header: "Sub-tipo",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="px-1.5 text-muted-foreground">
-        {row.original.subType}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "approved",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className="flex items-center gap-1 px-1.5 text-muted-foreground"
-      >
-        {row.original.approved ? (
-          <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
-        ) : (
-          <IconCircleXFilled className="h-4 w-4 fill-destructive" />
-        )}
-        {row.original.approved ? "Aprovado" : "Reprovado"}
-      </Badge>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>Ver análise</DropdownMenuItem>
-          <DropdownMenuItem>Baixar áudio</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            Deletar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-]
+interface DashboardTableProps {
+  clientId?: string
+}
 
-export function DashboardTable() {
+export function DashboardTable({ clientId }: DashboardTableProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { token, authenticated } = useKeycloak()
-  const [data, setData] = React.useState<Item[]>([])
+  const [data, setData] = React.useState<AnalysisItem[]>([])
   const [services, setServices] = React.useState<string[]>([])
   const [subTypes, setSubTypes] = React.useState<string[]>([])
+  const [selectedAnalysis, setSelectedAnalysis] = React.useState<AnalysisItem | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = React.useState(false)
 
   const [date, setDate] = React.useState<Date | undefined>(
     searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined
@@ -172,14 +135,125 @@ export function DashboardTable() {
   const [pageIndex, setPageIndex] = React.useState(
     Number(searchParams.get("page") ?? 0)
   )
-  const [openDialog, setOpenDialog] = React.useState(false)
+
+  const handleViewAnalysis = (item: AnalysisItem) => {
+    setSelectedAnalysis(item)
+    setDetailDialogOpen(true)
+  }
+
+  const handleDownloadAudio = (item: AnalysisItem) => {
+    if (!item.audioUrl) {
+      toast.error("Nenhum áudio disponível para esta análise")
+      return
+    }
+    const link = document.createElement("a")
+    link.href = item.audioUrl
+    link.download = item.audioFilename || "audio"
+    link.target = "_blank"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const columns: ColumnDef<AnalysisItem>[] = React.useMemo(() => [
+    {
+      accessorKey: "date",
+      header: "Data",
+      cell: ({ row }) =>
+        format(row.original.date, "dd/MM/yyyy", { locale: ptBR }),
+    },
+    {
+      accessorKey: "clientName",
+      header: "Cliente",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.clientName} {row.original.clientSurname || ""}</span>
+      ),
+    },
+    {
+      accessorKey: "service",
+      header: "Serviço",
+    },
+    {
+      accessorKey: "subType",
+      header: "Sub-tipo",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="px-1.5 text-muted-foreground">
+          {row.original.subType}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "creditsUsed",
+      header: "Créditos",
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {row.original.creditsUsed != null ? row.original.creditsUsed.toFixed(1) : "-"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "executedBy",
+      header: "Executado por",
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {row.original.executedBy || "-"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "approved",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="flex items-center gap-1 px-1.5 text-muted-foreground"
+        >
+          {row.original.approved ? (
+            <IconCircleCheckFilled className="h-4 w-4 fill-emerald-500 dark:fill-emerald-400" />
+          ) : (
+            <IconCircleXFilled className="h-4 w-4 fill-destructive" />
+          )}
+          {row.original.approved ? "Aprovado" : "Reprovado"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleViewAnalysis(row.original)}>
+              <IconEye className="mr-2 h-4 w-4" />
+              Ver análise
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDownloadAudio(row.original)}
+              disabled={!row.original.audioUrl}
+            >
+              <IconDownload className="mr-2 h-4 w-4" />
+              Baixar áudio
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ], [])
 
   React.useEffect(() => {
     const fetchData = async () => {
       if (!authenticated || !token) return
 
       try {
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`
+        let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`
+        if (clientId) {
+          url += `?clientId=${clientId}`
+        }
 
         const response = await fetch(url, {
           headers: {
@@ -192,7 +266,7 @@ export function DashboardTable() {
         }
 
         const result = await response.json()
-        const mappedData: Item[] = result.map((item: any) => ({
+        const mappedData: AnalysisItem[] = result.map((item: any) => ({
           id: item.id,
           date: new Date(item.createdAt),
           clientId: item.clientId,
@@ -201,7 +275,14 @@ export function DashboardTable() {
           clientCpf: item.clientCpf,
           service: item.serviceTypeName || "-",
           subType: item.serviceSubTypeName || "-",
+          scriptName: item.scriptName,
           approved: item.approved,
+          creditsUsed: item.creditsUsed,
+          executedBy: item.executedBy,
+          audioFilename: item.audioFilename,
+          audioUrl: item.audioUrl,
+          transcription: item.transcription,
+          aiOutput: item.aiOutput,
         }))
 
         // Ordenar por data (mais recente primeiro)
@@ -221,7 +302,7 @@ export function DashboardTable() {
     }
 
     fetchData()
-  }, [token, authenticated])
+  }, [token, authenticated, clientId])
 
   const filteredData = React.useMemo(() => {
     return data.filter((item) => {
@@ -244,6 +325,7 @@ export function DashboardTable() {
   }, [data, date, clientSearch, service, subType, status])
 
   React.useEffect(() => {
+    if (clientId) return // Don't update URL params when filtering by clientId
     const params = new URLSearchParams()
     if (date) params.set("date", date.toISOString())
     if (clientSearch) params.set("client", clientSearch)
@@ -261,6 +343,7 @@ export function DashboardTable() {
     status,
     pageIndex,
     pageSize,
+    clientId,
     router,
   ])
 
@@ -555,6 +638,144 @@ export function DashboardTable() {
         </div>
       </div>
 
+      {/* Analysis Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Análise</DialogTitle>
+          </DialogHeader>
+          {selectedAnalysis && (
+            <div className="space-y-6">
+              {/* Meta info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Data</Label>
+                  <p className="text-sm font-medium">
+                    {format(selectedAnalysis.date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Executado por</Label>
+                  <p className="text-sm font-medium">{selectedAnalysis.executedBy || "-"}</p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Cliente</Label>
+                  <p className="text-sm font-medium">
+                    {selectedAnalysis.clientName} {selectedAnalysis.clientSurname || ""}
+                    {selectedAnalysis.clientCpf && (
+                      <span className="ml-2 text-muted-foreground font-mono text-xs">
+                        {selectedAnalysis.clientCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Créditos utilizados</Label>
+                  <p className="text-sm font-medium">
+                    {selectedAnalysis.creditsUsed != null ? selectedAnalysis.creditsUsed.toFixed(1) : "-"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Serviço</Label>
+                  <p className="text-sm font-medium">{selectedAnalysis.service}</p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Sub-tipo</Label>
+                  <p className="text-sm font-medium">{selectedAnalysis.subType}</p>
+                </div>
+                {selectedAnalysis.scriptName && (
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">Script</Label>
+                    <p className="text-sm font-medium">{selectedAnalysis.scriptName}</p>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">Resultado</Label>
+                  <Badge
+                    variant={selectedAnalysis.approved ? "default" : "destructive"}
+                    className="mt-1"
+                  >
+                    {selectedAnalysis.approved ? "Aprovado" : "Reprovado"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Audio */}
+              {selectedAnalysis.audioUrl && (
+                <>
+                  <Separator />
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">Áudio</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      <audio controls className="flex-1 h-8" src={selectedAnalysis.audioUrl} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadAudio(selectedAnalysis)}
+                      >
+                        <IconDownload className="mr-1 h-4 w-4" />
+                        Baixar
+                      </Button>
+                    </div>
+                    {selectedAnalysis.audioFilename && (
+                      <p className="text-xs text-muted-foreground mt-1">{selectedAnalysis.audioFilename}</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Transcription */}
+              {selectedAnalysis.transcription && (
+                <>
+                  <Separator />
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">Transcrição</Label>
+                    <div className="mt-1 rounded-md bg-muted p-3 max-h-40 overflow-y-auto">
+                      <p className="text-sm whitespace-pre-wrap">{selectedAnalysis.transcription}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* AI Output */}
+              {selectedAnalysis.aiOutput?.output && selectedAnalysis.aiOutput.output.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground">Análise por Pergunta</Label>
+                    <div className="space-y-3 mt-2">
+                      {selectedAnalysis.aiOutput.output.map((item, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">Pergunta {index + 1}</span>
+                            <Badge variant={item.correct ? "default" : "destructive"}>
+                              {item.correct ? "Correto" : "Incorreto"}
+                            </Badge>
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">Pergunta:</span>
+                              <p className="text-sm">{item.question}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">Resposta:</span>
+                              <p className="text-sm">{item.answer}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">Análise:</span>
+                              <p className="text-sm">{item.analysis}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
