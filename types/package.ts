@@ -1,10 +1,11 @@
-export interface CreditPackage {
-  id: string
-  name: string
-  identifier: string
-  priceInCents: number
-  credits: number
-  active: boolean
-  createdAt?: string
-  updatedAt?: string
+export interface StripeProduct {
+  productId: string;
+  priceId: string;
+  name: string;
+  description?: string;
+  unitAmount: number;    // price in cents (e.g., 10000 = R$ 100,00)
+  currency: string;
+  type: 'recurring' | 'one_time';
+  interval?: string;     // "month", "year", etc.
+  credits: number;
 }
