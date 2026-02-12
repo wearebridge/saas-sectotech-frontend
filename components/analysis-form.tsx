@@ -108,45 +108,32 @@ export function AnalysisForm() {
     }))
   }
 
-  const getAudioDuration = (file: File): Promise<number> => {
-    return new Promise((resolve, reject) => {
-      const audio = new Audio()
-      audio.src = URL.createObjectURL(file)
-      
-      audio.addEventListener('loadedmetadata', () => {
-        URL.revokeObjectURL(audio.src)
-        resolve(audio.duration)
-      })
-      
-      audio.addEventListener('error', () => {
-        URL.revokeObjectURL(audio.src)
-        reject(new Error('Erro ao carregar áudio'))
-      })
-    })
-  }
-
-  const calculateEstimatedCredits = async (durationInSeconds: number) => {
+  const calculateEstimatedCredits = async (file: File): Promise<{ durationInSeconds: number, estimatedCredits: number } | null> => {
     if (!token) return null
 
     try {
       setIsCalculatingCredits(true)
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      const response = await fetch(`${apiUrl}/analyze/calculate-credits?duration=${durationInSeconds}`, {
-        method: 'GET',
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`${apiUrl}/analyze/calculate-credits`, {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        body: formData,
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao calcular créditos')
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || 'Erro ao calcular créditos')
       }
 
-      const result = await response.json()
-      return result.estimatedCredits
+      return await response.json()
     } catch (error) {
       console.error('Erro ao calcular créditos:', error)
-      toast.error('Erro ao calcular custo estimado')
+      toast.error('Erro ao calcular custo estimado. Verifique o formato do arquivo.')
       return null
     } finally {
       setIsCalculatingCredits(false)
@@ -168,11 +155,11 @@ export function AnalysisForm() {
       setEstimatedCredits(null)
 
       try {
-        const duration = await getAudioDuration(file)
-        setAudioDuration(duration)
-
-        const credits = await calculateEstimatedCredits(duration)
-        setEstimatedCredits(credits)
+        const result = await calculateEstimatedCredits(file)
+        if (result) {
+          setAudioDuration(result.durationInSeconds)
+          setEstimatedCredits(result.estimatedCredits)
+        }
       } catch (error) {
         console.error('Erro ao processar áudio:', error)
         toast.error('Erro ao processar arquivo de áudio')
@@ -326,7 +313,7 @@ export function AnalysisForm() {
                     <DialogTrigger asChild>
                       <Button variant="outline" size="default">
                         <Plus className="w-4 h-4 mr-1" />
-                        Novo
+                        Novo Cliente
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -376,22 +363,28 @@ export function AnalysisForm() {
             </CardContent>
           </Card>
 
-          {audioFile && audioDuration !== null && (
+          {audioFile && (audioDuration !== null || isCalculatingCredits) && (
             <Card className="border-blue-200 bg-blue-50/50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-blue-600" />
-                  Estimativa de Custo
+                  Custo da Análise
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
-                      Duração do áudio: <span className="font-medium">{Math.ceil(audioDuration)} segundos</span>
+                      Duração do áudio: <span className="font-medium">
+                        {audioDuration != null ? (
+                          <>{Math.floor(audioDuration / 60)}m {Math.floor(audioDuration % 60)}s</>
+                        ) : (
+                          'Calculando...'
+                        )}
+                      </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Taxa: 1 crédito por 60 segundos
+                      Taxa: 1 crédito por minuto
                     </p>
                   </div>
                   
@@ -403,7 +396,7 @@ export function AnalysisForm() {
                       </div>
                     ) : estimatedCredits !== null ? (
                       <div className="space-y-1">
-                        <Badge variant="default" className="text-base px-3 py-1 bg-blue-600 hover:bg-blue-700">
+                      <Badge variant="default" className="text-base px-3 py-1 bg-blue-600 hover:bg-blue-700">
                           {estimatedCredits} {estimatedCredits === 1 ? 'Crédito' : 'Créditos'}
                         </Badge>
                         <p className="text-xs text-muted-foreground">serão descontados</p>
