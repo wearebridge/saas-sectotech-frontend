@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -12,6 +13,7 @@ import {
   IconSearch,
   IconLayoutColumns,
   IconPlus,
+  IconDotsVertical,
   IconChevronsLeft,
   IconChevronLeft,
   IconChevronRight,
@@ -22,12 +24,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useKeycloak } from "@/lib/keycloak";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -52,74 +57,145 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { User } from "@/types/users";
-import { NewUserForm } from "./dto";
-import { columnsUsers } from "./columns";
-import { getUsers } from "@/service/users";
 
-const columns: ColumnDef<User>[] = columnsUsers;
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  enabled: boolean;
+  createdTimestamp: number;
+}
+
+interface NewUserForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  password: string;
+}
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorKey: "firstName",
+    header: "Nome",
+    cell: ({ row }) => (
+      <span className="font-medium">
+        {row.original.firstName} {row.original.lastName}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "email",
+    header: "E-mail",
+  },
+  {
+    accessorKey: "username",
+    header: "Username",
+  },
+  {
+    accessorKey: "enabled",
+    header: "Status",
+    cell: ({ row }) => (
+      <span
+        className={cn(
+          "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+          row.original.enabled
+            ? "bg-green-100 text-green-800"
+            : "bg-red-100 text-red-800",
+        )}
+      >
+        {row.original.enabled ? "Ativo" : "Inativo"}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "createdTimestamp",
+    header: "Criado em",
+    cell: ({ row }) => {
+      const date = new Date(row.original.createdTimestamp);
+      return date.toLocaleDateString("pt-BR");
+    },
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <IconDotsVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem>Editar</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive">
+            Desabilitar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  },
+];
 
 export function UsersTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated, loading: keycloakLoading } = useKeycloak();
+  const { token } = useKeycloak();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [nameSearch, setNameSearch] = useState(searchParams.get("name") ?? "");
-  const [emailSearch, setEmailSearch] = useState(
+  const [loading, setLoading] = useState(true);
+  const [nameSearch, setNameSearch] = React.useState(
+    searchParams.get("name") ?? "",
+  );
+  const [emailSearch, setEmailSearch] = React.useState(
     searchParams.get("email") ?? "",
   );
-  const [pageSize, setPageSize] = useState(
+  const [pageSize, setPageSize] = React.useState(
     Number(searchParams.get("pageSize") ?? 10),
   );
-  const [pageIndex, setPageIndex] = useState(
+  const [pageIndex, setPageIndex] = React.useState(
     Number(searchParams.get("page") ?? 0),
   );
-  const [openDialog, setOpenDialog] = useState(false);
-  const [newUser, setNewUser] = useState<NewUserForm>({
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [newUser, setNewUser] = React.useState<NewUserForm>({
     firstName: "",
     lastName: "",
     email: "",
     username: "",
     password: "",
   });
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = React.useState(false);
 
-  const handleUsers = useCallback(async () => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
+  const fetchUsers = async () => {
     try {
-      const response = await getUsers({ token });
+      setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const response = await fetch(`${apiUrl}/companies/current/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      if (response instanceof Error) {
-        toast.error(response.message);
-        setUsers([]);
-        return;
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        throw new Error("Falha ao carregar usuários");
       }
-
-      setUsers(response);
-    } catch {
-      toast.error("Erro ao carregar usuários");
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+      toast.error("Erro ao carregar usuários da empresa");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  };
 
   const createUser = async () => {
     try {
-      if (!token) {
-        toast.error(
-          "Token de autenticação ausente. Por favor, faça login novamente.",
-        );
-        return;
-      }
-
       setCreating(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const response = await fetch(`${apiUrl}/company/users`, {
@@ -141,7 +217,7 @@ export function UsersTable() {
           username: "",
           password: "",
         });
-        await handleUsers();
+        fetchUsers(); // Recarregar a lista
       } else {
         const error = await response.json();
         throw new Error(error.message || "Falha ao criar usuário");
@@ -154,7 +230,7 @@ export function UsersTable() {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const params = new URLSearchParams();
     if (nameSearch) params.set("name", nameSearch);
     if (emailSearch) params.set("email", emailSearch);
@@ -163,21 +239,14 @@ export function UsersTable() {
     router.replace(`?${params.toString()}`);
   }, [nameSearch, emailSearch, pageIndex, pageSize, router]);
 
-  useEffect(() => {
-    if (keycloakLoading) {
-      return;
+  React.useEffect(() => {
+    if (token) {
+      fetchUsers();
     }
-
-    if (!authenticated || !token) {
-      setLoading(false);
-      return;
-    }
-
-    handleUsers();
-  }, [keycloakLoading, authenticated, token, handleUsers]);
+  }, [token]);
 
   // Filtrar usuários baseado na busca
-  const filteredUsers = useMemo(() => {
+  const filteredUsers = React.useMemo(() => {
     return users.filter((user) => {
       const nameMatch =
         nameSearch === "" ||

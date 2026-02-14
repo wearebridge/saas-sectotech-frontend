@@ -72,28 +72,3 @@ export async function regenerateCredentials({
     );
   }
 }
-
-export async function getUsers({
-  token,
-}: tokenProps): Promise<CustomError | User[]> {
-  try {
-    if (!token) {
-      return new CustomError(
-        "EMPTY_FIELD",
-        "Falha ao obter usuários. Token de autenticação ausente.",
-      );
-    }
-
-    const response = await api.GET(`/companies/current/users`, token);
-
-    if (response instanceof Error || !response.ok) {
-      return new CustomError("BAD_REQUEST", "Erro ao obter usuários");
-    }
-
-    const data = await response.json();
-    return data as User[];
-  } catch (error) {
-    console.error("Erro ao obter usuários:", error);
-    return new CustomError("BAD_REQUEST", "Erro ao obter usuários");
-  }
-}
