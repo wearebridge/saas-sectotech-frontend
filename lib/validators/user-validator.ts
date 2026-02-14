@@ -1,0 +1,32 @@
+import { z } from "zod";
+
+export const userSchema = z.object({
+  firstName: z
+    .string()
+    .min(1, "Nome é obrigatório")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  lastName: z
+    .string()
+    .min(1, "Sobrenome é obrigatório")
+    .max(100, "Sobrenome deve ter no máximo 100 caracteres"),
+  email: z.string().min(1, "E-mail é obrigatório").email("E-mail inválido"),
+  username: z
+    .string()
+    .min(3, "Username deve ter no mínimo 3 caracteres")
+    .max(50, "Username deve ter no máximo 50 caracteres")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username deve conter apenas letras, números, hífens e underscores",
+    ),
+  password: z
+    .string()
+    .min(8, "Senha deve ter no mínimo 8 caracteres")
+    .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "Senha deve conter pelo menos um número")
+    .regex(
+      /[!@#$%^&*(),.?":{}|<>]/,
+      "Senha deve conter pelo menos um caractere especial",
+    ),
+});
+
+export type UserFormValues = z.infer<typeof userSchema>;

@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
 import {
   ColumnDef,
   flexRender,
@@ -13,7 +13,6 @@ import {
   IconSearch,
   IconLayoutColumns,
   IconPlus,
-  IconDotsVertical,
   IconChevronsLeft,
   IconChevronLeft,
   IconChevronRight,
@@ -21,18 +20,15 @@ import {
   IconChevronDown,
 } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKeycloak } from "@/lib/keycloak";
+
 import { toast } from "sonner";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -56,120 +52,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  enabled: boolean;
-  createdTimestamp: number;
-}
-
-interface NewUserForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  password: string;
-}
-
-const columns: ColumnDef<User>[] = [
-  {
-    accessorKey: "firstName",
-    header: "Nome",
-    cell: ({ row }) => (
-      <span className="font-medium">
-        {row.original.firstName} {row.original.lastName}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "email",
-    header: "E-mail",
-  },
-  {
-    accessorKey: "username",
-    header: "Username",
-  },
-  {
-    accessorKey: "enabled",
-    header: "Status",
-    cell: ({ row }) => (
-      <span
-        className={cn(
-          "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-          row.original.enabled
-            ? "bg-green-100 text-green-800"
-            : "bg-red-100 text-red-800",
-        )}
-      >
-        {row.original.enabled ? "Ativo" : "Inativo"}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "createdTimestamp",
-    header: "Criado em",
-    cell: ({ row }) => {
-      const date = new Date(row.original.createdTimestamp);
-      return date.toLocaleDateString("pt-BR");
-    },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <IconDotsVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>Editar</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            Desabilitar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-];
+import { columnsUsers } from "./columns";
+import { User } from "@/types/users";
+import UsersForm from "./users-form";
+import { getUsers } from "@/service/users";
+import { useKeycloak } from "@/lib/keycloak";
 
 export function UsersTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useKeycloak();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [nameSearch, setNameSearch] = React.useState(
-    searchParams.get("name") ?? "",
-  );
-  const [emailSearch, setEmailSearch] = React.useState(
+  const [loading, setLoading] = useState(false);
+  const [nameSearch, setNameSearch] = useState(searchParams.get("name") ?? "");
+  const [emailSearch, setEmailSearch] = useState(
     searchParams.get("email") ?? "",
   );
-  const [pageSize, setPageSize] = React.useState(
+  const [pageSize, setPageSize] = useState(
     Number(searchParams.get("pageSize") ?? 10),
   );
-  const [pageIndex, setPageIndex] = React.useState(
+  const [pageIndex, setPageIndex] = useState(
     Number(searchParams.get("page") ?? 0),
   );
-  const [openDialog, setOpenDialog] = React.useState(false);
-  const [newUser, setNewUser] = React.useState<NewUserForm>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    username: "",
-    password: "",
-  });
-  const [creating, setCreating] = React.useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
-  const fetchUsers = async () => {
+  const columns = useMemo<ColumnDef<User>[]>(() => columnsUsers(), []);
+
+  const { authenticated, token } = useKeycloak();
+
+  const handleLoadUsers = async () => {
+    if (!token) return;
+
     try {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -194,43 +108,7 @@ export function UsersTable() {
     }
   };
 
-  const createUser = async () => {
-    try {
-      setCreating(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const response = await fetch(`${apiUrl}/company/users`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newUser),
-      });
-
-      if (response.ok) {
-        toast.success("Usuário criado com sucesso!");
-        setOpenDialog(false);
-        setNewUser({
-          firstName: "",
-          lastName: "",
-          email: "",
-          username: "",
-          password: "",
-        });
-        fetchUsers(); // Recarregar a lista
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Falha ao criar usuário");
-      }
-    } catch (error) {
-      console.error("Erro ao criar usuário:", error);
-      toast.error("Erro ao criar usuário: " + (error as Error).message);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams();
     if (nameSearch) params.set("name", nameSearch);
     if (emailSearch) params.set("email", emailSearch);
@@ -239,14 +117,19 @@ export function UsersTable() {
     router.replace(`?${params.toString()}`);
   }, [nameSearch, emailSearch, pageIndex, pageSize, router]);
 
-  React.useEffect(() => {
-    if (token) {
-      fetchUsers();
+  // useEffect(() => {
+  //   handleLoadUsers();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [token]);
+
+  useEffect(() => {
+    if (authenticated && token) {
+      handleLoadUsers();
     }
-  }, [token]);
+  }, [authenticated, token]);
 
   // Filtrar usuários baseado na busca
-  const filteredUsers = React.useMemo(() => {
+  const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const nameMatch =
         nameSearch === "" ||
@@ -351,7 +234,7 @@ export function UsersTable() {
             </DropdownMenu>
 
             <Button
-              variant="outline"
+              variant="sectotech"
               size="sm"
               onClick={() => setOpenDialog(true)}
             >
@@ -464,95 +347,11 @@ export function UsersTable() {
           <DialogHeader>
             <DialogTitle>Novo usuário</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nome</Label>
-                <Input
-                  id="firstName"
-                  value={newUser.firstName}
-                  onChange={(e) =>
-                    setNewUser((prev) => ({
-                      ...prev,
-                      firstName: e.target.value,
-                    }))
-                  }
-                  placeholder="Nome"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Sobrenome</Label>
-                <Input
-                  id="lastName"
-                  value={newUser.lastName}
-                  onChange={(e) =>
-                    setNewUser((prev) => ({
-                      ...prev,
-                      lastName: e.target.value,
-                    }))
-                  }
-                  placeholder="Sobrenome"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="email@exemplo.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={newUser.username}
-                onChange={(e) =>
-                  setNewUser((prev) => ({ ...prev, username: e.target.value }))
-                }
-                placeholder="username"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={newUser.password}
-                onChange={(e) =>
-                  setNewUser((prev) => ({ ...prev, password: e.target.value }))
-                }
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setOpenDialog(false)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={createUser}
-                disabled={
-                  creating ||
-                  !newUser.firstName ||
-                  !newUser.lastName ||
-                  !newUser.email ||
-                  !newUser.username ||
-                  !newUser.password
-                }
-              >
-                {creating ? "Criando..." : "Criar usuário"}
-              </Button>
-            </div>
-          </div>
+          <UsersForm
+            setOpenDialog={setOpenDialog}
+            loadUsers={handleLoadUsers}
+            token={token}
+          />
         </DialogContent>
       </Dialog>
     </>

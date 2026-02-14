@@ -72,3 +72,37 @@ export async function regenerateCredentials({
     );
   }
 }
+
+export async function getUsers({
+  token,
+}: tokenProps): Promise<User[] | CustomError> {
+  console.log(token);
+
+  try {
+    if (!token) {
+      return new CustomError(
+        "PERMISSION_DND",
+        "Erro ao buscar subtipos de serviço.",
+      );
+    }
+
+    const response = await api.GET(`${baseUrl}/users`, token);
+
+    if (response instanceof CustomError) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Erro ao buscar usuários da empresa.",
+      );
+    }
+
+    const data = await response.json();
+
+    return data as User[];
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return new CustomError(
+      "BAD_REQUEST",
+      "Erro ao buscar usuários da empresa.",
+    );
+  }
+}

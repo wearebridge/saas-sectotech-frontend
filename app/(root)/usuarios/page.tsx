@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { UsersTable } from "@/components/root/users/users-table";
 import { ClientCredentialsSection } from "@/components/root/users/client-credentials-section";
 import { Separator } from "@/components/ui/separator";
