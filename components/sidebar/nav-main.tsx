@@ -48,7 +48,7 @@ export function NavMain({
             <SidebarMenuItem className="flex items-center gap-2">
               <SidebarMenuButton
                 tooltip="Nova análise"
-                className="bg-brand text-primary-foreground hover:bg-brand/90 hover:text-primary-foreground active:bg-brand/90 active:text-primary-foreground min-w-8 duration-200 ease-linear cursor-pointer"
+                className="bg-brand text-primary-foreground dark:text-primary hover:bg-brand/90 hover:text-primary-foreground active:bg-brand/90 active:text-primary-foreground min-w-8 duration-200 ease-linear cursor-pointer"
               >
                 <IconCirclePlusFilled />
                 <span>Nova análise</span>

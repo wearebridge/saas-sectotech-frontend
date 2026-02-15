@@ -15,8 +15,8 @@ export const userSchema = z.object({
     .min(3, "Username deve ter no mínimo 3 caracteres")
     .max(50, "Username deve ter no máximo 50 caracteres")
     .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Username deve conter apenas letras, números, hífens e underscores",
+      /^[a-zA-Z0-9_.-]+$/,
+      "Username deve conter apenas letras, números, hífens, underscores e pontos",
     ),
   password: z
     .string()

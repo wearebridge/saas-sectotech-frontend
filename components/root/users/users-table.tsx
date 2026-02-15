@@ -19,6 +19,7 @@ import {
   IconChevronsRight,
   IconChevronDown,
 } from "@tabler/icons-react";
+
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { toast } from "sonner";
@@ -53,16 +54,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { columnsUsers } from "./columns";
+import { columnsUsers } from "./users-columns";
 import { User } from "@/types/users";
 import UsersForm from "./users-form";
 
 import { useKeycloak } from "@/lib/keycloak";
+import { IconInput } from "@/components/ui/icon-input";
 
 export function UsersTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [seletedUser, setSeletedUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [nameSearch, setNameSearch] = useState(searchParams.get("name") ?? "");
@@ -77,7 +80,10 @@ export function UsersTable() {
   );
   const [openDialog, setOpenDialog] = useState(false);
 
-  const columns = useMemo<ColumnDef<User>[]>(() => columnsUsers(), []);
+  const columns = useMemo<ColumnDef<User>[]>(
+    () => columnsUsers({ setSeletedUser, setOpenDialog }),
+    [],
+  );
 
   const { authenticated, token } = useKeycloak();
 
@@ -177,34 +183,30 @@ export function UsersTable() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <IconSearch className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={nameSearch}
-                onChange={(e) => setNameSearch(e.target.value)}
-                placeholder="Buscar nome"
-                className="h-8 w-[220px] pl-8 text-sm"
-              />
-            </div>
+          <div className="flex item center flex-col md:flex-row gap-2 w-full">
+            <IconInput
+              className="h-8 text-sm"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              StartIcon={IconSearch as any}
+              placeholder="Buscar nome"
+              value={nameSearch}
+              onChange={(e) => setNameSearch(e.target.value)}
+            />
 
-            <div className="relative">
-              <IconSearch className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={emailSearch}
-                onChange={(e) => setEmailSearch(e.target.value)}
-                placeholder="Buscar e-mail"
-                className="h-8 w-[220px] pl-8 text-sm"
-              />
-            </div>
-          </div>
+            <IconInput
+              className="h-8 text-sm"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              StartIcon={IconSearch as any}
+              placeholder="Buscar e-mail"
+              value={emailSearch}
+              onChange={(e) => setEmailSearch(e.target.value)}
+            />
 
-          <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <IconLayoutColumns className="h-4 w-4" />
-                  <span className="hidden lg:inline">Colunas</span>
+                  <span className="">Colunas</span>
                   <IconChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -234,7 +236,7 @@ export function UsersTable() {
               onClick={() => setOpenDialog(true)}
             >
               <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo usuário</span>
+              <span className="">Novo usuário</span>
             </Button>
           </div>
         </div>
@@ -346,6 +348,8 @@ export function UsersTable() {
             setOpenDialog={setOpenDialog}
             loadUsers={handleLoadUsers}
             token={token}
+            onSuccess={handleLoadUsers}
+            initalData={seletedUser}
           />
         </DialogContent>
       </Dialog>

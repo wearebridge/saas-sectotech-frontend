@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UserFormValues, userSchema } from "@/lib/validators/user-validator";
+import { createUsers } from "@/service/users";
+import { User } from "@/types/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,22 +22,28 @@ interface UsersFormProps {
   setOpenDialog: (open: boolean) => void;
   loadUsers: () => void;
   token: string | undefined;
+  initalData?: User | null;
+  onSuccess: () => void;
 }
 
 export default function UsersForm({
   setOpenDialog,
   loadUsers,
   token,
+  onSuccess,
+  initalData,
 }: UsersFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+
+  const isEditing = !!initalData;
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      username: "",
+      firstName: initalData?.firstName || "",
+      lastName: initalData?.lastName || "",
+      email: initalData?.email || "",
+      username: initalData?.username || "",
       password: "",
     },
   });
@@ -48,28 +56,22 @@ export default function UsersForm({
 
     try {
       setIsLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const response = await fetch(`${apiUrl}/company/users`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
 
-      if (response.ok) {
-        toast.success("Usuário criado com sucesso!");
-        setOpenDialog(false);
-        form.reset();
-        loadUsers();
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Falha ao criar usuário");
+      const response = await createUsers({ ...data, token });
+
+      if (response instanceof Error) {
+        toast.error(response.message);
+        setIsLoading(false);
+        return;
       }
+
+      toast.success("Usuário criado com sucesso!");
+      setOpenDialog(false);
+      form.reset();
+      loadUsers();
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
-      toast.error("Erro ao criar usuário: " + (error as Error).message);
+      toast.error("Erro ao criar usuário");
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +165,13 @@ export default function UsersForm({
             variant={"sectotech"}
             className="cursor-pointer"
           >
-            {isLoading ? "Criando..." : "Criar usuário"}
+            {isLoading
+              ? isEditing
+                ? "Atualizando..."
+                : "Criando..."
+              : isEditing
+                ? "Atualizar usuário"
+                : "Criar usuário"}
           </Button>
           <Button
             type="button"

@@ -12,7 +12,15 @@ import { Button } from "@/components/ui/button";
 import { IconDotsVertical } from "@tabler/icons-react";
 import { User } from "@/types/users";
 
-export function columnsUsers(): ColumnDef<User>[] {
+interface UsersFormProps {
+  setSeletedUser: (user: User | null) => void;
+  setOpenDialog: (open: boolean) => void;
+}
+
+export function columnsUsers({
+  setSeletedUser,
+  setOpenDialog,
+}: UsersFormProps): ColumnDef<User>[] {
   return [
     {
       accessorKey: "firstName",
@@ -66,7 +74,14 @@ export function columnsUsers(): ColumnDef<User>[] {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSeletedUser(row.original);
+                setOpenDialog(true);
+              }}
+            >
+              Editar
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive">
               Desabilitar

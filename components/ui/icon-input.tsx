@@ -15,25 +15,27 @@ const IconInput = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div
         className={cn(
-          "flex w-full items-center overflow-hidden rounded-md border border-input bg-transparent text-base shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "flex items-center justify-center overflow-hidden file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent  text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+          "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
           className,
         )}
       >
         {StartIcon && (
           <div className="flex items-center justify-center p-2 ">
-            <StartIcon className="text-foreground w-5 h-5" />
+            <StartIcon className="w-4 h-4 text-muted-foreground" />
           </div>
         )}
         <input
           type={type}
-          className="flex h-9 w-full bg-transparent px-1 py-1 text-base placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+          className="flex h-9 w-full bg-transparent  text-base placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
           ref={ref}
           {...props}
         />
         {ButtonIcon && (
           <div className="flex items-center justify-center p-2 px-3">
             <ButtonIcon.icon
-              className="text-foreground w-5 h-5 cursor-pointer"
+              className="w-4 h-4 text-muted-foreground cursor-pointer"
               onClick={ButtonIcon.onClick}
               type="button"
             />

@@ -10,6 +10,7 @@ import {
   IconBriefcase,
   IconPigMoney,
   IconHistory,
+  IconSettings,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
