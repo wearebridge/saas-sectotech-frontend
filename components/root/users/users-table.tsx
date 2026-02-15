@@ -56,7 +56,7 @@ import {
 import { columnsUsers } from "./columns";
 import { User } from "@/types/users";
 import UsersForm from "./users-form";
-import { getUsers } from "@/service/users";
+
 import { useKeycloak } from "@/lib/keycloak";
 
 export function UsersTable() {
@@ -64,7 +64,7 @@ export function UsersTable() {
   const searchParams = useSearchParams();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [nameSearch, setNameSearch] = useState(searchParams.get("name") ?? "");
   const [emailSearch, setEmailSearch] = useState(
     searchParams.get("email") ?? "",
@@ -116,11 +116,6 @@ export function UsersTable() {
     params.set("pageSize", String(pageSize));
     router.replace(`?${params.toString()}`);
   }, [nameSearch, emailSearch, pageIndex, pageSize, router]);
-
-  // useEffect(() => {
-  //   handleLoadUsers();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [token]);
 
   useEffect(() => {
     if (authenticated && token) {
