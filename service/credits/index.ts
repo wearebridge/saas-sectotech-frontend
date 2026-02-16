@@ -1,10 +1,15 @@
 "use server";
 
 import { CustomError } from "@/lib/errors/custom-errors";
-import { BuyCreditsProps, VerifyPaymentProps } from "./dto";
+import {
+  BuyCreditsProps,
+  GetTransactionHistoryProps,
+  VerifyPaymentProps,
+} from "./dto";
 import * as api from "@/service/api";
 import { tokenProps } from "@/types/token";
 import { StripeProduct } from "@/types/package";
+import { CreditTransaction } from "@/types/credit-transaction";
 
 export async function buyCredits({
   priceId,

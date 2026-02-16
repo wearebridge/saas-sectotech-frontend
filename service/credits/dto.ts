@@ -7,3 +7,7 @@ export interface BuyCreditsProps extends tokenProps {
 export interface VerifyPaymentProps extends tokenProps {
   sessionId: string;
 }
+
+export interface GetTransactionHistoryProps extends tokenProps {
+  companyId: string;
+}

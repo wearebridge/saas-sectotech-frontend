@@ -23,7 +23,7 @@ import { buyCredits, getProducts, verifyPayment } from "@/service/credits";
 import { CreditsCard } from "@/components/root/credtis/credit-card";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "@/components/common/loader";
-import { PurchaseHistory } from "@/components/purchase-history";
+import { PurchaseHistory } from "@/components/root/credtis/purchase-history";
 
 function Page() {
   const [products, setProducts] = useState<StripeProduct[]>([]);
@@ -101,8 +101,6 @@ function Page() {
   };
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
     if (success && sessionId && token) {
       handleVerifyPayment();
     } else if (success) {
@@ -168,86 +166,92 @@ function Page() {
 
       <Tabs defaultValue="plans" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="plans" className="flex items-center gap-2">
+          <TabsTrigger
+            value="plans"
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <CreditCard className="h-4 w-4" />
             Planos e Pacotes
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
+          <TabsTrigger
+            value="history"
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <History className="h-4 w-4" />
             Histórico de Compras
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="plans" className="space-y-10 mt-6">
-      {loadingProducts ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader size={8} />
-        </div>
-      ) : (
-        <>
-          {/* Recurring Plans */}
-          {recurringProducts.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" />
-                Planos Recorrentes
-              </h2>
-
-              <p className="text-sm text-muted-foreground">
-                Receba créditos automaticamente a cada cobrança. Cancele quando
-                quiser.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {recurringProducts.map((product) => (
-                  <CreditsCard
-                    product={product}
-                    token={token}
-                    type="recurring"
-                    key={product.productId}
-                  />
-                ))}
-              </div>
+          {loadingProducts ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader size={8} />
             </div>
+          ) : (
+            <>
+              {/* Recurring Plans */}
+              {recurringProducts.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5" />
+                    Planos Recorrentes
+                  </h2>
+
+                  <p className="text-sm text-muted-foreground">
+                    Receba créditos automaticamente a cada cobrança. Cancele
+                    quando quiser.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {recurringProducts.map((product) => (
+                      <CreditsCard
+                        product={product}
+                        token={token}
+                        type="recurring"
+                        key={product.productId}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* One-time Packages */}
+              {oneTimeProducts.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <>
+                      <CreditCard className="h-5 w-5" />
+                      Pacotes Avulsos
+                    </>
+                  </h2>
+
+                  <p className="text-sm text-muted-foreground">
+                    Compra única de créditos sem compromisso.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {oneTimeProducts.map((product) => (
+                      <CreditsCard
+                        product={product}
+                        token={token}
+                        type="one_time"
+                        key={product.productId}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {products.length === 0 && (
+                <Card>
+                  <CardContent className="text-center py-10 text-muted-foreground">
+                    Nenhum produto disponível no momento.
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
-
-          <Separator />
-
-          {/* One-time Packages */}
-          {oneTimeProducts.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <>
-                  <CreditCard className="h-5 w-5" />
-                  Pacotes Avulsos
-                </>
-              </h2>
-
-              <p className="text-sm text-muted-foreground">
-                Compra única de créditos sem compromisso.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {oneTimeProducts.map((product) => (
-                  <CreditsCard
-                    product={product}
-                    token={token}
-                    type="one_time"
-                    key={product.productId}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {products.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-10 text-muted-foreground">
-                Nenhum produto disponível no momento.
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">

@@ -39,11 +39,6 @@ const baseData = {
       icon: IconDashboard,
     },
     {
-      title: "Histórico",
-      url: "/analise/historico",
-      icon: IconHistory,
-    },
-    {
       title: "Scripts",
       url: "/scripts",
       icon: IconListDetails,
