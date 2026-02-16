@@ -309,7 +309,7 @@ export function DashboardTable({ clientId }: DashboardTableProps) {
       if (date && format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")) return false
       if (clientSearch) {
         const search = clientSearch.trim().toLowerCase()
-        const fullName = `${item.clientName} ${item.clientSurname || ''}`.toLowerCase()
+        const fullName = `${item.clientName || ''} ${item.clientSurname || ''}`.toLowerCase()
         const cpf = item.clientCpf?.replace(/\D/g, '') || ''
         const searchDigits = search.replace(/\D/g, '')
         if (!fullName.includes(search) && !(searchDigits && cpf.includes(searchDigits))) return false

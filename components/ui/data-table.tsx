@@ -31,6 +31,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   searchKey?: string
+  searchKeys?: string[]
   searchPlaceholder?: string
   loading?: boolean
 }
@@ -39,6 +40,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   searchKey,
+  searchKeys,
   searchPlaceholder = 'Search...',
   loading = false,
 }: DataTableProps<TData, TValue>) {
@@ -46,6 +48,23 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [globalSearch, setGlobalSearch] = React.useState('')
+
+  const globalFilterFn = React.useCallback(
+    (row: any, _columnId: string, filterValue: string) => {
+      const search = filterValue.toLowerCase().replace(/[.\-/]/g, '')
+      if (!search) return true
+      const keys = searchKeys ?? (searchKey ? [searchKey] : [])
+      return keys.some((key) => {
+        const value = row.getValue(key)
+        if (value == null) return false
+        return String(value).toLowerCase().replace(/[.\-/]/g, '').includes(search)
+      })
+    },
+    [searchKey, searchKeys]
+  )
+
+  const useGlobalSearch = !!searchKeys && searchKeys.length > 0
 
   const table = useReactTable({
     data,
@@ -58,11 +77,16 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    ...(useGlobalSearch && {
+      globalFilterFn,
+      onGlobalFilterChange: setGlobalSearch,
+    }),
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(useGlobalSearch && { globalFilter: globalSearch }),
     },
   })
 
@@ -107,17 +131,26 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {/* Search */}
-      {searchKey && (
+      {(searchKey || searchKeys) && (
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
+          {useGlobalSearch ? (
+            <Input
+              placeholder={searchPlaceholder}
+              value={globalSearch}
+              onChange={(event) => setGlobalSearch(event.target.value)}
+              className="max-w-sm"
+            />
+          ) : searchKey ? (
+            <Input
+              placeholder={searchPlaceholder}
+              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
+              onChange={(event) =>
+                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+          ) : null}
         </div>
       )}
 

@@ -92,4 +92,19 @@ export class ClientService {
       throw new Error('Failed to delete client')
     }
   }
+
+  static async search(query: string, token: string): Promise<ClientResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/clients/search?q=${encodeURIComponent(query)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Falha ao buscar clientes')
+    }
+
+    return response.json()
+  }
 }

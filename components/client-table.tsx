@@ -327,8 +327,8 @@ export function ClientTable({
         columns={columns}
         data={filteredClients}
         loading={loading}
-        searchKey="name"
-        searchPlaceholder="Buscar clientes..."
+        searchKeys={["name", "cpf"]}
+        searchPlaceholder="Buscar por nome ou CPF..."
       />
 
       {/* Edit Dialog */}

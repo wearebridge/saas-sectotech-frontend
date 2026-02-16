@@ -9,11 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
-import { Coins, CreditCard, Loader2, RefreshCw } from "lucide-react";
+import { Coins, CreditCard, Loader2, RefreshCw, History } from "lucide-react";
 
 import { StripeProduct } from "@/types/package";
 
@@ -22,6 +23,7 @@ import { buyCredits, getProducts, verifyPayment } from "@/service/credits";
 import { CreditsCard } from "@/components/root/credtis/credit-card";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "@/components/common/loader";
+import { PurchaseHistory } from "@/components/purchase-history";
 
 function Page() {
   const [products, setProducts] = useState<StripeProduct[]>([]);
@@ -164,6 +166,19 @@ function Page() {
         </CardContent>
       </Card>
 
+      <Tabs defaultValue="plans" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="plans" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Planos e Pacotes
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Histórico de Compras
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="plans" className="space-y-10 mt-6">
       {loadingProducts ? (
         <div className="flex items-center justify-center py-16">
           <Loader size={8} />
@@ -233,6 +248,20 @@ function Page() {
           )}
         </>
       )}
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Histórico de Transações</h2>
+              <p className="text-sm text-muted-foreground">
+                Veja todas as compras de créditos realizadas e quem as efetuou.
+              </p>
+            </div>
+            <PurchaseHistory />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
