@@ -9,6 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 
 interface KeycloakContextType {
   keycloak: Keycloak | null;
@@ -88,8 +89,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
   if (loading || (!authenticated && pathname !== "/")) {
     return (
-      <div className="flex items-center justify-center h-screen w-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="h-screen flex flex-row gap-1 w-full items-center justify-center">
+        <Loader2Icon className={"animate-spin w-10 h-10"} />
       </div>
     );
   }

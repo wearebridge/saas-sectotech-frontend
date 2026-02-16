@@ -1,11 +1,12 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   IconCreditCard,
   IconDotsVertical,
   IconLogout,
-} from "@tabler/icons-react"
+  IconSettings,
+} from "@tabler/icons-react";
 
 import {
   DropdownMenu,
@@ -15,71 +16,73 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useKeycloak } from "@/lib/keycloak"
-import { useCredit } from "@/lib/credit-context"
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useKeycloak } from "@/lib/keycloak";
+import { useCredit } from "@/lib/credit-context";
+import Link from "next/link";
 
 interface UserProfile {
-  firstName: string
-  lastName: string
-  email: string
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 export function NavUser({
   user,
 }: {
   user: {
-    name: string
-    credits: number
-  }
+    name: string;
+    credits: number;
+  };
 }) {
-  const { isMobile } = useSidebar()
-  const { logout, keycloak, token, authenticated } = useKeycloak()
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [userLoading, setUserLoading] = useState(true)
-  const { credits, loading: creditsLoading } = useCredit()
+  const { isMobile } = useSidebar();
+  const { logout, keycloak, token, authenticated } = useKeycloak();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+  const { credits, loading: creditsLoading } = useCredit();
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!token || !keycloak?.tokenParsed || !authenticated) {
-        setUserLoading(false)
-        return
+        setUserLoading(false);
+        return;
       }
 
       try {
-        setUserLoading(true)
-        
+        setUserLoading(true);
+
         // Buscar dados do usuário do token
-        const tokenParsed = keycloak.tokenParsed as any
+        const tokenParsed = keycloak.tokenParsed as any;
         const userInfo: UserProfile = {
-          firstName: tokenParsed.given_name || '',
-          lastName: tokenParsed.family_name || '',
-          email: tokenParsed.email || ''
-        }
-        setUserProfile(userInfo)
+          firstName: tokenParsed.given_name || "",
+          lastName: tokenParsed.family_name || "",
+          email: tokenParsed.email || "",
+        };
+        setUserProfile(userInfo);
       } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error)
+        console.error("Erro ao carregar dados do usuário:", error);
       } finally {
-        setUserLoading(false)
+        setUserLoading(false);
       }
-    }
+    };
 
-    fetchUserData()
-  }, [token, keycloak, authenticated])
+    fetchUserData();
+  }, [token, keycloak, authenticated]);
 
-  const displayName = userProfile 
-    ? `${userProfile.firstName} ${userProfile.lastName}`.trim() || userProfile.email
-    : user.name
-    
-  const displayCredits = credits
-  const loading = userLoading || creditsLoading
+  const displayName = userProfile
+    ? `${userProfile.firstName} ${userProfile.lastName}`.trim() ||
+      userProfile.email
+    : user.name;
+
+  const displayCredits = credits;
+  const loading = userLoading || creditsLoading;
 
   return (
     <SidebarMenu>
@@ -97,7 +100,9 @@ export function NavUser({
                 </div>
               ) : (
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium text-base">{displayName}</span>
+                  <span className="truncate font-medium text-base">
+                    {displayName}
+                  </span>
                   <span className="text-muted-foreground truncate text-xs">
                     {`${displayCredits} créditos`}
                   </span>
@@ -121,7 +126,9 @@ export function NavUser({
                   </div>
                 ) : (
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium text-base">{displayName}</span>
+                    <span className="truncate font-medium text-base">
+                      {displayName}
+                    </span>
                     <span className="text-muted-foreground truncate text-xs">
                       {userProfile?.email}
                     </span>
@@ -134,13 +141,23 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <Link href="/configuracoes">
+                <DropdownMenuItem className="cursor-pointer">
+                  <IconSettings />
+                  Configurações
+                </DropdownMenuItem>
+              </Link>
+
+              <DropdownMenuItem className="cursor-pointer">
                 <IconCreditCard />
                 Ajuda
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
+            <DropdownMenuItem
+              onClick={() => logout()}
+              className="cursor-pointer"
+            >
               <IconLogout />
               Sair
             </DropdownMenuItem>
@@ -148,5 +165,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
