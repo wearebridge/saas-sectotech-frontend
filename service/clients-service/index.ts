@@ -26,38 +26,26 @@ export async function createClient({
   address,
 }: CreateClientProps): Promise<string | CustomError> {
   if (!token) {
-    return new CustomError(
-      "PERMISSION_DND",
-      "Error creating client.",
-    );
+    return new CustomError("PERMISSION_DND", "Error creating client.");
   }
 
   try {
     if (!name || !surname) {
-      return new CustomError(
-        "EMPTY_FIELD",
-        "Name and surname are required.",
-      );
+      return new CustomError("EMPTY_FIELD", "Name and surname are required.");
     }
 
     const response = await api.POST(
-      `${baseUrl}`, 
-      { name, surname, birthDate, cpf, rg, address }, 
-      token
+      `${baseUrl}`,
+      { name, surname, birthDate, cpf, rg, address },
+      token,
     );
 
     if (response instanceof CustomError) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error creating client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error creating client.");
     }
 
     if (!response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error creating client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error creating client.");
     }
 
     return "Client created successfully";
@@ -90,10 +78,7 @@ export async function updateClient({
   token,
 }: UpdateClientProps): Promise<string | CustomError> {
   if (!token) {
-    return new CustomError(
-      "PERMISSION_DND",
-      "Error updating client.",
-    );
+    return new CustomError("PERMISSION_DND", "Error updating client.");
   }
 
   try {
@@ -106,39 +91,30 @@ export async function updateClient({
 
     const response = await api.PUT(
       `${baseUrl}/${id}`,
-      { 
-        name, 
-        surname, 
-        birthDate, 
-        cpf, 
-        rg, 
-        address, 
-        status: status === "active" 
+      {
+        name,
+        surname,
+        birthDate,
+        cpf,
+        rg,
+        address,
+        status: status === "active",
       },
       token,
     );
 
     if (response instanceof CustomError) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error updating client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error updating client.");
     }
 
     if (!response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error updating client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error updating client.");
     }
 
     return "Client updated successfully";
   } catch (error) {
     console.error("Error updating client:", error);
-    return new CustomError(
-      "BAD_REQUEST",
-      "Error updating client.",
-    );
+    return new CustomError("BAD_REQUEST", "Error updating client.");
   }
 }
 
@@ -147,19 +123,21 @@ export async function getClients({
 }: tokenProps): Promise<Client[] | CustomError> {
   try {
     if (!token) {
-      return new CustomError(
-        "PERMISSION_DND",
-        "Error fetching clients.",
-      );
+      return new CustomError("PERMISSION_DND", "Error fetching clients.");
     }
 
-    const response = await api.GET(`${baseUrl}`, token);
+    const response = await api.GET(
+      `${baseUrl}`,
+      token,
+      {},
+      {
+        revalidate: 30,
+        tags: ["clients"],
+      },
+    );
 
     if (response instanceof CustomError) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error fetching clients.",
-      );
+      return new CustomError("BAD_REQUEST", "Error fetching clients.");
     }
 
     const data = await response.json();
@@ -167,10 +145,7 @@ export async function getClients({
     return data as Client[];
   } catch (error) {
     console.error("Error fetching clients:", error);
-    return new CustomError(
-      "BAD_REQUEST",
-      "Error fetching clients.",
-    );
+    return new CustomError("BAD_REQUEST", "Error fetching clients.");
   }
 }
 
@@ -184,10 +159,7 @@ export async function deleteClient({
 }: DeleteClientProps): Promise<string | CustomError> {
   try {
     if (!token) {
-      return new CustomError(
-        "PERMISSION_DND",
-        "Error deleting client.",
-      );
+      return new CustomError("PERMISSION_DND", "Error deleting client.");
     }
 
     const response = await api.PUT(
@@ -197,25 +169,16 @@ export async function deleteClient({
     );
 
     if (response instanceof CustomError) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error deleting client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error deleting client.");
     }
 
     if (!response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Error deleting client.",
-      );
+      return new CustomError("BAD_REQUEST", "Error deleting client.");
     }
 
     return "Client deactivated successfully";
   } catch (error) {
     console.error("Error deleting client:", error);
-    return new CustomError(
-      "BAD_REQUEST",
-      "Error deleting client.",
-    );
+    return new CustomError("BAD_REQUEST", "Error deleting client.");
   }
 }

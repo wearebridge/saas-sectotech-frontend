@@ -7,6 +7,7 @@ interface InputProps extends React.ComponentProps<"input"> {
   ButtonIcon?: {
     icon: LucideIcon;
     onClick: () => void;
+    visible?: boolean;
   };
 }
 
@@ -32,7 +33,7 @@ const IconInput = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           {...props}
         />
-        {ButtonIcon && (
+        {ButtonIcon && ButtonIcon.visible !== false && (
           <div className="flex items-center justify-center p-2 px-3">
             <ButtonIcon.icon
               className="w-4 h-4 text-muted-foreground cursor-pointer"

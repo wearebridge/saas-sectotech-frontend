@@ -85,7 +85,15 @@ export async function getScripts({
       ? `${baseUrl}/byServiceType/${serviceTypeId}`
       : `${baseUrl}`;
 
-    const response = await api.GET(url, token);
+    const response = await api.GET(
+      url,
+      token,
+      {},
+      {
+        revalidate: 60,
+        tags: ["scripts"],
+      },
+    );
 
     if (response instanceof CustomError || !response.ok) {
       return new CustomError("BAD_REQUEST", "Falha ao consultar os scripts");

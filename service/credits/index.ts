@@ -1,15 +1,10 @@
 "use server";
 
 import { CustomError } from "@/lib/errors/custom-errors";
-import {
-  BuyCreditsProps,
-  GetTransactionHistoryProps,
-  VerifyPaymentProps,
-} from "./dto";
+import { BuyCreditsProps, VerifyPaymentProps } from "./dto";
 import * as api from "@/service/api";
 import { tokenProps } from "@/types/token";
 import { StripeProduct } from "@/types/package";
-import { CreditTransaction } from "@/types/credit-transaction";
 
 export async function buyCredits({
   priceId,
@@ -63,6 +58,8 @@ export async function verifyPayment({
     const response = await api.GET(
       `/payment/verify-payment/${sessionId}`,
       token,
+      {},
+      { cache: "no-store" },
     );
 
     if (response instanceof CustomError || !response.ok) {
@@ -89,7 +86,15 @@ export async function getProducts({
       return new CustomError("BAD_REQUEST", "Token não fornecido.");
     }
 
-    const response = await api.GET("/packages", token);
+    const response = await api.GET(
+      "/packages",
+      token,
+      {},
+      {
+        revalidate: 3600,
+        tags: ["packages"],
+      },
+    );
 
     if (response instanceof CustomError || !response.ok) {
       return new CustomError("BAD_REQUEST", "Erro ao buscar os produtos.");

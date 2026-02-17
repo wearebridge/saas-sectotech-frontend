@@ -92,6 +92,11 @@ export async function getServices({
     const response = await api.GET(
       `${baseUrl}/byServiceSubType/${serviceSubTypeId}`,
       token,
+      {},
+      {
+        revalidate: 300,
+        tags: ["service-types"],
+      },
     );
 
     if (response instanceof CustomError || !response.ok) {

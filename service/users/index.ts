@@ -19,7 +19,15 @@ export async function getCredentials({
       );
     }
 
-    const response = await api.GET(`${baseUrl}/credentials`, token);
+    const response = await api.GET(
+      `${baseUrl}/credentials`,
+      token,
+      {},
+      {
+        revalidate: 300,
+        tags: ["credentials"],
+      },
+    );
 
     if (response instanceof Error || !response.ok) {
       return new CustomError(

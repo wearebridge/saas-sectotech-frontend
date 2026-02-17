@@ -119,7 +119,15 @@ export async function getSubTypeService({
       );
     }
 
-    const response = await api.GET(`${baseUrl}`, token);
+    const response = await api.GET(
+      `${baseUrl}`,
+      token,
+      {},
+      {
+        revalidate: 300,
+        tags: ["service-subtypes"],
+      },
+    );
 
     if (response instanceof CustomError) {
       return new CustomError(
