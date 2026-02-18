@@ -1,7 +1,7 @@
 "use client";
 
 import { Script } from "@/types/analysis";
-import { ScriptSelector } from "@/components/script-selector";
+import { ScriptSelector } from "@/components/root/analysis/script-selector";
 import {
   FormControl,
   FormField,

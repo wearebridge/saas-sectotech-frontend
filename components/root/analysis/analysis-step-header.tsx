@@ -18,17 +18,26 @@ export function AnalysisStepHeader({
   currentStep,
 }: AnalysisStepHeaderProps) {
   return (
-    <div className="flex items-center justify-center">
+    <div className="w-full flex items-start justify-between sm:max-w-[60%]">
       {steps.map((step, index) => {
         const isCompleted = currentStep > step.id;
         const isCurrent = currentStep === step.id;
+        const isLastStep = index === steps.length - 1;
 
         return (
-          <div key={step.id} className="flex flex-1 items-center w-full">
-            <div className="flex flex-col items-center w-36 gap-2">
+          <div
+            key={step.id}
+            className={cn(
+              "flex items-start ",
+              // Se não for o último, ocupa o espaço restante para esticar a linha
+              !isLastStep ? "flex-1 w-full" : "",
+            )}
+          >
+            {/* Conteúdo do Passo (Bolinha + Texto) */}
+            <div className="flex flex-col items-center gap-2 relative z-10">
               <div
                 className={cn(
-                  "flex size-7 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300 h-7",
+                  "flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300",
                   isCompleted &&
                     "border-primary bg-primary text-primary-foreground",
                   isCurrent &&
@@ -38,11 +47,13 @@ export function AnalysisStepHeader({
                     "border-muted-foreground/30 bg-background text-muted-foreground/50",
                 )}
               >
-                {isCompleted ? <CheckIcon className="size-5" /> : step.id}
+                {isCompleted ? <CheckIcon className="size-4" /> : step.id}
               </div>
+
               <span
                 className={cn(
-                  "text-xs font-medium transition-colors duration-300 hidden sm:block",
+                  "text-xs font-medium transition-colors duration-300 text-center whitespace-nowrap absolute top-8 left-1/2 -translate-x-1/2",
+                  "hidden sm:block", // Esconde em mobile, mostra em sm+
                   isCurrent && "text-primary",
                   isCompleted && "text-primary",
                   !isCompleted && !isCurrent && "text-muted-foreground/50",
@@ -51,11 +62,13 @@ export function AnalysisStepHeader({
                 {step.label}
               </span>
             </div>
-            {index < steps.length - 1 && (
-              <div className="relative w-36 h-0.5 mx-2 flex-1 self-start mt-5 overflow-hidden rounded-full bg-muted-foreground/15">
+
+            {/* Linha Conectora */}
+            {!isLastStep && (
+              <div className="flex-1 h-0.5 mx-2 mt-3.5 bg-muted-foreground/15 rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-500 ease-out",
+                    "h-full bg-primary transition-[width] duration-500 ease-out",
                     isCompleted ? "w-full" : "w-0",
                   )}
                 />

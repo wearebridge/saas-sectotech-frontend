@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -352,12 +353,16 @@ export function AnalysisForm() {
   return (
     <div className="space-y-6">
       <Card className="w-full sm:w-[70%] xl:w-[70%] max-w-4xl mx-auto border-border/50 shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="mb-6 w-full flex items-center justify-center flex-col">
+        <CardHeader className="pb-4 text-center">
+          <div className="mb-8 mt-3 w-full flex items-center justify-center flex-col">
             <AnalysisStepHeader steps={STEPS} currentStep={currentStep} />
           </div>
-          <CardTitle className="text-xl">{currentStepMeta.title}</CardTitle>
-          <CardDescription>{currentStepMeta.description}</CardDescription>
+          <CardTitle className="text-xl text-center">
+            {currentStepMeta.title}
+          </CardTitle>
+          <CardDescription className="text-center">
+            {currentStepMeta.description}
+          </CardDescription>
         </CardHeader>
 
         <Form {...form}>
@@ -406,9 +411,7 @@ export function AnalysisForm() {
                 <ArrowLeftIcon className="size-4" />
                 <span className="hidden sm:inline">Voltar</span>
               </Button>
-              <div className="text-sm text-muted-foreground">
-                Passo {currentStep} de {STEPS.length}
-              </div>
+
               <Button
                 onClick={handleNext}
                 className="gap-2"
