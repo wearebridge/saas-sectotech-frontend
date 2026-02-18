@@ -1,151 +1,154 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useKeycloak } from "@/lib/keycloak";
 import { Script, ServiceType, ServiceSubType } from "@/types/analysis";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { getSubTypeService } from "@/service/services-sub-type";
+import { getServices } from "@/service/services-type";
+import { getScripts } from "@/service/scripts";
+import { Loader } from "@/components/common/loader";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface ScriptSelectorProps {
   onScriptSelect: (script: Script | null) => void;
   selectedScript: Script | null;
+  selectedServiceSubTypeId: string;
+  selectedServiceTypeId: string;
+  onServiceSubTypeChange: (serviceSubTypeId: string) => void;
+  onServiceTypeChange: (serviceTypeId: string) => void;
 }
 
 export function ScriptSelector({
   onScriptSelect,
   selectedScript,
+  selectedServiceSubTypeId,
+  selectedServiceTypeId,
+  onServiceSubTypeChange,
+  onServiceTypeChange,
 }: ScriptSelectorProps) {
+  const [isSubTypeOpen, setIsSubTypeOpen] = useState(false);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const [isScriptOpen, setIsScriptOpen] = useState(false);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [serviceSubTypes, setServiceSubTypes] = useState<ServiceSubType[]>([]);
   const [scripts, setScripts] = useState<Script[]>([]);
-  const [selectedServiceType, setSelectedServiceType] = useState<string>("");
-  const [selectedServiceSubType, setSelectedServiceSubType] =
-    useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(false);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(false);
+  const [isLoadingScripts, setIsLoadingScripts] = useState(false);
   const { token, authenticated } = useKeycloak();
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const fetchingRef = useRef(false);
 
-  const fetchServiceSubTypes = useCallback(async () => {
+  const handleGetServiceSubType = useCallback(async () => {
     if (!token) return;
 
+    setIsLoadingSubTypes(true);
     try {
-      const response = await fetch(`${apiUrl}/service-sub-types`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const result = await getSubTypeService({ token: token });
 
-      if (!response.ok) {
-        throw new Error("Falha ao carregar subtipos de serviço");
+      if (result instanceof Error) {
+        toast.error(result.message || "Erro ao carregar subtipos de serviço");
+        return;
       }
 
-      const data = await response.json();
-      setServiceSubTypes(data);
+      setServiceSubTypes(result);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar subtipos de serviço");
+    } finally {
+      setIsLoadingSubTypes(false);
     }
-  }, [token, apiUrl]);
+  }, [token]);
 
-  const fetchServiceTypes = useCallback(
+  const handleGetServiceTypes = useCallback(
     async (serviceSubTypeId: string) => {
       if (!token || !serviceSubTypeId || fetchingRef.current) return;
 
-      setIsLoading(true);
+      setIsLoadingTypes(true);
       fetchingRef.current = true;
       try {
-        const response = await fetch(
-          `${apiUrl}/service-types/byServiceSubType/${serviceSubTypeId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const result = await getServices({ serviceSubTypeId, token });
 
-        if (!response.ok) {
-          throw new Error("Falha ao carregar tipos de serviço");
+        if (result instanceof Error) {
+          toast.error(result.message || "Erro ao carregar tipos de serviço");
+          return;
         }
 
-        const data = await response.json();
-        setServiceTypes(data);
+        setServiceTypes(result);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar tipos de serviço");
       } finally {
-        setIsLoading(false);
+        setIsLoadingTypes(false);
         fetchingRef.current = false;
       }
     },
-    [token, apiUrl],
+    [token],
   );
 
-  const fetchScripts = useCallback(
+  const handleGetScripts = useCallback(
     async (serviceTypeId: string) => {
       if (!token || !serviceTypeId || fetchingRef.current) return;
 
-      setIsLoading(true);
+      setIsLoadingScripts(true);
       fetchingRef.current = true;
       try {
-        const response = await fetch(
-          `${apiUrl}/scripts/byServiceType/${serviceTypeId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const result = await getScripts({ token, serviceTypeId });
 
-        if (!response.ok) {
-          throw new Error("Falha ao carregar scripts");
+        if (result instanceof Error) {
+          toast.error(result.message || "Erro ao carregar scripts");
+          setIsLoadingScripts(false);
+          fetchingRef.current = false;
+          return;
         }
 
-        const data = await response.json();
-        setScripts(data);
+        setScripts(result);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar scripts");
       } finally {
-        setIsLoading(false);
+        setIsLoadingScripts(false);
         fetchingRef.current = false;
       }
     },
-    [token, apiUrl],
+    [token],
   );
 
   useEffect(() => {
     if (authenticated) {
-      fetchServiceSubTypes();
+      handleGetServiceSubType();
     }
-  }, [authenticated, fetchServiceSubTypes]);
+  }, [authenticated, handleGetServiceSubType]);
 
   useEffect(() => {
-    if (selectedServiceSubType) {
+    if (selectedServiceSubTypeId) {
       setServiceTypes([]);
       setScripts([]);
-      setSelectedServiceType("");
-      onScriptSelect(null);
-      fetchServiceTypes(selectedServiceSubType);
+      handleGetServiceTypes(selectedServiceSubTypeId);
     }
-  }, [selectedServiceSubType]); // Removendo fetchServiceTypes da dependência
+  }, [selectedServiceSubTypeId, handleGetServiceTypes]);
 
   useEffect(() => {
-    if (selectedServiceType) {
+    if (selectedServiceTypeId) {
       setScripts([]);
-      onScriptSelect(null);
-      fetchScripts(selectedServiceType);
+      handleGetScripts(selectedServiceTypeId);
     }
-  }, [selectedServiceType]); // Removendo fetchScripts da dependência
+  }, [selectedServiceTypeId, handleGetScripts]);
 
   const handleScriptSelect = useCallback(
     (scriptId: string) => {
@@ -155,103 +158,213 @@ export function ScriptSelector({
     [scripts, onScriptSelect],
   );
 
-  const handleServiceTypeChange = useCallback((serviceTypeId: string) => {
-    setSelectedServiceType(serviceTypeId);
-  }, []);
+  const handleServiceTypeChange = useCallback(
+    (serviceTypeId: string) => {
+      onServiceTypeChange(serviceTypeId);
+    },
+    [onServiceTypeChange],
+  );
 
-  const handleServiceSubTypeChange = useCallback((serviceSubTypeId: string) => {
-    setSelectedServiceSubType(serviceSubTypeId);
-  }, []);
+  const handleServiceSubTypeChange = useCallback(
+    (serviceSubTypeId: string) => {
+      onServiceSubTypeChange(serviceSubTypeId);
+    },
+    [onServiceSubTypeChange],
+  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Selecionar Script</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 md:space-y-0">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <label className="text-sm font-medium">Subtipo de Serviço</label>
-            <Select
-              value={selectedServiceSubType}
-              onValueChange={handleServiceSubTypeChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um subtipo de serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {serviceSubTypes.map((subType) => (
-                  <SelectItem key={subType.id} value={subType.id}>
-                    {subType.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="flex flex-col gap-4">
+      <div className="flex-1 flex gap-2 flex-col">
+        <label className="text-sm font-medium">Subtipo de Serviço</label>
+        {isLoadingSubTypes ? (
+          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+            <Loader size={5} />
           </div>
-
-          <div className="flex-1">
-            <label className="text-sm font-medium">Tipo de Serviço</label>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select
-                value={selectedServiceType}
-                onValueChange={handleServiceTypeChange}
-                disabled={!selectedServiceSubType}
+        ) : (
+          <Popover open={isSubTypeOpen} onOpenChange={setIsSubTypeOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex h-9 w-full items-center justify-between text-sm",
+                  !selectedServiceSubTypeId && "text-muted-foreground",
+                )}
               >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      selectedServiceSubType
-                        ? "Selecione um tipo de serviço"
-                        : "Selecione um subtipo primeiro"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
+                <span className="truncate">
+                  {selectedServiceSubTypeId
+                    ? serviceSubTypes.find(
+                        (subType) => subType.id === selectedServiceSubTypeId,
+                      )?.name
+                    : "Selecione um subtipo de serviço"}
+                </span>
+                <IconChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Buscar por subtipo..." />
+                <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                <CommandGroup>
+                  {serviceSubTypes.map((subType) => (
+                    <CommandItem
+                      key={subType.id}
+                      value={subType.name}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleServiceSubTypeChange(
+                          selectedServiceSubTypeId === subType.id
+                            ? ""
+                            : subType.id,
+                        );
+                        setIsSubTypeOpen(false);
+                      }}
+                    >
+                      <IconCheck
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedServiceSubTypeId === subType.id
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      <span className="text-sm">{subType.name}</span>
+                    </CommandItem>
                   ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
 
-          <div className="flex-1">
-            <label className="text-sm font-medium">Script</label>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <Select
-                value={selectedScript?.id || ""}
-                onValueChange={handleScriptSelect}
-                disabled={!selectedServiceType}
+      <div className="flex-1 flex gap-2 flex-col">
+        <label className="text-sm font-medium">Tipo de Serviço</label>
+        {isLoadingTypes ? (
+          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+            <Loader size={5} />
+          </div>
+        ) : (
+          <Popover open={isTypeOpen} onOpenChange={setIsTypeOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex h-9 w-full items-center justify-between text-sm",
+                  !selectedServiceTypeId && "text-muted-foreground",
+                )}
+                disabled={!selectedServiceSubTypeId}
               >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      selectedServiceType
-                        ? "Selecione um script"
-                        : "Selecione um tipo primeiro"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
+                <span className="truncate">
+                  {selectedServiceTypeId
+                    ? serviceTypes.find(
+                        (type) => type.id === selectedServiceTypeId,
+                      )?.name
+                    : selectedServiceSubTypeId
+                      ? "Selecione um tipo de serviço"
+                      : "Selecione um subtipo primeiro"}
+                </span>
+                <IconChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Buscar por tipo..." />
+                <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                <CommandGroup>
+                  {serviceTypes.map((type) => (
+                    <CommandItem
+                      key={type.id}
+                      value={type.name}
+                      className="cursor-pointer"
+                      onSelect={() => {
+                        handleServiceTypeChange(
+                          selectedServiceTypeId === type.id ? "" : type.id,
+                        );
+                        setIsTypeOpen(false);
+                      }}
+                    >
+                      <IconCheck
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedServiceTypeId === type.id
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      <span className="text-sm">{type.name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+
+      <div className="flex-1 flex gap-2 flex-col">
+        <label className="text-sm font-medium">Script</label>
+        {isLoadingScripts ? (
+          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+            <Loader size={5} />
+          </div>
+        ) : (
+          <Popover open={isScriptOpen} onOpenChange={setIsScriptOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "flex h-9 w-full items-center justify-between text-sm",
+                  !selectedScript?.id && "text-muted-foreground",
+                )}
+                disabled={!selectedServiceTypeId}
+              >
+                <span className="truncate">
+                  {selectedScript?.name
+                    ? selectedScript.name
+                    : selectedServiceTypeId
+                      ? "Selecione um script"
+                      : "Selecione um tipo primeiro"}
+                </span>
+                <IconChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Buscar por script..." />
+                <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                <CommandGroup>
                   {scripts
                     .filter((script) => script.status)
                     .map((script) => (
-                      <SelectItem key={script.id} value={script.id}>
-                        {script.name}
-                      </SelectItem>
+                      <CommandItem
+                        key={script.id}
+                        value={script.name}
+                        className="cursor-pointer"
+                        onSelect={() => {
+                          handleScriptSelect(script.id);
+                          setIsScriptOpen(false);
+                        }}
+                      >
+                        <IconCheck
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedScript?.id === script.id
+                              ? "opacity-100"
+                              : "opacity-0",
+                          )}
+                        />
+                        <span className="text-sm">{script.name}</span>
+                      </CommandItem>
                     ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+    </div>
   );
 }

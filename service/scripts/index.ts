@@ -79,8 +79,6 @@ export async function getScripts({
       return new CustomError("EMPTY_FIELD", "Falha ao consultar os scripts");
     }
 
-    console.log(serviceTypeId);
-
     const url = serviceTypeId
       ? `${baseUrl}/byServiceType/${serviceTypeId}`
       : `${baseUrl}`;

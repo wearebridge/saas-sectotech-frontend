@@ -74,6 +74,8 @@ export function AnalysisForm() {
 
   const form = useForm<AnalysisFormValues>({
     defaultValues: {
+      serviceSubTypeId: "",
+      serviceTypeId: "",
       scriptId: "",
       clientId: "",
       audioFile: undefined,
@@ -352,7 +354,7 @@ export function AnalysisForm() {
 
   return (
     <div className="space-y-6">
-      <Card className="w-full sm:w-[70%] xl:w-[70%] max-w-4xl mx-auto border-border/50 shadow-lg">
+      <Card className="w-full md:w-[70%] xl:w-[70%] max-w-4xl mx-auto border-border/50 shadow-lg ">
         <CardHeader className="pb-4 text-center">
           <div className="mb-8 mt-3 w-full flex items-center justify-center flex-col">
             <AnalysisStepHeader steps={STEPS} currentStep={currentStep} />
@@ -400,33 +402,34 @@ export function AnalysisForm() {
               )}
             </CardContent>
 
-            <CardFooter className="flex justify-between gap-4 pt-2">
+            <CardFooter className="flex justify-between gap-4 pt-2 flex-col sm:flex-row ">
               <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStep === 1 || isAnalyzing}
-                className="gap-2"
+                className="gap-2 w-full sm:max-w-36"
                 type="button"
               >
                 <ArrowLeftIcon className="size-4" />
-                <span className="hidden sm:inline">Voltar</span>
+                <span className="">Voltar</span>
               </Button>
 
               <Button
                 onClick={handleNext}
-                className="gap-2"
+                className="gap-2 w-full sm:max-w-36 flex flex-row items-center justify-center"
+                variant={"sectotech"}
                 type="button"
                 isLoading={isAnalyzing && currentStep === STEPS.length}
                 disabled={isAnalyzing}
               >
                 {currentStep === STEPS.length ? (
                   <>
-                    <span className="hidden sm:inline">Finalizar</span>
+                    <span className="">Finalizar</span>
                     <CheckIcon className="size-4" />
                   </>
                 ) : (
                   <>
-                    <span className="hidden sm:inline">Continuar</span>
+                    <span className="">Continuar</span>
                     <ArrowRightIcon className="size-4" />
                   </>
                 )}
