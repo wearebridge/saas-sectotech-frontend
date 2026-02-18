@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import z from "zod";
+import { z } from "zod";
 
 import { Input } from "@/components/ui/input";
 import { isValidPassword } from "@/lib/validators/password";

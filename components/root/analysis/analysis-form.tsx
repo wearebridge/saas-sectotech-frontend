@@ -1,0 +1,512 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useKeycloak } from "@/lib/keycloak";
+import { useCredit } from "@/lib/credit-context";
+import { ClientService } from "@/service/client/client-service";
+import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
+import { ClientResponse } from "@/types/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { AnalysisStepHeader } from "./analysis-step-header";
+import { AnalysisFormValues } from "./analysis-form-types";
+import { StepSelectScript } from "./step-select-script";
+import { StepAnalysisData } from "./step-analysis-data";
+import { StepScriptQuestions } from "./step-script-questions";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckCircle,
+  CheckIcon,
+  XCircle,
+} from "lucide-react";
+
+const STEPS = [
+  { id: 1, label: "Selecionar Script" },
+  { id: 2, label: "Dados da Análise" },
+  { id: 3, label: "Script" },
+];
+
+const stepTitles = [
+  {
+    title: "Selecionar Script",
+    description: "Escolha o subtipo, tipo e script para a análise.",
+  },
+  {
+    title: "Dados da Análise",
+    description: "Selecione o cliente e envie o arquivo de áudio.",
+  },
+  {
+    title: "Script",
+    description: "Preencha as respostas esperadas para cada pergunta.",
+  },
+];
+
+export function AnalysisForm() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedScript, setSelectedScript] = useState<Script | null>(null);
+  const [clients, setClients] = useState<ClientResponse[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
+  const [audioDuration, setAudioDuration] = useState<number | null>(null);
+  const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null);
+  const [isCalculatingCredits, setIsCalculatingCredits] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { token } = useKeycloak();
+  const { refreshCredits } = useCredit();
+
+  const form = useForm<AnalysisFormValues>({
+    defaultValues: {
+      scriptId: "",
+      clientId: "",
+      audioFile: undefined,
+      answers: {},
+    },
+  });
+
+  const loadClients = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+    try {
+      setIsLoadingClients(true);
+      const data = await ClientService.findAll(token);
+      setClients(data);
+    } catch (error) {
+      console.error("Erro ao carregar clientes:", error);
+      toast.error("Erro ao carregar clientes. Por favor, tente novamente.");
+    } finally {
+      setIsLoadingClients(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
+
+  const handleCreateClient = async (data: any) => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const newClient = await ClientService.create(data, token);
+      setClients((prev) => [...prev, newClient]);
+      form.setValue("clientId", newClient.id);
+      setIsClientDialogOpen(false);
+      toast.success("Cliente criado com sucesso");
+    } catch (error) {
+      console.error("Erro ao criar cliente:", error);
+      toast.error("Falha ao criar cliente");
+      throw error;
+    }
+  };
+
+  const handleScriptSelect = useCallback(
+    (script: Script | null) => {
+      setSelectedScript(script);
+      setAnalysisResult(null);
+      form.setValue("scriptId", script?.id ?? "");
+
+      const initialAnswers: Record<string, string> = {};
+      script?.scriptItems?.forEach((item) => {
+        initialAnswers[item.id] = item.answer || "";
+      });
+
+      form.setValue("answers", initialAnswers, { shouldValidate: false });
+    },
+    [form],
+  );
+
+  const calculateEstimatedCredits = async (file: File) => {
+    if (!token) {
+      return null;
+    }
+
+    try {
+      setIsCalculatingCredits(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${apiUrl}/analyze/calculate-credits`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Erro ao calcular créditos");
+      }
+
+      return (await response.json()) as {
+        durationInSeconds: number;
+        estimatedCredits: number;
+      };
+    } catch (error) {
+      console.error("Erro ao calcular créditos:", error);
+      toast.error("Erro ao calcular custo estimado.");
+      return null;
+    } finally {
+      setIsCalculatingCredits(false);
+    }
+  };
+
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = [
+      "audio/mpeg",
+      "audio/wav",
+      "audio/mp3",
+      "audio/ogg",
+      "audio/m4a",
+    ];
+    if (
+      !allowedTypes.includes(file.type) &&
+      !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)
+    ) {
+      toast.error(
+        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A)",
+      );
+      return;
+    }
+
+    form.setValue("audioFile", file);
+    setAudioDuration(null);
+    setEstimatedCredits(null);
+
+    const result = await calculateEstimatedCredits(file);
+    if (result) {
+      setAudioDuration(result.durationInSeconds);
+      setEstimatedCredits(result.estimatedCredits);
+    }
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 3 && !selectedScript?.scriptItems?.length) {
+      toast.error("Selecione um script para responder as perguntas.");
+      return;
+    }
+
+    if (currentStep === 3) {
+      const answers = form.getValues("answers") || {};
+      const scriptItems = selectedScript?.scriptItems || [];
+      const missingAnswers = scriptItems.filter(
+        (item) => !answers[item.id]?.trim(),
+      );
+
+      form.clearErrors("answers");
+
+      if (missingAnswers.length > 0) {
+        missingAnswers.forEach((item) => {
+          form.setError(`answers.${item.id}` as const, {
+            type: "manual",
+            message: "Resposta obrigatoria",
+          });
+        });
+        return;
+      }
+    } else {
+      const scriptId = form.getValues("scriptId").trim();
+      const clientId = form.getValues("clientId").trim();
+      const audioFile = form.getValues("audioFile");
+
+      form.clearErrors(["scriptId", "clientId", "audioFile"]);
+
+      if (currentStep === 1) {
+        if (!scriptId) {
+          form.setError("scriptId", {
+            type: "manual",
+            message: "Selecione um script",
+          });
+          return;
+        }
+      } else {
+        if (!clientId) {
+          form.setError("clientId", {
+            type: "manual",
+            message: "Selecione um cliente",
+          });
+        }
+        if (!audioFile) {
+          form.setError("audioFile", {
+            type: "manual",
+            message: "Selecione um arquivo de audio",
+          });
+        }
+
+        if (!clientId || !audioFile) {
+          return;
+        }
+      }
+    }
+
+    if (currentStep < STEPS.length) {
+      setCurrentStep((prev) => prev + 1);
+    } else {
+      onSubmit(form.getValues());
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  const onSubmit = async (values: AnalysisFormValues) => {
+    if (!token) {
+      toast.error("Você não está autenticado");
+      return;
+    }
+
+    if (!selectedScript) {
+      toast.error("Por favor, selecione um script");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const requestData: AnalysisRequest = {
+        clientId: values.clientId,
+        scriptId: values.scriptId,
+        scriptItems:
+          selectedScript.scriptItems?.map((item) => ({
+            question: item.question,
+            answer: values.answers[item.id]?.trim() || "",
+          })) || [],
+      };
+
+      const formData = new FormData();
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(requestData)], {
+          type: "application/json",
+        }),
+      );
+      if (values.audioFile) {
+        formData.append("file", values.audioFile);
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const response = await fetch(`${apiUrl}/analyze/generate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        const message = errorText || response.statusText || "Erro desconhecido";
+        throw new Error(`Erro ao realizar análise: ${message}`);
+      }
+
+      const result: AnalysisResult = await response.json();
+      setAnalysisResult(result);
+      toast.success("Análise realizada com sucesso!");
+      await refreshCredits();
+    } catch (error) {
+      console.error("Erro na análise:", error);
+      toast.error("Erro ao realizar análise. Tente novamente.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const currentStepMeta = stepTitles[currentStep - 1];
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleNext();
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="w-full sm:w-[70%] xl:w-[70%] max-w-4xl mx-auto border-border/50 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="mb-6 w-full flex items-center justify-center flex-col">
+            <AnalysisStepHeader steps={STEPS} currentStep={currentStep} />
+          </div>
+          <CardTitle className="text-xl">{currentStepMeta.title}</CardTitle>
+          <CardDescription>{currentStepMeta.description}</CardDescription>
+        </CardHeader>
+
+        <Form {...form}>
+          <form onSubmit={handleFormSubmit}>
+            <CardContent className="space-y-6">
+              {currentStep === 1 && (
+                <StepSelectScript
+                  form={form}
+                  selectedScript={selectedScript}
+                  onScriptSelect={handleScriptSelect}
+                />
+              )}
+
+              {currentStep === 2 && (
+                <StepAnalysisData
+                  form={form}
+                  clients={clients}
+                  isLoadingClients={isLoadingClients}
+                  isClientDialogOpen={isClientDialogOpen}
+                  setIsClientDialogOpen={setIsClientDialogOpen}
+                  onCreateClient={handleCreateClient}
+                  fileInputRef={fileInputRef}
+                  isCalculatingCredits={isCalculatingCredits}
+                  onFileSelect={handleFileSelect}
+                  audioDuration={audioDuration}
+                  estimatedCredits={estimatedCredits}
+                />
+              )}
+
+              {currentStep === 3 && (
+                <StepScriptQuestions
+                  form={form}
+                  selectedScript={selectedScript}
+                />
+              )}
+            </CardContent>
+
+            <CardFooter className="flex justify-between gap-4 pt-2">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={currentStep === 1 || isAnalyzing}
+                className="gap-2"
+                type="button"
+              >
+                <ArrowLeftIcon className="size-4" />
+                <span className="hidden sm:inline">Voltar</span>
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Passo {currentStep} de {STEPS.length}
+              </div>
+              <Button
+                onClick={handleNext}
+                className="gap-2"
+                type="button"
+                isLoading={isAnalyzing && currentStep === STEPS.length}
+                disabled={isAnalyzing}
+              >
+                {currentStep === STEPS.length ? (
+                  <>
+                    <span className="hidden sm:inline">Finalizar</span>
+                    <CheckIcon className="size-4" />
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Continuar</span>
+                    <ArrowRightIcon className="size-4" />
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+
+      {analysisResult && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Resultado da Análise
+              <Badge
+                variant={analysisResult.approved ? "default" : "destructive"}
+              >
+                {analysisResult.approved ? (
+                  <>
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Aprovado
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Reprovado
+                  </>
+                )}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysisResult.transcription && (
+              <div>
+                <Label className="text-sm font-medium">Transcrição</Label>
+                <div className="p-3 bg-muted rounded-md mt-1">
+                  <p className="text-sm">{analysisResult.transcription}</p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium">
+                Análise por Pergunta
+              </Label>
+              <div className="space-y-3 mt-2">
+                {analysisResult.output.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">
+                        Pergunta {index + 1}
+                      </span>
+                      <Badge variant={item.correct ? "default" : "destructive"}>
+                        {item.correct ? "Correto" : "Incorreto"}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Pergunta:
+                        </span>
+                        <p className="text-sm">{item.question}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Resposta:
+                        </span>
+                        <p className="text-sm">{item.answer}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Análise:
+                        </span>
+                        <p className="text-sm">{item.analysis}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
