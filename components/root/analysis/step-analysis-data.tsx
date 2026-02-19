@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { ClientResponse } from "@/types/client";
 import { ClientForm } from "@/components/client-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DragDropAudio } from "@/components/common/drag-drop-audio";
 import {
   Dialog,
   DialogContent,
@@ -18,17 +20,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { UseFormReturn } from "react-hook-form";
 import { AnalysisFormValues } from "./analysis-form-types";
-import { CreditCard, Loader2, Plus, Upload, User } from "lucide-react";
+import { CreditCard, Loader2, Plus, User } from "lucide-react";
+import { IconCheck, IconChevronDown } from "@tabler/icons-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface StepAnalysisDataProps {
   form: UseFormReturn<AnalysisFormValues>;
@@ -57,73 +66,122 @@ export function StepAnalysisData({
   audioDuration,
   estimatedCredits,
 }: StepAnalysisDataProps) {
+  const [isClientSelectOpen, setIsClientSelectOpen] = useState(false);
+
+  const selectedClient = clients.find(
+    (client) => client.id === form.getValues("clientId"),
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 mb-3">
       <FormField
         control={form.control}
         name="clientId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Cliente *</FormLabel>
-            <div className="grid grid-cols-4 gap-2">
-              <div className="col-span-3">
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isLoadingClients}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          isLoadingClients
-                            ? "Carregando clientes..."
-                            : "Selecione um cliente"
-                        }
-                      />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          {client.name} {client.surname}
-                          {client.cpf && (
-                            <span className="text-xs text-muted-foreground">
-                              - CPF:{" "}
-                              {client.cpf.replace(
-                                /(\d{3})(\d{3})(\d{3})(\d{2})/,
-                                "$1.$2.$3-$4",
-                              )}
-                            </span>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-row gap-2 w-full">
+                <div className="flex-1">
+                  {isLoadingClients ? (
+                    <div className="h-8 w-full flex items-center justify-center border rounded-md">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <Popover
+                      open={isClientSelectOpen}
+                      onOpenChange={setIsClientSelectOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "flex h-9 w-full items-center justify-between text-sm",
+                            !field.value && "text-muted-foreground",
                           )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        >
+                          <span className="truncate">
+                            {selectedClient
+                              ? `${selectedClient.name} ${selectedClient.surname}`
+                              : "Selecione um cliente"}
+                          </span>
+                          <IconChevronDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar por cliente..." />
+                          <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                          <CommandGroup>
+                            {clients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                value={`${client.name} ${client.surname}`}
+                                className="cursor-pointer"
+                                onSelect={() => {
+                                  field.onChange(client.id);
+                                  setIsClientSelectOpen(false);
+                                }}
+                              >
+                                <IconCheck
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    field.value === client.id
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4" />
+                                  <span className="text-sm">
+                                    {client.name} {client.surname}
+                                  </span>
+                                  {client.cpf && (
+                                    <span className="text-xs text-muted-foreground">
+                                      - CPF:{" "}
+                                      {client.cpf.replace(
+                                        /(\d{3})(\d{3})(\d{3})(\d{2})/,
+                                        "$1.$2.$3-$4",
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+                <Dialog
+                  open={isClientDialogOpen}
+                  onOpenChange={setIsClientDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="md:size-auto md:px-4"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="hidden md:inline ml-1">
+                        Novo Cliente
+                      </span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Criar Novo Cliente</DialogTitle>
+                    </DialogHeader>
+                    <ClientForm
+                      onSubmit={onCreateClient}
+                      onCancel={() => setIsClientDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
-              <Dialog
-                open={isClientDialogOpen}
-                onOpenChange={setIsClientDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="default">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Novo Cliente
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Cliente</DialogTitle>
-                  </DialogHeader>
-                  <ClientForm
-                    onSubmit={onCreateClient}
-                    onCancel={() => setIsClientDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
             </div>
             <FormMessage />
           </FormItem>
@@ -138,26 +196,11 @@ export function StepAnalysisData({
             <FormLabel>Arquivo de Audio *</FormLabel>
             <FormControl>
               <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                  disabled={isCalculatingCredits}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {form.getValues("audioFile")?.name ||
-                    "Selecionar arquivo de audio"}
-                  {isCalculatingCredits && (
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                  )}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="audio/*,.mp3,.wav,.ogg,.m4a"
-                  onChange={onFileSelect}
-                  className="hidden"
+                <DragDropAudio
+                  fileInputRef={fileInputRef}
+                  onFileSelect={onFileSelect}
+                  isCalculatingCredits={isCalculatingCredits}
+                  selectedFileName={form.getValues("audioFile")?.name}
                 />
               </div>
             </FormControl>
@@ -167,48 +210,45 @@ export function StepAnalysisData({
       />
 
       {(audioDuration !== null || isCalculatingCredits) && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              Custo da Analise
+              <CreditCard className="w-5 h-5 text-brand" />
+              Custo da Análise
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  Duracao do audio:{" "}
-                  <span className="font-medium">
+                  Duração do áudio:{" "}
+                  <span className="font-medium text-foreground">
                     {audioDuration != null
                       ? `${Math.floor(audioDuration / 60)}m ${Math.floor(audioDuration % 60)}s`
                       : "Calculando..."}
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Taxa: 1 credito por minuto
+                  Taxa: 1 crédito por minuto
                 </p>
               </div>
 
-              <div className="text-right">
+              <div className="text-left mt-2 sm:mt-0 md:text-right">
                 {isCalculatingCredits ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <Loader2 className="w-4 h-4 animate-spin text-brand" />
                     <span className="text-sm text-muted-foreground">
                       Calculando...
                     </span>
                   </div>
                 ) : estimatedCredits !== null ? (
                   <div className="space-y-1">
-                    <Badge
-                      variant="default"
-                      className="text-base px-3 py-1 bg-blue-600 hover:bg-blue-700"
-                    >
+                    <Badge className="text-base px-3 py-1 bg-brand text-white">
                       {estimatedCredits}{" "}
-                      {estimatedCredits === 1 ? "Credito" : "Creditos"}
+                      {estimatedCredits === 1 ? "Crédito" : "Créditos"}
                     </Badge>
                     <p className="text-xs text-muted-foreground">
-                      serao descontados
+                      serão descontados
                     </p>
                   </div>
                 ) : null}

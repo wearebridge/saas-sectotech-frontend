@@ -10,9 +10,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { HelpCircle } from "lucide-react";
 
 interface StepScriptQuestionsProps {
   form: UseFormReturn<AnalysisFormValues>;
@@ -25,41 +26,54 @@ export function StepScriptQuestions({
 }: StepScriptQuestionsProps) {
   if (!selectedScript?.scriptItems?.length) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Selecione um script para responder as perguntas.
-      </p>
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <HelpCircle className="w-12 h-12 text-muted-foreground mb-3 opacity-50" />
+        <p className="text-sm text-muted-foreground">
+          Selecione um script para responder as perguntas.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {selectedScript.scriptItems.map((item, index) => (
-        <div key={item.id} className="space-y-2">
-          <Label className="text-sm font-medium">Pergunta {index + 1}</Label>
-          <div className="p-3 bg-muted rounded-md">
-            <p className="text-sm">{item.question}</p>
-          </div>
-          <FormField
-            control={form.control}
-            name={`answers.${item.id}`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Resposta Esperada *</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Digite a resposta esperada para esta pergunta"
-                    rows={2}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {index < selectedScript.scriptItems.length - 1 && (
-            <Separator className="mt-4" />
-          )}
-        </div>
+        <Card key={item.id} className="border-border/50">
+          <CardHeader className="">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Badge variant="outline" className="rounded-full">
+                  {index + 1}
+                </Badge>
+                <span>Pergunta</span>
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div className="p-3 bg-muted rounded-lg border border-border/30">
+              <p className="text-sm text-foreground">{item.question}</p>
+            </div>
+
+            <FormField
+              control={form.control}
+              name={`answers.${item.id}`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm">Resposta Esperada *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Digite a resposta esperada para esta pergunta"
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

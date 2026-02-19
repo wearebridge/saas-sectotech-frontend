@@ -177,7 +177,7 @@ export function ScriptSelector({
       <div className="flex-1 flex gap-2 flex-col">
         <label className="text-sm font-medium">Subtipo de Serviço</label>
         {isLoadingSubTypes ? (
-          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+          <div className="h-8 w-full flex items-center justify-center border rounded-md">
             <Loader size={5} />
           </div>
         ) : (
@@ -241,7 +241,7 @@ export function ScriptSelector({
       <div className="flex-1 flex gap-2 flex-col">
         <label className="text-sm font-medium">Tipo de Serviço</label>
         {isLoadingTypes ? (
-          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+          <div className="h-8 w-full flex items-center justify-center border rounded-md">
             <Loader size={5} />
           </div>
         ) : (
@@ -306,7 +306,7 @@ export function ScriptSelector({
       <div className="flex-1 flex gap-2 flex-col">
         <label className="text-sm font-medium">Script</label>
         {isLoadingScripts ? (
-          <div className="h-10 w-full flex items-center justify-center border rounded-md">
+          <div className="h-8 w-full flex items-center justify-center border rounded-md">
             <Loader size={5} />
           </div>
         ) : (

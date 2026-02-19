@@ -1,47 +1,48 @@
 export interface ScriptItem {
-  id: string
-  question: string
-  answer?: string
+  id: string;
+  question: string;
+  answer?: string;
 }
 
 export interface Script {
-  id: string
-  name: string
-  status: boolean
-  scriptItems?: ScriptItem[]
+  id: string;
+  name: string;
+  status: boolean;
+  scriptItems?: ScriptItem[];
 }
 
 export interface AnalysisRequest {
-  clientId: string
-  transcription?: string
-  scriptId: string
+  clientId: string;
+  transcription?: string;
+  scriptId: string;
+  audioDuration?: number;
   scriptItems: {
-    question: string
-    answer: string
-  }[]
+    question: string;
+    answer: string;
+  }[];
 }
 
 export interface AnalysisResult {
-  approved: boolean
-  transcription: string
+  approved: boolean;
+  transcription: string;
   output: {
-    question: string
-    answer: string
-    correct: boolean
-    analysis: string
-  }[]
+    question: string;
+    answer: string;
+    correct: boolean;
+    analysis: string;
+  }[];
 }
 
 export interface ServiceType {
-  id: string
-  name: string
-  description?: string
-  status: boolean
+  id: string;
+  name: string;
+  description?: string;
+  status: boolean;
 }
 
 export interface ServiceSubType {
-  id: string
-  name: string
-  description?: string
-  status: boolean
+  id: string;
+  name: string;
+  description?: string;
+  status: boolean;
 }

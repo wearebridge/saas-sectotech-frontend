@@ -137,33 +137,53 @@ export function AnalysisForm() {
     [form],
   );
 
-  const calculateEstimatedCredits = async (file: File) => {
-    if (!token) {
-      return null;
-    }
+  const calculateDurationFromFile = async (
+    file: File,
+  ): Promise<number | null> => {
+    return new Promise((resolve) => {
+      const audioContext = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
+      const fileReader = new FileReader();
 
+      fileReader.onload = async (event) => {
+        try {
+          const arrayBuffer = event.target?.result as ArrayBuffer;
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          resolve(audioBuffer.duration);
+        } catch (error) {
+          console.error("Erro ao decodificar áudio:", error);
+          resolve(null);
+        }
+      };
+
+      fileReader.onerror = () => {
+        console.error("Erro ao ler arquivo");
+        resolve(null);
+      };
+
+      fileReader.readAsArrayBuffer(file);
+    });
+  };
+
+  const calculateEstimatedCredits = async (file: File) => {
     try {
       setIsCalculatingCredits(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      const formData = new FormData();
-      formData.append("file", file);
 
-      const response = await fetch(`${apiUrl}/analyze/calculate-credits`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      // Obter duração do arquivo usando Web Audio API
+      const durationInSeconds = await calculateDurationFromFile(file);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "Erro ao calcular créditos");
+      if (durationInSeconds === null) {
+        toast.error("Não foi possível calcular a duração do áudio.");
+        return null;
       }
 
-      return (await response.json()) as {
-        durationInSeconds: number;
-        estimatedCredits: number;
+      // Calcular créditos: 1 crédito por minuto (arredonda para cima)
+      const estimatedCredits = Math.ceil(durationInSeconds / 60);
+
+      return {
+        durationInSeconds,
+        estimatedCredits,
       };
     } catch (error) {
       console.error("Erro ao calcular créditos:", error);
@@ -272,7 +292,7 @@ export function AnalysisForm() {
     if (currentStep < STEPS.length) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      onSubmit(form.getValues());
+      handleSubmit(form.getValues());
     }
   };
 
@@ -282,7 +302,7 @@ export function AnalysisForm() {
     }
   };
 
-  const onSubmit = async (values: AnalysisFormValues) => {
+  const handleSubmit = async (values: AnalysisFormValues) => {
     if (!token) {
       toast.error("Você não está autenticado");
       return;
@@ -293,19 +313,38 @@ export function AnalysisForm() {
       return;
     }
 
+    if (!audioDuration) {
+      toast.warning(
+        "Aviso: Não foi possível calcular a duração do áudio localmente.",
+      );
+    }
+
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
+      if (!values.audioFile) {
+        throw new Error("Arquivo de áudio não selecionado");
+      }
+
       const requestData: AnalysisRequest = {
         clientId: values.clientId,
         scriptId: values.scriptId,
+        audioDuration: audioDuration ?? undefined,
         scriptItems:
           selectedScript.scriptItems?.map((item) => ({
             question: item.question,
             answer: values.answers[item.id]?.trim() || "",
           })) || [],
       };
+
+      console.log("Enviando análise com dados:", {
+        clientId: values.clientId,
+        scriptId: values.scriptId,
+        audioDuration,
+        scriptItemsCount: requestData.scriptItems.length,
+        audioFileName: values.audioFile.name,
+      });
 
       const formData = new FormData();
       formData.append(
@@ -314,9 +353,7 @@ export function AnalysisForm() {
           type: "application/json",
         }),
       );
-      if (values.audioFile) {
-        formData.append("file", values.audioFile);
-      }
+      formData.append("file", values.audioFile);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const response = await fetch(`${apiUrl}/analyze/generate`, {
@@ -328,9 +365,25 @@ export function AnalysisForm() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        const message = errorText || response.statusText || "Erro desconhecido";
-        throw new Error(`Erro ao realizar análise: ${message}`);
+        const contentType = response.headers.get("content-type");
+        let errorMessage = "Erro desconhecido";
+
+        if (contentType?.includes("application/json")) {
+          try {
+            const errorData = await response.json();
+            errorMessage =
+              errorData.message || errorData.error || JSON.stringify(errorData);
+          } catch {
+            errorMessage = `Erro ${response.status}: ${response.statusText}`;
+          }
+        } else {
+          errorMessage = await response
+            .text()
+            .catch(() => `Erro ${response.status}: ${response.statusText}`);
+        }
+
+        console.error("Erro na resposta:", errorMessage);
+        throw new Error(`Erro ao realizar análise: ${errorMessage}`);
       }
 
       const result: AnalysisResult = await response.json();
@@ -339,7 +392,11 @@ export function AnalysisForm() {
       await refreshCredits();
     } catch (error) {
       console.error("Erro na análise:", error);
-      toast.error("Erro ao realizar análise. Tente novamente.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro ao realizar análise. Tente novamente.";
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -354,7 +411,7 @@ export function AnalysisForm() {
 
   return (
     <div className="space-y-6">
-      <Card className="w-full md:w-[70%] xl:w-[70%] max-w-4xl mx-auto border-border/50 shadow-lg ">
+      <Card className="w-full md:w-[70%] xl:w-[70%] max-w-4xl min-h-[87.5dvh] mx-auto border-border/50 shadow-lg ">
         <CardHeader className="pb-4 text-center">
           <div className="mb-8 mt-3 w-full flex items-center justify-center flex-col">
             <AnalysisStepHeader steps={STEPS} currentStep={currentStep} />
@@ -401,42 +458,42 @@ export function AnalysisForm() {
                 />
               )}
             </CardContent>
-
-            <CardFooter className="flex justify-between gap-4 pt-2 flex-col sm:flex-row ">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={currentStep === 1 || isAnalyzing}
-                className="gap-2 w-full sm:max-w-36"
-                type="button"
-              >
-                <ArrowLeftIcon className="size-4" />
-                <span className="">Voltar</span>
-              </Button>
-
-              <Button
-                onClick={handleNext}
-                className="gap-2 w-full sm:max-w-36 flex flex-row items-center justify-center"
-                variant={"sectotech"}
-                type="button"
-                isLoading={isAnalyzing && currentStep === STEPS.length}
-                disabled={isAnalyzing}
-              >
-                {currentStep === STEPS.length ? (
-                  <>
-                    <span className="">Finalizar</span>
-                    <CheckIcon className="size-4" />
-                  </>
-                ) : (
-                  <>
-                    <span className="">Continuar</span>
-                    <ArrowRightIcon className="size-4" />
-                  </>
-                )}
-              </Button>
-            </CardFooter>
           </form>
         </Form>
+
+        <CardFooter className="flex justify-between gap-4 pt-2 flex-col sm:flex-row mt-auto">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={currentStep === 1 || isAnalyzing}
+            className="gap-2 w-full sm:max-w-36"
+            type="button"
+          >
+            <ArrowLeftIcon className="size-4" />
+            <span className="">Voltar</span>
+          </Button>
+
+          <Button
+            onClick={handleNext}
+            className="gap-2 w-full sm:max-w-36 flex flex-row items-center justify-center"
+            variant={currentStep === STEPS.length ? "sectotech" : "default"}
+            type="button"
+            isLoading={isAnalyzing && currentStep === STEPS.length}
+            disabled={isAnalyzing}
+          >
+            {currentStep === STEPS.length ? (
+              <>
+                <span className="">Finalizar</span>
+                <CheckIcon className="size-4" />
+              </>
+            ) : (
+              <>
+                <span className="">Continuar</span>
+                <ArrowRightIcon className="size-4" />
+              </>
+            )}
+          </Button>
+        </CardFooter>
       </Card>
 
       {analysisResult && (
