@@ -206,7 +206,7 @@ export function ScriptSelector({
                 <CommandInput placeholder="Buscar por subtipo..." />
                 <CommandEmpty>Nenhum resultado.</CommandEmpty>
                 <CommandGroup>
-                  {serviceSubTypes.map((subType) => (
+                  {serviceSubTypes.filter(subType => subType.status).map((subType) => (
                     <CommandItem
                       key={subType.id}
                       value={subType.name}
@@ -273,7 +273,7 @@ export function ScriptSelector({
                 <CommandInput placeholder="Buscar por tipo..." />
                 <CommandEmpty>Nenhum resultado.</CommandEmpty>
                 <CommandGroup>
-                  {serviceTypes.map((type) => (
+                  {serviceTypes.filter(type => type.status).map((type) => (
                     <CommandItem
                       key={type.id}
                       value={type.name}

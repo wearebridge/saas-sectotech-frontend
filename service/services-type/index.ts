@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { CustomError } from "@/lib/errors/custom-errors";
 import * as api from "@/service/api";
 import { ServiceType } from "@/types/service";
@@ -33,6 +34,7 @@ export async function createService({
       return new CustomError("BAD_REQUEST", "Erro ao criar o serviço.");
     }
 
+    updateTag("service-types");
     return "Serviço criado com sucesso!";
   } catch (error) {
     console.log(error);
@@ -73,6 +75,7 @@ export async function updateService({
       return new CustomError("BAD_REQUEST", "Erro ao atualizar o serviço.");
     }
 
+    updateTag("service-types");
     return "Serviço atualizado com sucesso";
   } catch (error) {
     console.error("Error updating service:", error);
@@ -132,6 +135,7 @@ export async function deleteService({
       return new CustomError("BAD_REQUEST", "Erro ao desativar serviço.");
     }
 
+    updateTag("service-types");
     return "Serviço desativado com sucesso";
   } catch (error) {
     console.error("Error deleting service sub type:", error);

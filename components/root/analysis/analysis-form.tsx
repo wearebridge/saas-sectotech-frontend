@@ -8,7 +8,7 @@ import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
 import { ClientService } from "@/service/client/client-service";
 import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
-import { ClientResponse } from "@/types/client";
+import { ClientResponse, ClientFieldKey } from "@/types/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -102,6 +102,49 @@ export function AnalysisForm() {
   useEffect(() => {
     loadClients();
   }, [loadClients]);
+
+  const getClientFieldValue = useCallback(
+    (client: ClientResponse, field: ClientFieldKey): string => {
+      const fieldMap: Record<ClientFieldKey, string | undefined> = {
+        fullName: client.fullName,
+        cpf: client.cpf,
+        rg: client.rg,
+        birthDate: client.birthDate,
+        address: client.address,
+        phone: client.phone,
+        email: client.email,
+        gender: client.gender,
+      };
+      return fieldMap[field] || "";
+    },
+    [],
+  );
+
+  const clientId = form.watch("clientId");
+
+  useEffect(() => {
+    if (!clientId || !selectedScript?.scriptItems) return;
+
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return;
+
+    const currentAnswers = form.getValues("answers") || {};
+    let hasChanges = false;
+
+    selectedScript.scriptItems.forEach((item) => {
+      if (item.linkedClientField) {
+        const value = getClientFieldValue(client, item.linkedClientField);
+        if (value && currentAnswers[item.id] !== value) {
+          currentAnswers[item.id] = value;
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      form.setValue("answers", { ...currentAnswers }, { shouldValidate: false });
+    }
+  }, [clientId, selectedScript, clients, form, getClientFieldValue]);
 
   const handleCreateClient = async (data: any) => {
     if (!token) {

@@ -46,7 +46,7 @@ export default function ClientAnalysesPage() {
             <>
               <h1 className="text-3xl font-bold tracking-tight">
                 {client
-                  ? `${client.name} ${client.surname}`
+                  ? `${client.fullName}`
                   : "Cliente não encontrado"}
               </h1>
               <p className="text-muted-foreground">

@@ -103,7 +103,7 @@ export function StepAnalysisData({
                         >
                           <span className="truncate">
                             {selectedClient
-                              ? `${selectedClient.name} ${selectedClient.surname}`
+                              ? `${selectedClient.fullName}`
                               : "Selecione um cliente"}
                           </span>
                           <IconChevronDown className="h-4 w-4 opacity-50" />
@@ -117,7 +117,7 @@ export function StepAnalysisData({
                             {clients.map((client) => (
                               <CommandItem
                                 key={client.id}
-                                value={`${client.name} ${client.surname}`}
+                                value={`${client.fullName}`}
                                 className="cursor-pointer"
                                 onSelect={() => {
                                   field.onChange(client.id);
@@ -135,7 +135,7 @@ export function StepAnalysisData({
                                 <div className="flex items-center gap-2">
                                   <User className="w-4 h-4" />
                                   <span className="text-sm">
-                                    {client.name} {client.surname}
+                                    {client.fullName}
                                   </span>
                                   {client.cpf && (
                                     <span className="text-xs text-muted-foreground">

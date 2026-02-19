@@ -174,8 +174,7 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
     if (nameFilter) {
       filtered = filtered.filter(
         (item) =>
-          item.name.toLowerCase().includes(nameFilter.toLowerCase()) ||
-          item.surname.toLowerCase().includes(nameFilter.toLowerCase()),
+          item.fullName.toLowerCase().includes(nameFilter.toLowerCase()),
       );
     }
     if (status !== "all") {
@@ -188,7 +187,7 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
 
   // Extract unique names for filter
   const uniqueNames = useMemo(
-    () => [...new Set(data.map((d) => `${d.name} ${d.surname}`))],
+    () => [...new Set(data.map((d) => d.fullName))],
     [data],
   );
 

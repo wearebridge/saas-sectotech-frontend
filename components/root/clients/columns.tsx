@@ -39,14 +39,14 @@ export const clientColumns = ({
 }: ClientColumnsProps) => {
   const columns: ColumnDef<ClientResponse>[] = [
     {
-      accessorKey: "name",
+      accessorKey: "fullName",
       header: "Nome",
       cell: ({ row }) => (
         <Link
           href={`/clientes/analises/${row.original.id}`}
           className="font-medium hover:underline text-primary"
         >
-          {row.original.name} {row.original.surname}
+          {row.original.fullName}
         </Link>
       ),
     },
