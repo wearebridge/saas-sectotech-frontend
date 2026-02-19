@@ -1,7 +1,10 @@
+import { ClientFieldKey } from './client'
+
 export interface ScriptItem {
   id: string;
   question: string;
   answer?: string;
+  linkedClientField?: ClientFieldKey | null;
 }
 
 export interface Script {

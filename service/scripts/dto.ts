@@ -17,6 +17,7 @@ export interface CreateScriptProps extends tokenProps {
   scriptItems?:
     | {
         question: string;
+        linkedClientField?: string | null;
       }[]
     | undefined;
 }
@@ -27,6 +28,7 @@ export interface UpdateScriptProps extends tokenProps {
   scriptItems?:
     | {
         question: string;
+        linkedClientField?: string | null;
       }[]
     | undefined;
   scriptId: string;

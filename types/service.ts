@@ -1,3 +1,5 @@
+import { ClientFieldKey } from './client'
+
 export interface ServiceType {
   id: string
   name: string
@@ -18,7 +20,7 @@ export interface Script {
   id: string
   name: string
   status: boolean
-  scriptItems?: { id: string; question: string }[]
+  scriptItems?: { id: string; question: string; linkedClientField?: ClientFieldKey | null }[]
   serviceTypeId?: string
   serviceTypeName?: string
   serviceSubTypeId?: string

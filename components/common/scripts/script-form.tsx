@@ -25,12 +25,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PlusIcon, Trash2 } from "lucide-react";
 import { useKeycloak } from "@/lib/keycloak";
 import { createScript, updateScript } from "@/service/scripts";
+import { CLIENT_FIELD_LABELS, ClientFieldKey } from "@/types/client";
 
 const scriptItemSchema = z.object({
   question: z.string().min(1, "O item é obrigatório"),
+  linkedClientField: z.string().nullable().optional(),
 });
 
 const formSchema = z.object({
@@ -224,14 +233,14 @@ export function ScriptForm({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ question: "" })}
+                  onClick={() => append({ question: "", linkedClientField: null })}
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Adicionar Pergunta
                 </Button>
               </div>
 
-              <div className="h-[200px] w-full rounded-md border p-4 overflow-y-auto">
+              <div className="h-[300px] w-full rounded-md border p-4 overflow-y-auto">
                 <div className="space-y-4">
                   {fields.map((field, index) => (
                     <div
@@ -247,6 +256,33 @@ export function ScriptForm({
                               <FormControl>
                                 <Input placeholder="Pergunta" {...field} />
                               </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`scriptItems.${index}.linkedClientField`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <Select
+                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)}
+                                value={field.value || "__none__"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="text-xs">
+                                    <SelectValue placeholder="Vincular a dado do cliente (opcional)" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Nenhum vínculo</SelectItem>
+                                  {(Object.entries(CLIENT_FIELD_LABELS) as [ClientFieldKey, string][]).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>
+                                      {label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

@@ -32,7 +32,6 @@ interface AnalysisHistoryItem {
   id: string
   clientId?: string
   clientName: string
-  clientSurname?: string
   clientCpf?: string
   audioFilename?: string
   transcription?: string
@@ -100,8 +99,6 @@ export function AnalysisHistory() {
       const search = clientSearch.trim().toLowerCase()
       const matchesClient = search === "" ||
         (analysis.clientName && analysis.clientName.toLowerCase().includes(search)) ||
-        (analysis.clientSurname && analysis.clientSurname.toLowerCase().includes(search)) ||
-        (`${analysis.clientName || ''} ${analysis.clientSurname || ''}`.toLowerCase().includes(search)) ||
         (analysis.clientCpf && analysis.clientCpf.replace(/\D/g, '').includes(search.replace(/\D/g, '')))
 
       const matchesDate = dateFilter === "" || 
@@ -231,7 +228,7 @@ export function AnalysisHistory() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      {analysis.clientName} {analysis.clientSurname || ""}
+                      {analysis.clientName}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -292,7 +289,7 @@ export function AnalysisHistory() {
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label className="text-sm font-medium">Cliente</Label>
-                                <p className="text-sm">{selectedAnalysis.clientName} {selectedAnalysis.clientSurname || ""}</p>
+                                <p className="text-sm">{selectedAnalysis.clientName}</p>
                                 {selectedAnalysis.clientCpf && (
                                   <p className="text-xs text-muted-foreground">
                                     CPF: {selectedAnalysis.clientCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}

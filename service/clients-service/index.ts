@@ -8,35 +8,39 @@ import { tokenProps } from "@/types/token";
 const baseUrl = "/clients";
 
 interface CreateClientProps extends tokenProps {
-  name: string;
-  surname: string;
+  fullName: string;
   birthDate?: string;
   cpf?: string;
   rg?: string;
   address?: string;
+  phone?: string;
+  email?: string;
+  gender?: string;
 }
 
 export async function createClient({
   token,
-  name,
-  surname,
+  fullName,
   birthDate,
   cpf,
   rg,
   address,
+  phone,
+  email,
+  gender,
 }: CreateClientProps): Promise<string | CustomError> {
   if (!token) {
     return new CustomError("PERMISSION_DND", "Error creating client.");
   }
 
   try {
-    if (!name || !surname) {
-      return new CustomError("EMPTY_FIELD", "Name and surname are required.");
+    if (!fullName) {
+      return new CustomError("EMPTY_FIELD", "Full name is required.");
     }
 
     const response = await api.POST(
       `${baseUrl}`,
-      { name, surname, birthDate, cpf, rg, address },
+      { fullName, birthDate, cpf, rg, address, phone, email, gender },
       token,
     );
 
@@ -57,23 +61,27 @@ export async function createClient({
 
 interface UpdateClientProps extends tokenProps {
   id: string;
-  name: string;
-  surname: string;
+  fullName: string;
   birthDate?: string;
   cpf?: string;
   rg?: string;
   address?: string;
+  phone?: string;
+  email?: string;
+  gender?: string;
   status: string;
 }
 
 export async function updateClient({
   id,
-  name,
-  surname,
+  fullName,
   birthDate,
   cpf,
   rg,
   address,
+  phone,
+  email,
+  gender,
   status,
   token,
 }: UpdateClientProps): Promise<string | CustomError> {
@@ -82,23 +90,25 @@ export async function updateClient({
   }
 
   try {
-    if (!name || !surname || !id || status === undefined) {
+    if (!fullName || !id || status === undefined) {
       return new CustomError(
         "EMPTY_FIELD",
-        "Name, surname, ID and status are required.",
+        "Full name, ID and status are required.",
       );
     }
 
     const response = await api.PUT(
       `${baseUrl}/${id}`,
       {
-        name,
-        surname,
+        fullName,
         birthDate,
         cpf,
         rg,
         address,
-        status: status === "active",
+        phone,
+        email,
+        gender,
+        status: status === "active"
       },
       token,
     );

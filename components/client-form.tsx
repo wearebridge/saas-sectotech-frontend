@@ -42,14 +42,16 @@ export function ClientForm({
   const form = useForm<ClientRequest>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
-      name: client?.name || '',
-      surname: client?.surname || '',
+      fullName: client?.fullName || '',
       birthDate: client?.birthDate 
         ? new Date(client.birthDate).toISOString().split('T')[0] 
         : '',
       cpf: client?.cpf || '',
       rg: client?.rg || '',
       address: client?.address || '',
+      phone: client?.phone || '',
+      email: client?.email || '',
+      gender: client?.gender || undefined,
       status: client ? (client.status ? 'active' : 'inactive') : 'active',
     },
   })
@@ -72,16 +74,34 @@ export function ClientForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome Completo *</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Digite o nome completo"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="name"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome *</FormLabel>
+                <FormLabel>E-mail</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Digite o primeiro nome"
+                    type="email"
+                    placeholder="email@exemplo.com"
                     {...field}
                   />
                 </FormControl>
@@ -92,13 +112,14 @@ export function ClientForm({
 
           <FormField
             control={form.control}
-            name="surname"
+            name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sobrenome *</FormLabel>
+                <FormLabel>Telefone</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Digite o sobrenome"
+                    placeholder="(00) 00000-0000"
+                    maxLength={20}
                     {...field}
                   />
                 </FormControl>
@@ -174,6 +195,29 @@ export function ClientForm({
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sexo</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o sexo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="MALE">Masculino</SelectItem>
+                  <SelectItem value="FEMALE">Feminino</SelectItem>
+                  <SelectItem value="OTHER">Outro</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

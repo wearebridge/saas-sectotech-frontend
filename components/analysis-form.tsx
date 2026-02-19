@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useKeycloak } from "@/lib/keycloak";
 import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
-import { ClientResponse } from "@/types/client";
+import { ClientResponse, ClientFieldKey } from "@/types/client";
 import { ClientService } from "@/service/client/client-service";
 import { ScriptSelector } from "./root/analysis/script-selector";
 import { ClientForm } from "./client-form";
@@ -117,6 +117,42 @@ export function AnalysisForm() {
       setScriptAnswers(initialAnswers);
     }
   }, []);
+
+  // Função para obter o valor de um campo do cliente
+  const getClientFieldValue = useCallback((client: ClientResponse, field: ClientFieldKey): string => {
+    switch (field) {
+      case 'fullName': return client.fullName || ''
+      case 'cpf': return client.cpf || ''
+      case 'rg': return client.rg || ''
+      case 'birthDate': return client.birthDate || ''
+      case 'address': return client.address || ''
+      case 'phone': return client.phone || ''
+      case 'email': return client.email || ''
+      case 'gender': {
+        const labels: Record<string, string> = { MALE: 'Masculino', FEMALE: 'Feminino', OTHER: 'Outro' }
+        return client.gender ? (labels[client.gender] || client.gender) : ''
+      }
+      default: return ''
+    }
+  }, [])
+
+  // Auto-preencher respostas quando cliente ou script mudam
+  useEffect(() => {
+    if (!selectedScript?.scriptItems || !selectedClient) return
+
+    setScriptAnswers(prev => {
+      const updated = { ...prev }
+      selectedScript.scriptItems!.forEach(item => {
+        if (item.linkedClientField) {
+          const value = getClientFieldValue(selectedClient, item.linkedClientField)
+          if (value) {
+            updated[item.id] = value
+          }
+        }
+      })
+      return updated
+    })
+  }, [selectedClient, selectedScript, getClientFieldValue])
 
   const handleAnswerChange = (itemId: string, answer: string) => {
     setScriptAnswers((prev) => ({
@@ -360,7 +396,7 @@ export function AnalysisForm() {
                           <SelectItem key={client.id} value={client.id}>
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4" />
-                              {client.name} {client.surname}
+                              {client.fullName}
                               {client.cpf && (
                                 <span className="text-xs text-muted-foreground">
                                   - CPF:{" "}
@@ -501,34 +537,38 @@ export function AnalysisForm() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {selectedScript.scriptItems.map((item, index) => (
-                <div key={item.id} className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Pergunta {index + 1}
-                  </Label>
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm">{item.question}</p>
+              {selectedScript.scriptItems.map((item, index) => {
+                const isLinked = !!item.linkedClientField && !!selectedClient
+                return (
+                  <div key={item.id} className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Pergunta {index + 1}
+                    </Label>
+                    <div className="p-3 bg-muted rounded-md">
+                      <p className="text-sm">{item.question}</p>
+                      {item.linkedClientField && (
+                        <Badge variant="outline" className="mt-1 text-xs">
+                          Vinculado: {item.linkedClientField}
+                        </Badge>
+                      )}
+                    </div>
+                    <Label htmlFor={`answer-${item.id}`} className="text-sm font-medium">
+                      Resposta Esperada *
+                    </Label>
+                    <Textarea
+                      id={`answer-${item.id}`}
+                      value={scriptAnswers[item.id] || ""}
+                      onChange={(e) => handleAnswerChange(item.id, e.target.value)}
+                      placeholder={isLinked ? "Preenchido automaticamente com dados do cliente" : "Digite a resposta esperada para esta pergunta"}
+                      rows={2}
+                      className={isLinked ? "border-green-300 bg-green-50/50" : ""}
+                    />
+                    {index < selectedScript.scriptItems!.length - 1 && (
+                      <Separator className="mt-4" />
+                    )}
                   </div>
-                  <Label
-                    htmlFor={`answer-${item.id}`}
-                    className="text-sm font-medium"
-                  >
-                    Resposta Esperada *
-                  </Label>
-                  <Textarea
-                    id={`answer-${item.id}`}
-                    value={scriptAnswers[item.id] || ""}
-                    onChange={(e) =>
-                      handleAnswerChange(item.id, e.target.value)
-                    }
-                    placeholder="Digite a resposta esperada para esta pergunta"
-                    rows={2}
-                  />
-                  {index < selectedScript.scriptItems!.length - 1 && (
-                    <Separator className="mt-4" />
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>

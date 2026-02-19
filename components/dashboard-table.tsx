@@ -85,7 +85,6 @@ type AnalysisItem = {
   date: Date
   clientId?: string
   clientName: string
-  clientSurname?: string
   clientCpf?: string
   service: string
   subType: string
@@ -166,7 +165,7 @@ export function DashboardTable({ clientId }: DashboardTableProps) {
       accessorKey: "clientName",
       header: "Cliente",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.clientName} {row.original.clientSurname || ""}</span>
+        <span className="font-medium">{row.original.clientName}</span>
       ),
     },
     {
@@ -271,7 +270,6 @@ export function DashboardTable({ clientId }: DashboardTableProps) {
           date: new Date(item.createdAt),
           clientId: item.clientId,
           clientName: item.clientName || "-",
-          clientSurname: item.clientSurname,
           clientCpf: item.clientCpf,
           service: item.serviceTypeName || "-",
           subType: item.serviceSubTypeName || "-",
@@ -309,7 +307,7 @@ export function DashboardTable({ clientId }: DashboardTableProps) {
       if (date && format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")) return false
       if (clientSearch) {
         const search = clientSearch.trim().toLowerCase()
-        const fullName = `${item.clientName || ''} ${item.clientSurname || ''}`.toLowerCase()
+        const fullName = (item.clientName || '').toLowerCase()
         const cpf = item.clientCpf?.replace(/\D/g, '') || ''
         const searchDigits = search.replace(/\D/g, '')
         if (!fullName.includes(search) && !(searchDigits && cpf.includes(searchDigits))) return false
@@ -661,7 +659,7 @@ export function DashboardTable({ clientId }: DashboardTableProps) {
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">Cliente</Label>
                   <p className="text-sm font-medium">
-                    {selectedAnalysis.clientName} {selectedAnalysis.clientSurname || ""}
+                    {selectedAnalysis.clientName}
                     {selectedAnalysis.clientCpf && (
                       <span className="ml-2 text-muted-foreground font-mono text-xs">
                         {selectedAnalysis.clientCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
