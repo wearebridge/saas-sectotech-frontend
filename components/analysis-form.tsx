@@ -60,6 +60,8 @@ export function AnalysisForm() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
+  const [serviceSubTypeId, setServiceSubTypeId] = useState("");
+  const [serviceTypeId, setServiceTypeId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { token } = useKeycloak();
   const { refreshCredits } = useCredit();
@@ -296,9 +298,22 @@ export function AnalysisForm() {
     setEstimatedCredits(null);
     setScriptAnswers({});
     setAnalysisResult(null);
+    setServiceSubTypeId("");
+    setServiceTypeId("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleServiceSubTypeChange = (newServiceSubTypeId: string) => {
+    setServiceSubTypeId(newServiceSubTypeId);
+    setServiceTypeId("");
+    setSelectedScript(null);
+  };
+
+  const handleServiceTypeChange = (newServiceTypeId: string) => {
+    setServiceTypeId(newServiceTypeId);
+    setSelectedScript(null);
   };
 
   return (
@@ -306,6 +321,10 @@ export function AnalysisForm() {
       <ScriptSelector
         onScriptSelect={handleScriptSelect}
         selectedScript={selectedScript}
+        selectedServiceSubTypeId={serviceSubTypeId}
+        selectedServiceTypeId={serviceTypeId}
+        onServiceSubTypeChange={handleServiceSubTypeChange}
+        onServiceTypeChange={handleServiceTypeChange}
       />
 
       {selectedScript && (
