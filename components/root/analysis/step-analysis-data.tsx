@@ -244,7 +244,7 @@ export function StepAnalysisData({
                 ) : estimatedCredits !== null ? (
                   <div className="space-y-1">
                     <Badge className="text-base px-3 py-1 bg-brand text-white">
-                      {estimatedCredits}{" "}
+                      {estimatedCredits.toFixed(1)}{" "}
                       {estimatedCredits === 1 ? "Crédito" : "Créditos"}
                     </Badge>
                     <p className="text-xs text-muted-foreground">

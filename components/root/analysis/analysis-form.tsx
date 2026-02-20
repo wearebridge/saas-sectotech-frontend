@@ -180,53 +180,32 @@ export function AnalysisForm() {
     [form],
   );
 
-  const calculateDurationFromFile = async (
-    file: File,
-  ): Promise<number | null> => {
-    return new Promise((resolve) => {
-      const audioContext = new (
-        window.AudioContext || (window as any).webkitAudioContext
-      )();
-      const fileReader = new FileReader();
-
-      fileReader.onload = async (event) => {
-        try {
-          const arrayBuffer = event.target?.result as ArrayBuffer;
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-          resolve(audioBuffer.duration);
-        } catch (error) {
-          console.error("Erro ao decodificar áudio:", error);
-          resolve(null);
-        }
-      };
-
-      fileReader.onerror = () => {
-        console.error("Erro ao ler arquivo");
-        resolve(null);
-      };
-
-      fileReader.readAsArrayBuffer(file);
-    });
-  };
-
   const calculateEstimatedCredits = async (file: File) => {
     try {
       setIsCalculatingCredits(true);
 
-      // Obter duração do arquivo usando Web Audio API
-      const durationInSeconds = await calculateDurationFromFile(file);
+      const formData = new FormData();
+      formData.append("file", file);
 
-      if (durationInSeconds === null) {
-        toast.error("Não foi possível calcular a duração do áudio.");
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const response = await fetch(`${apiUrl}/analyze/calculate-credits`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        toast.error("Não foi possível calcular o custo do áudio.");
         return null;
       }
 
-      // Calcular créditos: 1 crédito por minuto (arredonda para cima)
-      const estimatedCredits = Math.ceil(durationInSeconds / 60);
+      const data = await response.json();
 
       return {
-        durationInSeconds,
-        estimatedCredits,
+        durationInSeconds: data.durationInSeconds as number,
+        estimatedCredits: data.estimatedCredits as number,
       };
     } catch (error) {
       console.error("Erro ao calcular créditos:", error);
@@ -356,12 +335,6 @@ export function AnalysisForm() {
       return;
     }
 
-    if (!audioDuration) {
-      toast.warning(
-        "Aviso: Não foi possível calcular a duração do áudio localmente.",
-      );
-    }
-
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
@@ -373,7 +346,6 @@ export function AnalysisForm() {
       const requestData: AnalysisRequest = {
         clientId: values.clientId,
         scriptId: values.scriptId,
-        audioDuration: audioDuration ?? undefined,
         scriptItems:
           selectedScript.scriptItems?.map((item) => ({
             question: item.question,
@@ -384,7 +356,6 @@ export function AnalysisForm() {
       console.log("Enviando análise com dados:", {
         clientId: values.clientId,
         scriptId: values.scriptId,
-        audioDuration,
         scriptItemsCount: requestData.scriptItems.length,
         audioFileName: values.audioFile.name,
       });

@@ -18,7 +18,6 @@ export interface AnalysisRequest {
   clientId: string;
   transcription?: string;
   scriptId: string;
-  audioDuration?: number;
   scriptItems: {
     question: string;
     answer: string;
