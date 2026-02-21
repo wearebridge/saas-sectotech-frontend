@@ -16,6 +16,9 @@ interface KeycloakContextType {
   authenticated: boolean;
   loading: boolean;
   token: string | undefined;
+  currentUserId: string | undefined;
+  roles: string[];
+  isCompanyAdmin: boolean;
   login: () => void;
   logout: () => void;
 }
@@ -34,6 +37,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | undefined>();
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+  const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
     const kc = new Keycloak({
@@ -51,6 +56,11 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         setKeycloak(kc);
         setAuthenticated(auth);
         setToken(kc.token);
+        if (auth && kc.tokenParsed) {
+          setCurrentUserId(kc.tokenParsed.sub);
+          const realmAccess = (kc.tokenParsed as Record<string, unknown>).realm_access as { roles?: string[] } | undefined;
+          setRoles(realmAccess?.roles ?? []);
+        }
         setLoading(false);
 
         if (auth) {
@@ -102,6 +112,9 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         authenticated,
         loading,
         token,
+        currentUserId,
+        roles,
+        isCompanyAdmin: roles.includes("company-admin"),
         login,
         logout,
       }}

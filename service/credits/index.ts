@@ -1,10 +1,11 @@
 "use server";
 
 import { CustomError } from "@/lib/errors/custom-errors";
-import { BuyCreditsProps, VerifyPaymentProps } from "./dto";
+import { BuyCreditsProps, VerifyPaymentProps, GetTransactionHistoryProps } from "./dto";
 import * as api from "@/service/api";
 import { tokenProps } from "@/types/token";
 import { StripeProduct } from "@/types/package";
+import { CreditTransaction } from "@/types/credit-transaction";
 
 export async function buyCredits({
   priceId,
@@ -108,6 +109,68 @@ export async function getProducts({
     return new CustomError(
       "BAD_REQUEST",
       "Ocorreu um erro ao buscar os produtos.",
+    );
+  }
+}
+
+export async function getTransactionHistory({
+  companyId,
+  token,
+}: GetTransactionHistoryProps): Promise<CustomError | CreditTransaction[]> {
+  try {
+    if (!token || !companyId) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Token ou ID da empresa não fornecido.",
+      );
+    }
+
+    // First get the company credit ID
+    const creditResponse = await api.GET(
+      `/companyCredits/byCompanyId/${companyId}`,
+      token,
+      {},
+      { cache: "no-store" },
+    );
+
+    if (creditResponse instanceof CustomError || !creditResponse.ok) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Erro ao buscar conta de créditos da empresa.",
+      );
+    }
+
+    const creditData = await creditResponse.json();
+
+    // Then fetch transactions
+    const txResponse = await api.GET(
+      `/creditTransactions/byCompanyCredit/${creditData.id}`,
+      token,
+      {},
+      { cache: "no-store" },
+    );
+
+    if (txResponse instanceof CustomError || !txResponse.ok) {
+      return new CustomError(
+        "BAD_REQUEST",
+        "Erro ao buscar histórico de transações.",
+      );
+    }
+
+    const transactions: CreditTransaction[] = await txResponse.json();
+
+    // Sort by date descending
+    transactions.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return transactions;
+  } catch (error) {
+    console.error("Error fetching transaction history:", error);
+    return new CustomError(
+      "BAD_REQUEST",
+      "Ocorreu um erro ao buscar o histórico de transações.",
     );
   }
 }

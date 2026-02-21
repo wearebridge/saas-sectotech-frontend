@@ -7,7 +7,7 @@ import { ArrowDownCircle, ArrowUpCircle, User } from "lucide-react";
 export const columnsPurchaseHistory: ColumnDef<CreditTransaction>[] = [
   {
     accessorKey: "createdAt",
-    header: "Data da Compra",
+    header: "Data",
     cell: ({ row }) => {
       return formatDate(row.original.createdAt);
     },
@@ -54,7 +54,7 @@ export const columnsPurchaseHistory: ColumnDef<CreditTransaction>[] = [
   },
   {
     accessorKey: "purchasedByName",
-    header: "Comprado Por",
+    header: "Responsável",
     cell: ({ row }) => {
       const { purchasedByName } = row.original;
       return (

@@ -10,8 +10,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { UserFormValues, userSchema } from "@/lib/validators/user-validator";
-import { createUsers } from "@/service/users";
+import {
+  UserFormValues,
+  UserEditFormValues,
+  userSchema,
+  userEditSchema,
+} from "@/lib/validators/user-validator";
+import { createUsers, updateUser } from "@/service/users";
 import { User } from "@/types/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -37,16 +42,27 @@ export default function UsersForm({
 
   const isEditing = !!initalData;
 
-  const form = useForm<UserFormValues>({
+  const createForm = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      username: "",
+      password: "",
+    },
+  });
+
+  const editForm = useForm<UserEditFormValues>({
+    resolver: zodResolver(userEditSchema),
     defaultValues: {
       firstName: initalData?.firstName || "",
       lastName: initalData?.lastName || "",
       email: initalData?.email || "",
-      username: initalData?.username || "",
-      password: "",
     },
   });
+
+  const form = isEditing ? editForm : createForm;
 
   const handleCreateUser = async (data: UserFormValues) => {
     if (!token) {
@@ -77,12 +93,48 @@ export default function UsersForm({
     }
   };
 
+  const handleUpdateUser = async (data: UserEditFormValues) => {
+    if (!token || !initalData) {
+      toast.error("Token de autenticação não encontrado");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await updateUser({
+        userId: initalData.id,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        token,
+      });
+
+      if (response instanceof Error) {
+        toast.error(response.message);
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success("Usuário atualizado com sucesso!");
+      setOpenDialog(false);
+      form.reset();
+      onSuccess();
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      toast.error("Erro ao atualizar usuário");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onSubmit = isEditing
+    ? editForm.handleSubmit(handleUpdateUser)
+    : createForm.handleSubmit(handleCreateUser);
+
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleCreateUser)}
-        className="space-y-4"
-      >
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -130,33 +182,37 @@ export default function UsersForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder="username" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!isEditing && (
+          <>
+            <FormField
+              control={createForm.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="username" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Senha</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={createForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Senha</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         <div className="flex w-full gap-2 pt-1 flex-col">
           <Button

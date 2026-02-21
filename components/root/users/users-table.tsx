@@ -52,14 +52,27 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { columnsUsers } from "./users-columns";
 import { User } from "@/types/users";
 import UsersForm from "./users-form";
+import PasswordResetForm from "./password-reset-form";
 
 import { useKeycloak } from "@/lib/keycloak";
 import { IconInput } from "@/components/ui/icon-input";
+import { disableUser } from "@/service/users";
 
 export function UsersTable() {
   const router = useRouter();
@@ -79,13 +92,62 @@ export function UsersTable() {
     Number(searchParams.get("page") ?? 0),
   );
   const [openDialog, setOpenDialog] = useState(false);
+  const [openDisableDialog, setOpenDisableDialog] = useState(false);
+  const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
+  const [userToDisable, setUserToDisable] = useState<User | null>(null);
+  const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
+
+  const handleDisableUser = (user: User) => {
+    setUserToDisable(user);
+    setOpenDisableDialog(true);
+  };
+
+  const handleResetPassword = (user: User) => {
+    setUserToResetPassword(user);
+    setOpenPasswordDialog(true);
+  };
+
+  const confirmDisableUser = async () => {
+    if (!token || !userToDisable) return;
+
+    try {
+      const response = await disableUser({
+        userId: userToDisable.id,
+        token,
+      });
+
+      if (response instanceof Error) {
+        toast.error(response.message);
+        return;
+      }
+
+      toast.success(
+        `Usuário ${userToDisable.firstName} ${userToDisable.lastName} desativado com sucesso!`,
+      );
+      handleLoadUsers();
+    } catch (error) {
+      console.error("Erro ao desativar usuário:", error);
+      toast.error("Erro ao desativar usuário");
+    } finally {
+      setOpenDisableDialog(false);
+      setUserToDisable(null);
+    }
+  };
 
   const columns = useMemo<ColumnDef<User>[]>(
-    () => columnsUsers({ setSeletedUser, setOpenDialog }),
-    [],
+    () =>
+      columnsUsers({
+        setSeletedUser,
+        setOpenDialog,
+        onDisableUser: handleDisableUser,
+        onResetPassword: handleResetPassword,
+        currentUserId,
+        isCompanyAdmin,
+      }),
+    [currentUserId, isCompanyAdmin],
   );
 
-  const { authenticated, token } = useKeycloak();
+  const { authenticated, token, currentUserId, isCompanyAdmin } = useKeycloak();
 
   const handleLoadUsers = async () => {
     if (!token) return;
@@ -230,14 +292,19 @@ export function UsersTable() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="sectotech"
-              size="sm"
-              onClick={() => setOpenDialog(true)}
-            >
-              <IconPlus className="h-4 w-4" />
-              <span className="">Novo usuário</span>
-            </Button>
+            {isCompanyAdmin && (
+              <Button
+                variant="sectotech"
+                size="sm"
+                onClick={() => {
+                  setSeletedUser(null);
+                  setOpenDialog(true);
+                }}
+              >
+                <IconPlus className="h-4 w-4" />
+                <span className="">Novo usuário</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -339,10 +406,24 @@ export function UsersTable() {
         </div>
       </div>
 
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      {/* Dialog para criar/editar usuário */}
+      <Dialog
+        open={openDialog}
+        onOpenChange={(open) => {
+          setOpenDialog(open);
+          if (!open) setSeletedUser(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo usuário</DialogTitle>
+            <DialogTitle>
+              {seletedUser ? "Editar usuário" : "Novo usuário"}
+            </DialogTitle>
+            <DialogDescription>
+              {seletedUser
+                ? "Atualize as informações do usuário."
+                : "Preencha os dados para criar um novo usuário."}
+            </DialogDescription>
           </DialogHeader>
           <UsersForm
             setOpenDialog={setOpenDialog}
@@ -350,6 +431,59 @@ export function UsersTable() {
             token={token}
             onSuccess={handleLoadUsers}
             initalData={seletedUser}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmação para desativar usuário */}
+      <AlertDialog open={openDisableDialog} onOpenChange={setOpenDisableDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja desativar o usuário{" "}
+              <strong>
+                {userToDisable?.firstName} {userToDisable?.lastName}
+              </strong>
+              ? Ele não poderá mais acessar o sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDisableUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para resetar senha */}
+      <Dialog
+        open={openPasswordDialog}
+        onOpenChange={(open) => {
+          setOpenPasswordDialog(open);
+          if (!open) setUserToResetPassword(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resetar senha</DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para{" "}
+              <strong>
+                {userToResetPassword?.firstName}{" "}
+                {userToResetPassword?.lastName}
+              </strong>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <PasswordResetForm
+            user={userToResetPassword}
+            token={token}
+            setOpenDialog={setOpenPasswordDialog}
           />
         </DialogContent>
       </Dialog>

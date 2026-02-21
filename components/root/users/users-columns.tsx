@@ -12,15 +12,23 @@ import { Button } from "@/components/ui/button";
 import { IconDotsVertical } from "@tabler/icons-react";
 import { User } from "@/types/users";
 
-interface UsersFormProps {
+interface UsersColumnsProps {
   setSeletedUser: (user: User | null) => void;
   setOpenDialog: (open: boolean) => void;
+  onDisableUser: (user: User) => void;
+  onResetPassword: (user: User) => void;
+  currentUserId?: string;
+  isCompanyAdmin: boolean;
 }
 
 export function columnsUsers({
   setSeletedUser,
   setOpenDialog,
-}: UsersFormProps): ColumnDef<User>[] {
+  onDisableUser,
+  onResetPassword,
+  currentUserId,
+  isCompanyAdmin,
+}: UsersColumnsProps): ColumnDef<User>[] {
   return [
     {
       accessorKey: "firstName",
@@ -66,29 +74,51 @@ export function columnsUsers({
     {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <IconDotsVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                setSeletedUser(row.original);
-                setOpenDialog(true);
-              }}
-            >
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
-              Desabilitar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => {
+        const isSelf = row.original.id === currentUserId;
+        const canEdit = isSelf || isCompanyAdmin;
+        const canManage = isCompanyAdmin && !isSelf;
+
+        if (!canEdit) return null;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <IconDotsVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  setSeletedUser(row.original);
+                  setOpenDialog(true);
+                }}
+              >
+                Editar
+              </DropdownMenuItem>
+              {canManage && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => onResetPassword(row.original)}
+                  >
+                    Resetar Senha
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {row.original.enabled && (
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => onDisableUser(row.original)}
+                    >
+                      Desabilitar
+                    </DropdownMenuItem>
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 }
