@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { useKeycloak } from "@/lib/keycloak";
 import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
 import { ClientResponse, ClientFieldKey } from "@/types/client";
@@ -14,13 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +31,6 @@ import {
   XCircle,
   CreditCard,
   Plus,
-  User,
 } from "lucide-react";
 import { useCredit } from "@/lib/credit-context";
 
@@ -65,6 +58,18 @@ export function AnalysisForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { token } = useKeycloak();
   const { refreshCredits } = useCredit();
+
+  // Form para integração com ScriptSelector
+  const form = useForm({
+    defaultValues: {
+      serviceSubTypeId: "",
+      serviceTypeId: "",
+      scriptId: "",
+      clientId: "",
+      audioFile: undefined,
+      answers: {},
+    },
+  });
 
   // Carregar clientes
   const loadClients = useCallback(async () => {
@@ -361,13 +366,24 @@ export function AnalysisForm() {
 
   const handleServiceSubTypeChange = (newServiceSubTypeId: string) => {
     setServiceSubTypeId(newServiceSubTypeId);
+    form.setValue("serviceSubTypeId", newServiceSubTypeId);
     setServiceTypeId("");
+    form.setValue("serviceTypeId", "");
     setSelectedScript(null);
+    form.setValue("scriptId", "");
   };
 
   const handleServiceTypeChange = (newServiceTypeId: string) => {
     setServiceTypeId(newServiceTypeId);
+    form.setValue("serviceTypeId", newServiceTypeId);
     setSelectedScript(null);
+    form.setValue("scriptId", "");
+  };
+
+  const handleClientChange = (clientId: string) => {
+    const client = clients.find((c) => c.id === clientId);
+    setSelectedClient(client || null);
+    form.setValue("clientId", clientId);
   };
 
   return (
@@ -379,6 +395,14 @@ export function AnalysisForm() {
         selectedServiceTypeId={serviceTypeId}
         onServiceSubTypeChange={handleServiceSubTypeChange}
         onServiceTypeChange={handleServiceTypeChange}
+        clients={clients}
+        isLoadingClients={loadingClients}
+        selectedClientId={selectedClient?.id || ""}
+        onClientChange={handleClientChange}
+        isClientDialogOpen={isClientDialogOpen}
+        setIsClientDialogOpen={setIsClientDialogOpen}
+        onCreateClient={handleCreateClient}
+        form={form}
       />
 
       {selectedScript && (
@@ -388,71 +412,6 @@ export function AnalysisForm() {
               <CardTitle>Dados da Análise</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Cliente *</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="col-span-3">
-                    <Select
-                      value={selectedClient?.id || ""}
-                      onValueChange={(value) => {
-                        const client = clients.find((c) => c.id === value);
-                        setSelectedClient(client || null);
-                      }}
-                      disabled={loadingClients}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            loadingClients
-                              ? "Carregando clientes..."
-                              : "Selecione um cliente"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              {client.fullName}
-                              {client.cpf && (
-                                <span className="text-xs text-muted-foreground">
-                                  - CPF:{" "}
-                                  {client.cpf.replace(
-                                    /(\d{3})(\d{3})(\d{3})(\d{2})/,
-                                    "$1.$2.$3-$4",
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Dialog
-                    open={isClientDialogOpen}
-                    onOpenChange={setIsClientDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="default">
-                        <Plus className="w-4 h-4 mr-1" />
-                        Novo Cliente
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Criar Novo Cliente</DialogTitle>
-                      </DialogHeader>
-                      <ClientForm
-                        onSubmit={handleCreateClient}
-                        onCancel={() => setIsClientDialogOpen(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-
               <div>
                 <Label>Arquivo de Áudio (opcional)</Label>
                 <div className="mt-1">
