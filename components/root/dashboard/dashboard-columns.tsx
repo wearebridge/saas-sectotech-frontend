@@ -2,6 +2,7 @@ import { AnalysisItem } from "@/types/analysis";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   IconCircleCheckFilled,
@@ -19,26 +20,33 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface DashboardColumnsProps {
-  handleViewAnalysis: (analysis: AnalysisItem) => void;
   handleDownloadAudio: (analysis: AnalysisItem) => void;
 }
 
 export const dashboardColumns = ({
-  handleViewAnalysis,
   handleDownloadAudio,
 }: DashboardColumnsProps) => {
   const columns: ColumnDef<AnalysisItem>[] = [
     {
       accessorKey: "date",
       header: "Data",
-      cell: ({ row }) =>
-        format(row.original.date, "dd/MM/yyyy", { locale: ptBR }),
+      cell: ({ row }) => (
+        <Link href={`/historico/detalhes/${row.original.id}`}>
+          <span className="cursor-pointer hover:underline">
+            {format(row.original.date, "dd/MM/yyyy", { locale: ptBR })}
+          </span>
+        </Link>
+      ),
     },
     {
       accessorKey: "clientName",
       header: "Cliente",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.clientName}</span>
+        <Link href={`/historico/detalhes/${row.original.id}`}>
+          <span className="font-medium cursor-pointer hover:underline">
+            {row.original.clientName}
+          </span>
+        </Link>
       ),
     },
     {
@@ -47,7 +55,7 @@ export const dashboardColumns = ({
     },
     {
       accessorKey: "subType",
-      header: "Sub-tipo",
+      header: "Subtipo",
       cell: ({ row }) => (
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
           {row.original.subType}
@@ -100,11 +108,14 @@ export const dashboardColumns = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleViewAnalysis(row.original)}>
-              <IconEye className="mr-2 h-4 w-4" />
-              Ver análise
-            </DropdownMenuItem>
+            <Link href={`/historico/detalhes/${row.original.id}`}>
+              <DropdownMenuItem className="cursor-pointer">
+                <IconEye className="mr-2 h-4 w-4" />
+                Ver análise
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem
+              className="cursor-pointer"
               onClick={() => handleDownloadAudio(row.original)}
               disabled={!row.original.audioUrl}
             >

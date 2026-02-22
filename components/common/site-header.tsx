@@ -20,6 +20,7 @@ const routeNames: Record<string, string> = {
   novo: "Novo",
   configuracao: "Configurações",
   analises: "Análises",
+  historico: "Histórico",
 };
 
 function isId(segment: string) {

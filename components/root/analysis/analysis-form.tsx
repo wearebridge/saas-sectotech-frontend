@@ -441,7 +441,7 @@ export function AnalysisForm() {
     };
 
     // Redirecionar imediatamente
-    router.push("/");
+    router.push("/historico");
 
     const toastId = toast.loading(loadingTitle, {
       description: loadingDescription,
