@@ -33,25 +33,26 @@ import {
   CheckIcon,
   XCircle,
 } from "lucide-react";
+import { PhoneFormatter } from "@/lib/formatters/phone";
 
 const STEPS = [
   { id: 1, label: "Selecionar Script" },
-  { id: 2, label: "Dados da Análise" },
-  { id: 3, label: "Script" },
+  { id: 2, label: "Script" },
+  { id: 3, label: "Dados da Análise" },
 ];
 
 const stepTitles = [
   {
     title: "Selecionar Script",
-    description: "Escolha o subtipo, tipo e script para a análise.",
-  },
-  {
-    title: "Dados da Análise",
-    description: "Selecione o cliente e envie o arquivo de áudio.",
+    description: "Escolha o subtipo, tipo, script e cliente para a análise.",
   },
   {
     title: "Script",
     description: "Preencha as respostas esperadas para cada pergunta.",
+  },
+  {
+    title: "Análise do Áudio",
+    description: "Envie o arquivo de áudio.",
   },
 ];
 
@@ -142,7 +143,11 @@ export function AnalysisForm() {
     });
 
     if (hasChanges) {
-      form.setValue("answers", { ...currentAnswers }, { shouldValidate: false });
+      form.setValue(
+        "answers",
+        { ...currentAnswers },
+        { shouldValidate: false },
+      );
     }
   }, [clientId, selectedScript, clients, form, getClientFieldValue]);
 
@@ -253,12 +258,41 @@ export function AnalysisForm() {
   };
 
   const handleNext = async () => {
-    if (currentStep === 3 && !selectedScript?.scriptItems?.length) {
-      toast.error("Selecione um script para responder as perguntas.");
-      return;
+    // Step 1: Validar script e cliente
+    if (currentStep === 1) {
+      const scriptId = form.getValues("scriptId").trim();
+      const clientId = form.getValues("clientId").trim();
+
+      form.clearErrors(["scriptId", "clientId"]);
+
+      let hasError = false;
+
+      if (!scriptId) {
+        form.setError("scriptId", {
+          type: "manual",
+          message: "Selecione um script",
+        });
+        hasError = true;
+      }
+      if (!clientId) {
+        form.setError("clientId", {
+          type: "manual",
+          message: "Selecione um cliente",
+        });
+        hasError = true;
+      }
+      if (hasError) {
+        return;
+      }
     }
 
-    if (currentStep === 3) {
+    // Step 2: Validar respostas do script
+    if (currentStep === 2) {
+      if (!selectedScript?.scriptItems?.length) {
+        toast.error("Selecione um script para responder as perguntas.");
+        return;
+      }
+
       const answers = form.getValues("answers") || {};
       const scriptItems = selectedScript?.scriptItems || [];
       const missingAnswers = scriptItems.filter(
@@ -276,41 +310,24 @@ export function AnalysisForm() {
         });
         return;
       }
-    } else {
-      const scriptId = form.getValues("scriptId").trim();
-      const clientId = form.getValues("clientId").trim();
+    }
+
+    // Step 3: Validar arquivo de áudio e fazer submit
+    if (currentStep === 3) {
       const audioFile = form.getValues("audioFile");
 
-      form.clearErrors(["scriptId", "clientId", "audioFile"]);
+      form.clearErrors("audioFile");
 
-      if (currentStep === 1) {
-        if (!scriptId) {
-          form.setError("scriptId", {
-            type: "manual",
-            message: "Selecione um script",
-          });
-          return;
-        }
-      } else {
-        if (!clientId) {
-          form.setError("clientId", {
-            type: "manual",
-            message: "Selecione um cliente",
-          });
-        }
-        if (!audioFile) {
-          form.setError("audioFile", {
-            type: "manual",
-            message: "Selecione um arquivo de audio",
-          });
-        }
-
-        if (!clientId || !audioFile) {
-          return;
-        }
+      if (!audioFile) {
+        form.setError("audioFile", {
+          type: "manual",
+          message: "Selecione um arquivo de audio",
+        });
+        return;
       }
     }
 
+    // Avançar para o próximo step ou fazer submit
     if (currentStep < STEPS.length) {
       setCurrentStep((prev) => prev + 1);
     } else {
@@ -436,6 +453,16 @@ export function AnalysisForm() {
           <CardDescription className="text-center">
             {currentStepMeta.description}
           </CardDescription>
+          {currentStep === 2 && (
+            <CardDescription className="text-center">
+              Contato:{" "}
+              {clientId
+                ? PhoneFormatter(
+                    clients.find((c) => c.id === clientId)?.phone || "",
+                  ) || "Não informado"
+                : "Não informado"}
+            </CardDescription>
+          )}
         </CardHeader>
 
         <Form {...form}>
@@ -446,29 +473,29 @@ export function AnalysisForm() {
                   form={form}
                   selectedScript={selectedScript}
                   onScriptSelect={handleScriptSelect}
-                />
-              )}
-
-              {currentStep === 2 && (
-                <StepAnalysisData
-                  form={form}
                   clients={clients}
                   isLoadingClients={isLoadingClients}
                   isClientDialogOpen={isClientDialogOpen}
                   setIsClientDialogOpen={setIsClientDialogOpen}
                   onCreateClient={handleCreateClient}
+                />
+              )}
+
+              {currentStep === 2 && (
+                <StepScriptQuestions
+                  form={form}
+                  selectedScript={selectedScript}
+                />
+              )}
+
+              {currentStep === 3 && (
+                <StepAnalysisData
+                  form={form}
                   fileInputRef={fileInputRef}
                   isCalculatingCredits={isCalculatingCredits}
                   onFileSelect={handleFileSelect}
                   audioDuration={audioDuration}
                   estimatedCredits={estimatedCredits}
-                />
-              )}
-
-              {currentStep === 3 && (
-                <StepScriptQuestions
-                  form={form}
-                  selectedScript={selectedScript}
                 />
               )}
             </CardContent>

@@ -1,14 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Script } from "@/types/analysis";
+import { ClientResponse } from "@/types/client";
 import { ScriptSelector } from "@/components/root/analysis/script-selector";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { AnalysisFormValues } from "./analysis-form-types";
 
@@ -16,12 +11,22 @@ interface StepSelectScriptProps {
   form: UseFormReturn<AnalysisFormValues>;
   selectedScript: Script | null;
   onScriptSelect: (script: Script | null) => void;
+  clients: ClientResponse[];
+  isLoadingClients: boolean;
+  isClientDialogOpen: boolean;
+  setIsClientDialogOpen: (open: boolean) => void;
+  onCreateClient: (data: any) => Promise<void>;
 }
 
 export function StepSelectScript({
   form,
   selectedScript,
   onScriptSelect,
+  clients,
+  isLoadingClients,
+  isClientDialogOpen,
+  setIsClientDialogOpen,
+  onCreateClient,
 }: StepSelectScriptProps) {
   const selectedServiceSubTypeId = form.watch("serviceSubTypeId");
   const selectedServiceTypeId = form.watch("serviceTypeId");
@@ -39,6 +44,10 @@ export function StepSelectScript({
     onScriptSelect(null);
   };
 
+  const handleClientChange = (clientId: string) => {
+    form.setValue("clientId", clientId);
+  };
+
   return (
     <div className="space-y-4">
       <ScriptSelector
@@ -48,18 +57,14 @@ export function StepSelectScript({
         selectedServiceTypeId={selectedServiceTypeId}
         onServiceSubTypeChange={handleServiceSubTypeChange}
         onServiceTypeChange={handleServiceTypeChange}
-      />
-      <FormField
-        control={form.control}
-        name="scriptId"
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input type="hidden" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+        clients={clients}
+        isLoadingClients={isLoadingClients}
+        selectedClientId={form.watch("clientId")}
+        onClientChange={handleClientChange}
+        isClientDialogOpen={isClientDialogOpen}
+        setIsClientDialogOpen={setIsClientDialogOpen}
+        onCreateClient={onCreateClient}
+        form={form}
       />
     </div>
   );

@@ -6,7 +6,7 @@ import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
 import { ClientResponse, ClientFieldKey } from "@/types/client";
 import { ClientService } from "@/service/client/client-service";
 import { ScriptSelector } from "./root/analysis/script-selector";
-import { ClientForm } from "./client-form";
+import { ClientForm } from "./root/clients/client-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,40 +119,58 @@ export function AnalysisForm() {
   }, []);
 
   // Função para obter o valor de um campo do cliente
-  const getClientFieldValue = useCallback((client: ClientResponse, field: ClientFieldKey): string => {
-    switch (field) {
-      case 'fullName': return client.fullName || ''
-      case 'cpf': return client.cpf || ''
-      case 'rg': return client.rg || ''
-      case 'birthDate': return client.birthDate || ''
-      case 'address': return client.address || ''
-      case 'phone': return client.phone || ''
-      case 'email': return client.email || ''
-      case 'gender': {
-        const labels: Record<string, string> = { MALE: 'Masculino', FEMALE: 'Feminino', OTHER: 'Outro' }
-        return client.gender ? (labels[client.gender] || client.gender) : ''
+  const getClientFieldValue = useCallback(
+    (client: ClientResponse, field: ClientFieldKey): string => {
+      switch (field) {
+        case "fullName":
+          return client.fullName || "";
+        case "cpf":
+          return client.cpf || "";
+        case "rg":
+          return client.rg || "";
+        case "birthDate":
+          return client.birthDate || "";
+        case "address":
+          return client.address || "";
+        case "phone":
+          return client.phone || "";
+        case "email":
+          return client.email || "";
+        case "gender": {
+          const labels: Record<string, string> = {
+            MALE: "Masculino",
+            FEMALE: "Feminino",
+            OTHER: "Outro",
+          };
+          return client.gender ? labels[client.gender] || client.gender : "";
+        }
+        default:
+          return "";
       }
-      default: return ''
-    }
-  }, [])
+    },
+    [],
+  );
 
   // Auto-preencher respostas quando cliente ou script mudam
   useEffect(() => {
-    if (!selectedScript?.scriptItems || !selectedClient) return
+    if (!selectedScript?.scriptItems || !selectedClient) return;
 
-    setScriptAnswers(prev => {
-      const updated = { ...prev }
-      selectedScript.scriptItems!.forEach(item => {
+    setScriptAnswers((prev) => {
+      const updated = { ...prev };
+      selectedScript.scriptItems!.forEach((item) => {
         if (item.linkedClientField) {
-          const value = getClientFieldValue(selectedClient, item.linkedClientField)
+          const value = getClientFieldValue(
+            selectedClient,
+            item.linkedClientField,
+          );
           if (value) {
-            updated[item.id] = value
+            updated[item.id] = value;
           }
         }
-      })
-      return updated
-    })
-  }, [selectedClient, selectedScript, getClientFieldValue])
+      });
+      return updated;
+    });
+  }, [selectedClient, selectedScript, getClientFieldValue]);
 
   const handleAnswerChange = (itemId: string, answer: string) => {
     setScriptAnswers((prev) => ({
@@ -538,7 +556,7 @@ export function AnalysisForm() {
           <CardContent>
             <div className="space-y-4">
               {selectedScript.scriptItems.map((item, index) => {
-                const isLinked = !!item.linkedClientField && !!selectedClient
+                const isLinked = !!item.linkedClientField && !!selectedClient;
                 return (
                   <div key={item.id} className="space-y-2">
                     <Label className="text-sm font-medium">
@@ -552,22 +570,33 @@ export function AnalysisForm() {
                         </Badge>
                       )}
                     </div>
-                    <Label htmlFor={`answer-${item.id}`} className="text-sm font-medium">
+                    <Label
+                      htmlFor={`answer-${item.id}`}
+                      className="text-sm font-medium"
+                    >
                       Resposta Esperada *
                     </Label>
                     <Textarea
                       id={`answer-${item.id}`}
                       value={scriptAnswers[item.id] || ""}
-                      onChange={(e) => handleAnswerChange(item.id, e.target.value)}
-                      placeholder={isLinked ? "Preenchido automaticamente com dados do cliente" : "Digite a resposta esperada para esta pergunta"}
+                      onChange={(e) =>
+                        handleAnswerChange(item.id, e.target.value)
+                      }
+                      placeholder={
+                        isLinked
+                          ? "Preenchido automaticamente com dados do cliente"
+                          : "Digite a resposta esperada para esta pergunta"
+                      }
                       rows={2}
-                      className={isLinked ? "border-green-300 bg-green-50/50" : ""}
+                      className={
+                        isLinked ? "border-green-300 bg-green-50/50" : ""
+                      }
                     />
                     {index < selectedScript.scriptItems!.length - 1 && (
                       <Separator className="mt-4" />
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           </CardContent>

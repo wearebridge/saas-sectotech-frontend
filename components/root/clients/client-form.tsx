@@ -1,18 +1,17 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -20,56 +19,59 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { ClientRequest, ClientResponse } from '@/types/client'
-import { clientSchema } from '@/lib/validators/client-validator'
+} from "@/components/ui/form";
+import { ClientRequest, ClientResponse } from "@/types/client";
+import { clientSchema } from "@/lib/validators/client-validator";
+import { InputMaskForm } from "@/components/ui/mask-input-form";
+import { PhoneFormatter } from "@/lib/formatters/phone";
+import { CPFFormatter } from "@/lib/formatters/cpf";
 
 interface ClientFormProps {
-  client?: ClientResponse
-  onSubmit: (data: ClientRequest) => Promise<void>
-  onCancel?: () => void
-  loading?: boolean
+  client?: ClientResponse;
+  onSubmit: (data: ClientRequest) => Promise<void>;
+  onCancel?: () => void;
+  loading?: boolean;
 }
 
-export function ClientForm({ 
-  client, 
-  onSubmit, 
-  onCancel, 
-  loading = false 
+export function ClientForm({
+  client,
+  onSubmit,
+  onCancel,
+  loading = false,
 }: ClientFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClientRequest>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
-      fullName: client?.fullName || '',
-      birthDate: client?.birthDate 
-        ? new Date(client.birthDate).toISOString().split('T')[0] 
-        : '',
-      cpf: client?.cpf || '',
-      rg: client?.rg || '',
-      address: client?.address || '',
-      phone: client?.phone || '',
-      email: client?.email || '',
+      fullName: client?.fullName || "",
+      birthDate: client?.birthDate
+        ? new Date(client.birthDate).toISOString().split("T")[0]
+        : "",
+      cpf: client?.cpf || "",
+      rg: client?.rg || "",
+      address: client?.address || "",
+      phone: client?.phone || "",
+      email: client?.email || "",
       gender: client?.gender || undefined,
-      status: client ? (client.status ? 'active' : 'inactive') : 'active',
+      status: client ? (client.status ? "active" : "inactive") : "active",
     },
-  })
+  });
 
   const handleSubmit = async (data: ClientRequest) => {
-    if (isSubmitting || loading) return
+    if (isSubmitting || loading) return;
 
     try {
-      setIsSubmitting(true)
-      await onSubmit(data)
-      form.reset()
+      setIsSubmitting(true);
+      await onSubmit(data);
+      form.reset();
     } catch (error) {
       // Error is handled by parent component
-      console.error('Error submitting form:', error)
+      console.error("Error submitting form:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -81,10 +83,7 @@ export function ClientForm({
             <FormItem>
               <FormLabel>Nome Completo *</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Digite o nome completo"
-                  {...field}
-                />
+                <Input placeholder="Digite o nome completo" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -110,22 +109,13 @@ export function ClientForm({
             )}
           />
 
-          <FormField
-            control={form.control}
+          <InputMaskForm
+            form={form}
             name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="(00) 00000-0000"
-                    maxLength={20}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="Telefone"
+            placeholder="(00) 00000-0000"
+            formatter={PhoneFormatter}
+            maxLength={15}
           />
         </div>
 
@@ -136,10 +126,7 @@ export function ClientForm({
             <FormItem>
               <FormLabel>Data de Nascimento</FormLabel>
               <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                />
+                <Input type="date" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -147,22 +134,13 @@ export function ClientForm({
         />
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
+          <InputMaskForm
+            form={form}
             name="cpf"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CPF</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="000.000.000-00"
-                    maxLength={11}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label="CPF"
+            placeholder="000.000.000-00"
+            formatter={CPFFormatter}
+            maxLength={14}
           />
 
           <FormField
@@ -172,10 +150,7 @@ export function ClientForm({
               <FormItem>
                 <FormLabel>RG</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Digite o RG"
-                    {...field}
-                  />
+                  <Input placeholder="Digite o RG" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -190,10 +165,7 @@ export function ClientForm({
             <FormItem>
               <FormLabel>Endereço</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Digite o endereço"
-                  {...field}
-                />
+                <Input placeholder="Digite o endereço" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -230,7 +202,10 @@ export function ClientForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
@@ -247,7 +222,20 @@ export function ClientForm({
           />
         )}
 
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex justify-end gap-2 pt-4 w-full flex-col">
+          <Button
+            type="submit"
+            variant={"sectotech"}
+            disabled={isSubmitting || loading}
+            className="w-full"
+          >
+            {isSubmitting || loading
+              ? "Salvando..."
+              : client
+                ? "Atualizar"
+                : "Criar"}
+          </Button>
+
           {onCancel && (
             <Button
               type="button"
@@ -258,14 +246,8 @@ export function ClientForm({
               Cancelar
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={isSubmitting || loading}
-          >
-            {isSubmitting || loading ? 'Salvando...' : (client ? 'Atualizar' : 'Criar')}
-          </Button>
         </div>
       </form>
     </Form>
-  )
+  );
 }

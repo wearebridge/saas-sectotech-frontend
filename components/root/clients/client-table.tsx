@@ -68,7 +68,7 @@ import {
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { ClientRequest, ClientResponse } from "@/types/client";
-import { ClientForm } from "@/components/client-form";
+import { ClientForm } from "@/components/root/clients/client-form";
 import { ClientService } from "@/service/client/client-service";
 
 import { clientColumns } from "@/components/root/clients/columns";
@@ -172,9 +172,8 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
     let filtered = [...data];
 
     if (nameFilter) {
-      filtered = filtered.filter(
-        (item) =>
-          item.fullName.toLowerCase().includes(nameFilter.toLowerCase()),
+      filtered = filtered.filter((item) =>
+        item.fullName.toLowerCase().includes(nameFilter.toLowerCase()),
       );
     }
     if (status !== "all") {

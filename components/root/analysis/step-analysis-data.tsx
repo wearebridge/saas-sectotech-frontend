@@ -1,18 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ClientResponse } from "@/types/client";
-import { ClientForm } from "@/components/client-form";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DragDropAudio } from "@/components/common/drag-drop-audio";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   FormControl,
   FormField,
@@ -23,29 +12,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { UseFormReturn } from "react-hook-form";
 import { AnalysisFormValues } from "./analysis-form-types";
-import { CreditCard, Loader2, Plus, User } from "lucide-react";
-import { IconCheck, IconChevronDown } from "@tabler/icons-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+import { CreditCard, Loader2 } from "lucide-react";
 
 interface StepAnalysisDataProps {
   form: UseFormReturn<AnalysisFormValues>;
-  clients: ClientResponse[];
-  isLoadingClients: boolean;
-  isClientDialogOpen: boolean;
-  setIsClientDialogOpen: (open: boolean) => void;
-  onCreateClient: (data: any) => Promise<void>;
   fileInputRef: React.RefObject<HTMLInputElement>;
   isCalculatingCredits: boolean;
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -55,139 +25,14 @@ interface StepAnalysisDataProps {
 
 export function StepAnalysisData({
   form,
-  clients,
-  isLoadingClients,
-  isClientDialogOpen,
-  setIsClientDialogOpen,
-  onCreateClient,
   fileInputRef,
   isCalculatingCredits,
   onFileSelect,
   audioDuration,
   estimatedCredits,
 }: StepAnalysisDataProps) {
-  const [isClientSelectOpen, setIsClientSelectOpen] = useState(false);
-
-  const selectedClient = clients.find(
-    (client) => client.id === form.getValues("clientId"),
-  );
-
   return (
     <div className="flex flex-col gap-5 mb-3">
-      <FormField
-        control={form.control}
-        name="clientId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cliente *</FormLabel>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex flex-row gap-2 w-full">
-                <div className="flex-1">
-                  {isLoadingClients ? (
-                    <div className="h-8 w-full flex items-center justify-center border rounded-md">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : (
-                    <Popover
-                      open={isClientSelectOpen}
-                      onOpenChange={setIsClientSelectOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "flex h-9 w-full items-center justify-between text-sm",
-                            !field.value && "text-muted-foreground",
-                          )}
-                        >
-                          <span className="truncate">
-                            {selectedClient
-                              ? `${selectedClient.fullName}`
-                              : "Selecione um cliente"}
-                          </span>
-                          <IconChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Buscar por cliente..." />
-                          <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                          <CommandGroup>
-                            {clients.map((client) => (
-                              <CommandItem
-                                key={client.id}
-                                value={`${client.fullName}`}
-                                className="cursor-pointer"
-                                onSelect={() => {
-                                  field.onChange(client.id);
-                                  setIsClientSelectOpen(false);
-                                }}
-                              >
-                                <IconCheck
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    field.value === client.id
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                                <div className="flex items-center gap-2">
-                                  <User className="w-4 h-4" />
-                                  <span className="text-sm">
-                                    {client.fullName}
-                                  </span>
-                                  {client.cpf && (
-                                    <span className="text-xs text-muted-foreground">
-                                      - CPF:{" "}
-                                      {client.cpf.replace(
-                                        /(\d{3})(\d{3})(\d{3})(\d{2})/,
-                                        "$1.$2.$3-$4",
-                                      )}
-                                    </span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-                <Dialog
-                  open={isClientDialogOpen}
-                  onOpenChange={setIsClientDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="md:size-auto md:px-4"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span className="hidden md:inline ml-1">
-                        Novo Cliente
-                      </span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Criar Novo Cliente</DialogTitle>
-                    </DialogHeader>
-                    <ClientForm
-                      onSubmit={onCreateClient}
-                      onCancel={() => setIsClientDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <FormField
         control={form.control}
         name="audioFile"
