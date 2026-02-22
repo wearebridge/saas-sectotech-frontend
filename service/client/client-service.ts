@@ -77,6 +77,7 @@ export class ClientService {
     token: string,
   ): Promise<ClientResponse> {
     // Convert string status to boolean for backend
+
     const backendData = {
       ...data,
       status: data.status === "active",

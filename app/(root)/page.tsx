@@ -1,7 +1,5 @@
-import { DashboardTable } from "@/components/dashboard-table";
+import { DashboardTable } from "@/components/root/dashboard/dashboard-table";
 
 export default function Home() {
-  return (
-    <DashboardTable />
-  );
+  return <DashboardTable />;
 }

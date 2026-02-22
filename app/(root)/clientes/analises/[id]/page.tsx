@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useKeycloak } from "@/lib/keycloak";
 import { ClientService } from "@/service/client/client-service";
 import { ClientResponse } from "@/types/client";
-import { DashboardTable } from "@/components/dashboard-table";
+import { DashboardTable } from "@/components/root/dashboard/dashboard-table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ClientAnalysesPage() {
@@ -45,9 +45,7 @@ export default function ClientAnalysesPage() {
           ) : (
             <>
               <h1 className="text-3xl font-bold tracking-tight">
-                {client
-                  ? `${client.fullName}`
-                  : "Cliente não encontrado"}
+                {client ? `${client.fullName}` : "Cliente não encontrado"}
               </h1>
               <p className="text-muted-foreground">
                 Histórico de análises do cliente
@@ -66,7 +64,7 @@ export default function ClientAnalysesPage() {
         </div>
       </div>
 
-      <DashboardTable clientId={clientId} />
+      <DashboardTable clientId={clientId} isClientView={true} />
     </div>
   );
 }
