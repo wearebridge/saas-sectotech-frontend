@@ -9,8 +9,6 @@ import {
   IconUsers,
   IconBriefcase,
   IconPigMoney,
-  IconHistory,
-  IconSettings,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
@@ -34,7 +32,7 @@ const baseData = {
   },
   navMain: [
     {
-      title: "Painel",
+      title: "Dashboard",
       url: "/",
       icon: IconDashboard,
     },

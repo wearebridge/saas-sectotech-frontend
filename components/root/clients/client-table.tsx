@@ -9,7 +9,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  IconCheck,
   IconChevronDown,
   IconLayoutColumns,
   IconPlus,
@@ -22,21 +21,8 @@ import {
 } from "@tabler/icons-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -183,12 +169,6 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
 
     return filtered;
   }, [data, nameFilter, status]);
-
-  // Extract unique names for filter
-  const uniqueNames = useMemo(
-    () => [...new Set(data.map((d) => d.fullName))],
-    [data],
-  );
 
   useEffect(() => {
     const params = new URLSearchParams();

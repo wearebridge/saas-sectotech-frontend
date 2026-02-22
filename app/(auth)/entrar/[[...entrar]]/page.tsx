@@ -1,9 +1,5 @@
-import React from 'react'
-
 function SignInPage() {
-  return (
-    <></>
-  )
+  return <></>;
 }
 
-export default SignInPage
+export default SignInPage;

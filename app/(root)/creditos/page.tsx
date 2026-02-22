@@ -14,11 +14,11 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
-import { Coins, CreditCard, Loader2, RefreshCw, History } from "lucide-react";
+import { Coins, CreditCard, RefreshCw, History } from "lucide-react";
 
 import { StripeProduct } from "@/types/package";
 
-import { buyCredits, getProducts, verifyPayment } from "@/service/credits";
+import { getProducts, verifyPayment } from "@/service/credits";
 
 import { CreditsCard } from "@/components/root/credtis/credit-card";
 import { Separator } from "@/components/ui/separator";
@@ -27,7 +27,6 @@ import { PurchaseHistory } from "@/components/root/credtis/purchase-history";
 
 function Page() {
   const [products, setProducts] = useState<StripeProduct[]>([]);
-  const [loading, setLoading] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const searchParams = useSearchParams();
@@ -115,30 +114,6 @@ function Page() {
       handleGetProducts();
     }
   }, [success, canceled, token, authenticated, keycloak]);
-
-  const handleBuy = async (priceId: string) => {
-    if (!token) {
-      toast.error("Você precisa estar logado para comprar créditos.");
-      return;
-    }
-    setLoading(true);
-
-    try {
-      const url = await buyCredits({ priceId, token: token });
-
-      if (url instanceof Error) {
-        toast.error(url.message);
-        return;
-      }
-
-      window.location.href = url;
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro desconhecido");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="container max-w-5xl mx-auto py-10 space-y-10">

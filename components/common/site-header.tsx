@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const navMain = [
-  { title: "Painel", url: "/" },
+  { title: "Dashboard", url: "/" },
   { title: "Scripts", url: "/scripts" },
   { title: "Subtipo de Serviços", url: "/subtipos-servicos" },
   { title: "Usuários", url: "/usuarios" },

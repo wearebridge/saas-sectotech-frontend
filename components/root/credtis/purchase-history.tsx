@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
 import { CreditTransaction } from "@/types/credit-transaction";
-import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -33,27 +32,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  IconCheck,
-  IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconX,
 } from "@tabler/icons-react";
 
 export function PurchaseHistory() {

@@ -1,4 +1,3 @@
-import React from "react";
 import { CompanyRegistrationForm } from "@/components/auth/register/company-registration-form";
 
 function SignUpPage() {

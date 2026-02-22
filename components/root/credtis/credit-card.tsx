@@ -13,7 +13,7 @@ import {
 import { formatCurrency, formatInterval } from "@/lib/utils";
 import { buyCredits } from "@/service/credits";
 import { StripeProduct } from "@/types/package";
-import { Coins, CreditCard, RefreshCw } from "lucide-react";
+import { Coins } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

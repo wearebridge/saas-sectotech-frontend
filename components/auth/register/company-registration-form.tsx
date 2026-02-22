@@ -24,7 +24,6 @@ import { isValidPassword } from "@/lib/validators/password";
 import { useState } from "react";
 import { PasswordRequirement } from "@/components/ui/password-requirement";
 import { IconInput } from "@/components/ui/icon-input";
-import { vi } from "date-fns/locale";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerCompany } from "@/service/auth/register";
