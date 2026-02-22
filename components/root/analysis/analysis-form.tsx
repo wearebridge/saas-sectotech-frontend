@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
@@ -69,7 +70,10 @@ export function AnalysisForm() {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [estimatedCredits, setEstimatedCredits] = useState<number | null>(null);
   const [isCalculatingCredits, setIsCalculatingCredits] = useState(false);
+  const [serviceTypeName, setServiceTypeName] = useState<string>("");
+  const [serviceSubTypeName, setServiceSubTypeName] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const { token } = useKeycloak();
   const { refreshCredits } = useCredit();
 
@@ -355,7 +359,21 @@ export function AnalysisForm() {
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
-    try {
+    const clientName =
+      clients.find((c) => c.id === values.clientId)?.fullName || "Cliente";
+    const scriptName = selectedScript.name || "Script";
+    const serviceName = serviceTypeName || "Serviço";
+    const subTypeName = serviceSubTypeName || "Subtipo";
+    const loadingTitle = "Analisando Áudio";
+    const loadingDescription = (
+      <span>
+        Estamos analisando o script <strong>{scriptName}</strong> do serviço{" "}
+        <strong>{serviceName}</strong>, subtipo <strong>{subTypeName}</strong>,
+        do cliente <strong>{clientName}</strong>.
+      </span>
+    );
+
+    const analysisPromise = async () => {
       if (!values.audioFile) {
         throw new Error("Arquivo de áudio não selecionado");
       }
@@ -419,15 +437,27 @@ export function AnalysisForm() {
 
       const result: AnalysisResult = await response.json();
       setAnalysisResult(result);
-      toast.success("Análise realizada com sucesso!");
       await refreshCredits();
-    } catch (error) {
-      console.error("Erro na análise:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Erro ao realizar análise. Tente novamente.";
-      toast.error(errorMessage);
+    };
+
+    // Redirecionar imediatamente
+    router.push("/");
+
+    const toastId = toast.loading(loadingTitle, {
+      description: loadingDescription,
+    });
+
+    try {
+      await analysisPromise();
+      toast.success("Analise concluida com sucesso!", { id: toastId });
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Erro ao concluir analise. Tente novamente.",
+        { id: toastId },
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -478,6 +508,8 @@ export function AnalysisForm() {
                   isClientDialogOpen={isClientDialogOpen}
                   setIsClientDialogOpen={setIsClientDialogOpen}
                   onCreateClient={handleCreateClient}
+                  onServiceTypeNameChange={setServiceTypeName}
+                  onServiceSubTypeNameChange={setServiceSubTypeName}
                 />
               )}
 

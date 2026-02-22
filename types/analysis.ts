@@ -1,4 +1,4 @@
-import { ClientFieldKey } from './client'
+import { ClientFieldKey } from "./client";
 
 export interface ScriptItem {
   id: string;
@@ -48,3 +48,28 @@ export interface ServiceSubType {
   description?: string;
   status: boolean;
 }
+
+export type AnalysisItem = {
+  id: string;
+  date: Date;
+  clientId?: string;
+  clientName: string;
+  clientCpf?: string;
+  service: string;
+  subType: string;
+  scriptName?: string;
+  approved: boolean;
+  creditsUsed?: number;
+  executedBy?: string;
+  audioFilename?: string;
+  audioUrl?: string;
+  transcription?: string;
+  aiOutput?: {
+    output?: {
+      question: string;
+      answer: string;
+      correct: boolean;
+      analysis: string;
+    }[];
+  };
+};

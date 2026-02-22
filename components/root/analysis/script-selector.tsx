@@ -58,6 +58,8 @@ interface ScriptSelectorProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onCreateClient: (data: any) => Promise<void>;
   form: UseFormReturn<AnalysisFormValues>;
+  onServiceTypeNameChange?: (name: string) => void;
+  onServiceSubTypeNameChange?: (name: string) => void;
 }
 
 export function ScriptSelector({
@@ -75,6 +77,8 @@ export function ScriptSelector({
   setIsClientDialogOpen,
   onCreateClient,
   form,
+  onServiceTypeNameChange,
+  onServiceSubTypeNameChange,
 }: ScriptSelectorProps) {
   const [isSubTypeOpen, setIsSubTypeOpen] = useState(false);
   const [isTypeOpen, setIsTypeOpen] = useState(false);
@@ -263,6 +267,9 @@ export function ScriptSelector({
                                       ? ""
                                       : subType.id,
                                   );
+                                  if (selectedServiceSubTypeId !== subType.id) {
+                                    onServiceSubTypeNameChange?.(subType.name);
+                                  }
                                   setIsSubTypeOpen(false);
                                 }}
                               >
@@ -344,6 +351,9 @@ export function ScriptSelector({
                                       ? ""
                                       : type.id,
                                   );
+                                  if (selectedServiceTypeId !== type.id) {
+                                    onServiceTypeNameChange?.(type.name);
+                                  }
                                   setIsTypeOpen(false);
                                 }}
                               >

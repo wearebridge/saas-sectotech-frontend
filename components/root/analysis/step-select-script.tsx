@@ -16,6 +16,8 @@ interface StepSelectScriptProps {
   isClientDialogOpen: boolean;
   setIsClientDialogOpen: (open: boolean) => void;
   onCreateClient: (data: any) => Promise<void>;
+  onServiceTypeNameChange?: (name: string) => void;
+  onServiceSubTypeNameChange?: (name: string) => void;
 }
 
 export function StepSelectScript({
@@ -27,6 +29,8 @@ export function StepSelectScript({
   isClientDialogOpen,
   setIsClientDialogOpen,
   onCreateClient,
+  onServiceTypeNameChange,
+  onServiceSubTypeNameChange,
 }: StepSelectScriptProps) {
   const selectedServiceSubTypeId = form.watch("serviceSubTypeId");
   const selectedServiceTypeId = form.watch("serviceTypeId");
@@ -65,6 +69,8 @@ export function StepSelectScript({
         setIsClientDialogOpen={setIsClientDialogOpen}
         onCreateClient={onCreateClient}
         form={form}
+        onServiceTypeNameChange={onServiceTypeNameChange}
+        onServiceSubTypeNameChange={onServiceSubTypeNameChange}
       />
     </div>
   );
