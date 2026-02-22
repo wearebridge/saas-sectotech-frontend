@@ -11,7 +11,7 @@ import { AnalysisItem } from "@/types/analysis";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { useKeycloak } from "@/lib/keycloak";
 import { getAnalysisById, regenerateAnalysis } from "@/service/analysis";
-import { useCredits } from "@/lib/credit-context";
+import { useCredit } from "@/lib/credit-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export default function AnalysisDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { token, authenticated } = useKeycloak();
-  const { refreshCredits } = useCredits();
+  const { refreshCredits } = useCredit();
   const [analysis, setAnalysis] = useState<AnalysisItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
