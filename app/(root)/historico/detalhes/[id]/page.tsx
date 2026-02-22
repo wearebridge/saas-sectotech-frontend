@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconRefresh } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { AnalysisItem } from "@/types/analysis";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { useKeycloak } from "@/lib/keycloak";
-import { getAnalysisById } from "@/service/analysis";
+import { getAnalysisById, regenerateAnalysis } from "@/service/analysis";
+import { useCredits } from "@/lib/credit-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,10 +40,13 @@ const mapAnalysisItem = (item: any): AnalysisItem => ({
 
 export default function AnalysisDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { token, authenticated } = useKeycloak();
+  const { refreshCredits } = useCredits();
   const [analysis, setAnalysis] = useState<AnalysisItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const analysisId = params.id as string;
 
@@ -77,6 +81,40 @@ export default function AnalysisDetailPage() {
       loadAnalysis();
     }
   }, [analysisId, token, authenticated]);
+
+  const handleRegenerate = async () => {
+    if (!token || !analysisId) return;
+
+    setRegenerating(true);
+    const toastId = toast.loading("Re-gerando análise...");
+
+    try {
+      const result = await regenerateAnalysis({ id: analysisId, token });
+
+      if (result instanceof CustomError) {
+        toast.error(result.message, { id: toastId });
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newAnalysis = result as any;
+      toast.success("Análise re-gerada com sucesso!", { id: toastId });
+      refreshCredits();
+
+      // Navigate to the new analysis detail
+      if (newAnalysis?.id && newAnalysis.id !== analysisId) {
+        router.push(`/historico/detalhes/${newAnalysis.id}`);
+      } else {
+        // Reload current analysis
+        setAnalysis(mapAnalysisItem(newAnalysis));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao re-gerar a análise", { id: toastId });
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const handleDownloadAudio = (item: AnalysisItem) => {
     if (!item.audioUrl) {
@@ -222,6 +260,18 @@ export default function AnalysisDetailPage() {
                     </Button>
                   </div>
                 )}
+              </div>
+
+              <Separator />
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerate}
+                  disabled={regenerating || loading}
+                >
+                  <IconRefresh className={`mr-2 h-4 w-4 ${regenerating ? "animate-spin" : ""}`} />
+                  {regenerating ? "Re-gerando..." : "Re-gerar Análise"}
+                </Button>
               </div>
 
               {analysis?.transcription && (

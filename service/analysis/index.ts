@@ -62,3 +62,41 @@ export async function getAnalysisById({
     return new CustomError("BAD_REQUEST", "Falha ao carregar a análise");
   }
 }
+
+interface RegenerateAnalysisProps extends tokenProps {
+  id: string;
+}
+
+export async function regenerateAnalysis({
+  id,
+  token,
+}: RegenerateAnalysisProps): Promise<unknown | CustomError> {
+  try {
+    if (!token || !id) {
+      return new CustomError("EMPTY_FIELD", "Dados insuficientes para re-gerar a análise");
+    }
+
+    const response = await api.POST(
+      `${baseUrl}/${id}/regenerate`,
+      {},
+      token,
+      {},
+      { timeout: 120000 },
+    );
+
+    if (response instanceof CustomError) {
+      return response;
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("Regenerate analysis error:", errorBody);
+      return new CustomError("BAD_REQUEST", "Falha ao re-gerar a análise");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error regenerating analysis:", error);
+    return new CustomError("BAD_REQUEST", "Erro ao re-gerar a análise");
+  }
+}
