@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useKeycloak } from "@/lib/keycloak";
 import { Script, AnalysisRequest, AnalysisResult } from "@/types/analysis";
 import { ClientResponse, ClientFieldKey } from "@/types/client";
+import { AnalysisFormValues } from "./root/analysis/analysis-form-types";
 import { ClientService } from "@/service/client/client-service";
 import { ScriptSelector } from "./root/analysis/script-selector";
 import { ClientForm } from "./root/clients/client-form";
@@ -60,7 +61,7 @@ export function AnalysisForm() {
   const { refreshCredits } = useCredit();
 
   // Form para integração com ScriptSelector
-  const form = useForm({
+  const form = useForm<AnalysisFormValues>({
     defaultValues: {
       serviceSubTypeId: "",
       serviceTypeId: "",
