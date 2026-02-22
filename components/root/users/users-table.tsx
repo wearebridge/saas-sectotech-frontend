@@ -95,7 +95,11 @@ export function UsersTable() {
   const [openDisableDialog, setOpenDisableDialog] = useState(false);
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [userToDisable, setUserToDisable] = useState<User | null>(null);
-  const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null);
+  const [userToResetPassword, setUserToResetPassword] = useState<User | null>(
+    null,
+  );
+
+  const { authenticated, token, currentUserId, isCompanyAdmin } = useKeycloak();
 
   const handleDisableUser = (user: User) => {
     setUserToDisable(user);
@@ -146,8 +150,6 @@ export function UsersTable() {
       }),
     [currentUserId, isCompanyAdmin],
   );
-
-  const { authenticated, token, currentUserId, isCompanyAdmin } = useKeycloak();
 
   const handleLoadUsers = async () => {
     if (!token) return;
@@ -474,8 +476,7 @@ export function UsersTable() {
             <DialogDescription>
               Defina uma nova senha para{" "}
               <strong>
-                {userToResetPassword?.firstName}{" "}
-                {userToResetPassword?.lastName}
+                {userToResetPassword?.firstName} {userToResetPassword?.lastName}
               </strong>
               .
             </DialogDescription>

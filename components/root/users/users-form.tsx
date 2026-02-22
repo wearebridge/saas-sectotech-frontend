@@ -62,8 +62,6 @@ export default function UsersForm({
     },
   });
 
-  const form = isEditing ? editForm : createForm;
-
   const handleCreateUser = async (data: UserFormValues) => {
     if (!token) {
       toast.error("Token de autenticação não encontrado");
@@ -83,7 +81,7 @@ export default function UsersForm({
 
       toast.success("Usuário criado com sucesso!");
       setOpenDialog(false);
-      form.reset();
+      createForm.reset();
       loadUsers();
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
@@ -118,7 +116,7 @@ export default function UsersForm({
 
       toast.success("Usuário atualizado com sucesso!");
       setOpenDialog(false);
-      form.reset();
+      editForm.reset();
       onSuccess();
     } catch (error) {
       console.error("Erro ao atualizar usuário:", error);
@@ -128,16 +126,92 @@ export default function UsersForm({
     }
   };
 
-  const onSubmit = isEditing
-    ? editForm.handleSubmit(handleUpdateUser)
-    : createForm.handleSubmit(handleCreateUser);
+  if (isEditing) {
+    return (
+      <Form {...editForm}>
+        <form
+          onSubmit={editForm.handleSubmit(handleUpdateUser)}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={editForm.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={editForm.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sobrenome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Sobrenome" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={editForm.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex w-full gap-2 pt-1 flex-col">
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              variant={"sectotech"}
+              className="cursor-pointer"
+            >
+              {isLoading ? "Atualizando..." : "Atualizar usuário"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setOpenDialog(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
+  }
 
   return (
-    <Form {...form}>
-      <form onSubmit={onSubmit} className="space-y-4">
+    <Form {...createForm}>
+      <form
+        onSubmit={createForm.handleSubmit(handleCreateUser)}
+        className="space-y-4"
+      >
         <div className="grid grid-cols-2 gap-4">
           <FormField
-            control={form.control}
+            control={createForm.control}
             name="firstName"
             render={({ field }) => (
               <FormItem>
@@ -150,7 +224,7 @@ export default function UsersForm({
             )}
           />
           <FormField
-            control={form.control}
+            control={createForm.control}
             name="lastName"
             render={({ field }) => (
               <FormItem>
@@ -165,7 +239,7 @@ export default function UsersForm({
         </div>
 
         <FormField
-          control={form.control}
+          control={createForm.control}
           name="email"
           render={({ field }) => (
             <FormItem>
@@ -182,37 +256,33 @@ export default function UsersForm({
           )}
         />
 
-        {!isEditing && (
-          <>
-            <FormField
-              control={createForm.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="username" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={createForm.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="username" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={createForm.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
+        <FormField
+          control={createForm.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="flex w-full gap-2 pt-1 flex-col">
           <Button
@@ -221,13 +291,7 @@ export default function UsersForm({
             variant={"sectotech"}
             className="cursor-pointer"
           >
-            {isLoading
-              ? isEditing
-                ? "Atualizando..."
-                : "Criando..."
-              : isEditing
-                ? "Atualizar usuário"
-                : "Criar usuário"}
+            {isLoading ? "Criando..." : "Criar usuário"}
           </Button>
           <Button
             type="button"
