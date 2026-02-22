@@ -5,4 +5,8 @@ export interface CreditTransaction {
   purchasedBy?: string
   purchasedByName?: string
   createdAt: string
+  expiresAt?: string
+  remainingAmount?: number
+  sourceType?: string
+  intervalType?: string
 }

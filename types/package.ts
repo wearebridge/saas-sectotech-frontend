@@ -9,3 +9,15 @@ export interface StripeProduct {
   interval?: string;     // "month", "year", etc.
   credits: number;
 }
+
+export interface SubscriptionInfo {
+  subscriptionId: string;
+  status: string;
+  planName: string;
+  credits: number | null;
+  interval: string | null;
+  currentPeriodEnd: number | null;
+  cancelAtPeriodEnd: boolean;
+  unitAmount: number | null;
+  currency: string | null;
+}

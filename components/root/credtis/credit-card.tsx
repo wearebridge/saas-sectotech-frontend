@@ -10,10 +10,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatCurrency, formatInterval } from "@/lib/utils";
 import { buyCredits } from "@/service/credits";
 import { StripeProduct } from "@/types/package";
-import { Coins } from "lucide-react";
+import { Coins, CreditCard, RefreshCw, CheckCircle, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,9 +32,17 @@ interface CreditsCardProps {
   product: StripeProduct;
   token: string | undefined;
   type: "one_time" | "recurring";
+  hasActiveSubscription?: boolean;
+  isCurrentPlan?: boolean;
 }
 
-export function CreditsCard({ product, token, type }: CreditsCardProps) {
+export function CreditsCard({
+  product,
+  token,
+  type,
+  hasActiveSubscription,
+  isCurrentPlan,
+}: CreditsCardProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBuy = async (priceId: string) => {
@@ -53,9 +72,20 @@ export function CreditsCard({ product, token, type }: CreditsCardProps) {
   return (
     <Card
       key={product.priceId}
-      className="flex flex-col relative overflow-hidden transition-all hover:shadow-md border-muted"
+      className={`flex flex-col relative overflow-hidden transition-all hover:shadow-md ${
+        isCurrentPlan
+          ? "border-primary ring-2 ring-primary/20"
+          : "border-muted"
+      }`}
     >
-      {type === "one_time" ? (
+      {isCurrentPlan ? (
+        <div className="absolute top-0 right-0 p-2">
+          <Badge variant="default" className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Plano Atual
+          </Badge>
+        </div>
+      ) : type === "one_time" ? (
         <div className="absolute top-0 right-0 p-3 bg-muted/50 rounded-bl-xl">
           <Coins className="h-5 w-5 text-muted-foreground" />
         </div>
@@ -99,17 +129,60 @@ export function CreditsCard({ product, token, type }: CreditsCardProps) {
               : `${product.description ?? ""}`}
           </p>
         )}
+        {type === "one_time" && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-2">
+            <CalendarClock className="h-3.5 w-3.5" />
+            Validade: 30 dias
+          </p>
+        )}
       </CardContent>
       <CardFooter className="pt-4">
-        <Button
-          onClick={() => handleBuy(product.priceId)}
-          isLoading={isLoading}
-          className="w-full"
-          size="lg"
-          variant={"sectotech"}
-        >
-          Comprar Agora
-        </Button>
+        {isCurrentPlan ? (
+          <Button className="w-full" size="lg" variant="outline" disabled>
+            Plano Atual
+          </Button>
+        ) : hasActiveSubscription && type === "recurring" ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                isLoading={isLoading}
+                className="w-full"
+                size="lg"
+                variant="sectotech"
+              >
+                Trocar Plano
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Trocar de plano?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ao trocar de plano, sua assinatura atual será cancelada
+                  imediatamente e uma nova assinatura será criada com o plano
+                  selecionado.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleBuy(product.priceId)}
+                >
+                  Confirmar Troca
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <Button
+            onClick={() => handleBuy(product.priceId)}
+            isLoading={isLoading}
+            className="w-full"
+            size="lg"
+            variant={"sectotech"}
+          >
+            Comprar Agora
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

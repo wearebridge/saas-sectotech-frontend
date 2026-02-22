@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 import {
   Card,
@@ -14,9 +14,17 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
-import { Coins, CreditCard, RefreshCw, History } from "lucide-react";
 
-import { StripeProduct } from "@/types/package";
+import {
+  Coins,
+  CreditCard,
+  RefreshCw,
+  History,
+  CalendarClock,
+  AlertTriangle,
+} from "lucide-react";
+
+import { StripeProduct, SubscriptionInfo } from "@/types/package";
 
 import { getProducts, verifyPayment } from "@/service/credits";
 
@@ -24,11 +32,17 @@ import { CreditsCard } from "@/components/root/credtis/credit-card";
 import { Separator } from "@/components/ui/separator";
 import { Loader } from "@/components/common/loader";
 import { PurchaseHistory } from "@/components/root/credtis/purchase-history";
+import { CreditLots } from "@/components/root/credtis/credit-lots";
+import { ActiveSubscription } from "@/components/root/credtis/active-subscription";
 
 function Page() {
   const [products, setProducts] = useState<StripeProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
+    null,
+  );
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
@@ -99,6 +113,20 @@ function Page() {
     }
   };
 
+  const fetchSubscription = useCallback(async () => {
+    if (!token) return;
+    setLoadingSubscription(true);
+    try {
+      const { getActiveSubscription } = await import("@/service/credits");
+      const sub = await getActiveSubscription({ token });
+      setSubscription(sub);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (success && sessionId && token) {
       handleVerifyPayment();
@@ -112,8 +140,9 @@ function Page() {
 
     if (authenticated) {
       handleGetProducts();
+      fetchSubscription();
     }
-  }, [success, canceled, token, authenticated, keycloak]);
+  }, [success, canceled, token, authenticated, keycloak, fetchSubscription]);
 
   return (
     <div className="container max-w-5xl mx-auto py-10 space-y-10">
@@ -136,17 +165,36 @@ function Page() {
           <p className="text-sm text-primary/70">
             Utilize seus créditos para validar áudios e gerar relatórios.
           </p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-2">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Seus créditos possuem data de validade. Consulte a aba
+            &quot;Validade dos Créditos&quot;.
+          </p>
         </CardContent>
       </Card>
 
+      {/* Active Subscription */}
+      <ActiveSubscription
+        subscription={subscription}
+        loading={loadingSubscription}
+        onCancelled={fetchSubscription}
+      />
+
       <Tabs defaultValue="plans" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger
             value="plans"
             className="flex items-center gap-2 cursor-pointer"
           >
             <CreditCard className="h-4 w-4" />
             Planos e Pacotes
+          </TabsTrigger>
+          <TabsTrigger
+            value="validity"
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <CalendarClock className="h-4 w-4" />
+            Validade dos Créditos
           </TabsTrigger>
           <TabsTrigger
             value="history"
@@ -184,6 +232,10 @@ function Page() {
                         token={token}
                         type="recurring"
                         key={product.productId}
+                        hasActiveSubscription={!!subscription}
+                        isCurrentPlan={
+                          subscription?.planName === product.name
+                        }
                       />
                     ))}
                   </div>
@@ -212,6 +264,7 @@ function Page() {
                         token={token}
                         type="one_time"
                         key={product.productId}
+                        hasActiveSubscription={!!subscription}
                       />
                     ))}
                   </div>
@@ -227,6 +280,19 @@ function Page() {
               )}
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="validity" className="mt-6">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">Validade dos Créditos</h2>
+              <p className="text-sm text-muted-foreground">
+                Acompanhe a validade dos seus lotes de créditos e veja quais
+                estão próximos de expirar.
+              </p>
+            </div>
+            <CreditLots />
+          </div>
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
