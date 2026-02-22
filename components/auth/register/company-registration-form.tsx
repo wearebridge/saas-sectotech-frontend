@@ -253,7 +253,9 @@ export function CompanyRegistrationForm() {
             onClick={handleSubmit}
             isLoading={isLoading}
             size="lg"
-            className="mt-3 cursor-pointer bg-brand text-primary-foreground hover:bg-brand/90 hover:text-primary-foreground active:bg-brand/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+            variant={"sectotech"}
+            className="mt-3"
+            // className="text-white mt-3 cursor-pointer bg-brand hover:bg-brand/90 active:bg-brand/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
           >
             Cadastrar
           </Button>

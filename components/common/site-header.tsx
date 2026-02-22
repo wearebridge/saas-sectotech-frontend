@@ -18,7 +18,7 @@ const navMain = [
 const routeNames: Record<string, string> = {
   tipos: "Tipos do Serviço",
   novo: "Novo",
-  configuracao: "Configurações",
+  configuracoes: "Configurações",
   analises: "Análises",
   historico: "Histórico",
 };
