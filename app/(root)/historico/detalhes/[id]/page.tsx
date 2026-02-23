@@ -14,7 +14,7 @@ import { getAnalysisById, regenerateAnalysis } from "@/service/analysis";
 import { useCredit } from "@/lib/credit-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -244,104 +244,101 @@ export default function AnalysisDetailPage() {
                     </Badge>
                   )}
                 </div>
-                {analysis?.audioUrl && (
-                  <div>
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Áudio
-                    </Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadAudio(analysis)}
-                      className="mt-1"
-                    >
-                      <IconDownload className="mr-1 h-4 w-4" />
-                      Baixar
-                    </Button>
-                  </div>
-                )}
               </div>
-
-              <Separator />
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={handleRegenerate}
-                  disabled={regenerating || loading}
-                >
-                  <IconRefresh className={`mr-2 h-4 w-4 ${regenerating ? "animate-spin" : ""}`} />
-                  {regenerating ? "Re-gerando..." : "Re-gerar Análise"}
-                </Button>
-              </div>
-
-              {analysis?.transcription && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-semibold mb-3">Transcrição</h3>
-                    <div className="rounded-md bg-muted p-3 max-h-72 overflow-y-auto">
-                      <p className="text-sm whitespace-pre-wrap">
-                        {analysis.transcription}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {analysis?.aiOutput?.output &&
-                analysis.aiOutput.output.length > 0 && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="font-semibold mb-3">
-                        Análise por Pergunta
-                      </h3>
-                      <div className="space-y-3">
-                        {analysis.aiOutput.output.map((item, index) => (
-                          <div key={index} className="rounded-lg border p-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">
-                                Pergunta {index + 1}
-                              </span>
-                              <Badge
-                                variant={
-                                  item.correct ? "default" : "destructive"
-                                }
-                              >
-                                {item.correct ? "Correto" : "Incorreto"}
-                              </Badge>
-                            </div>
-                            <Separator className="my-3" />
-                            <div className="space-y-2">
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  Pergunta:
-                                </span>
-                                <p className="text-sm">{item.question}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  Resposta:
-                                </span>
-                                <p className="text-sm">{item.answer}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  Análise:
-                                </span>
-                                <p className="text-sm">{item.analysis}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
             </>
           )}
         </CardContent>
+
+        {!loading && analysis && (
+          <CardFooter className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+            >
+              <IconRefresh
+                className={`mr-2 h-4 w-4 ${regenerating ? "animate-spin" : ""}`}
+              />
+              {regenerating ? "Re-gerando..." : "Re-gerar Análise"}
+            </Button>
+            {analysis.audioUrl && (
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadAudio(analysis)}
+              >
+                <IconDownload className="mr-2 h-4 w-4" />
+                Baixar Áudio
+              </Button>
+            )}
+          </CardFooter>
+        )}
       </Card>
+
+      {!loading && analysis && (
+        <>
+          {analysis.transcription && (
+            <Card>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-3">Transcrição</h3>
+                  <div className="rounded-md bg-muted p-3 max-h-72 overflow-y-auto">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {analysis.transcription}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.aiOutput?.output && analysis.aiOutput.output.length > 0 && (
+            <Card>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-3">Análise por Pergunta</h3>
+                  <div className="space-y-3">
+                    {analysis.aiOutput.output.map((item, index) => (
+                      <div key={index} className="rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            Pergunta {index + 1}
+                          </span>
+                          <Badge
+                            variant={item.correct ? "default" : "destructive"}
+                          >
+                            {item.correct ? "Correto" : "Incorreto"}
+                          </Badge>
+                        </div>
+                        <Separator className="my-3" />
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Pergunta:
+                            </span>
+                            <p className="text-sm">{item.question}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Resposta:
+                            </span>
+                            <p className="text-sm">{item.answer}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Análise:
+                            </span>
+                            <p className="text-sm">{item.analysis}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
