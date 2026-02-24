@@ -1,5 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
+
+const isVersionSkewError = (error: Error & { digest?: string }) =>
+  error.message?.includes("Failed to find Server Action") ||
+  error.message?.includes("older or newer deployment") ||
+  error.digest === "NEXT_NOT_FOUND";
+
 export default function AuthError({
   error,
   reset,
@@ -8,6 +15,28 @@ export default function AuthError({
   reset: () => void;
 }) {
   console.error("[AuthError]", error);
+
+  useEffect(() => {
+    if (isVersionSkewError(error)) {
+      window.location.reload();
+    }
+  }, [error]);
+
+  if (isVersionSkewError(error)) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 space-y-4 text-center border border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">
+            Atualizando aplicação...
+          </h2>
+          <p className="text-gray-600 text-sm">
+            Uma nova versão foi detectada. A página será recarregada
+            automaticamente.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center p-6">

@@ -1,5 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
+
+const isVersionSkewError = (error: Error & { digest?: string }) =>
+  error.message?.includes("Failed to find Server Action") ||
+  error.message?.includes("older or newer deployment") ||
+  error.digest === "NEXT_NOT_FOUND";
+
 export default function Error({
   error,
   reset,
@@ -8,6 +15,28 @@ export default function Error({
   reset: () => void;
 }) {
   console.error("[RootError]", error);
+
+  useEffect(() => {
+    if (isVersionSkewError(error)) {
+      window.location.reload();
+    }
+  }, [error]);
+
+  if (isVersionSkewError(error)) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-lg shadow-md p-8 space-y-4 text-center border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            Atualizando aplicação...
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Uma nova versão foi detectada. A página será recarregada
+            automaticamente.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center p-6">
