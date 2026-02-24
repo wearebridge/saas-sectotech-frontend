@@ -24,7 +24,13 @@ import {
 import { formatCurrency, formatInterval } from "@/lib/utils";
 import { buyCredits } from "@/service/credits";
 import { StripeProduct } from "@/types/package";
-import { Coins, CreditCard, RefreshCw, CheckCircle, CalendarClock } from "lucide-react";
+import {
+  Coins,
+  CreditCard,
+  RefreshCw,
+  CheckCircle,
+  CalendarClock,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -73,9 +79,7 @@ export function CreditsCard({
     <Card
       key={product.priceId}
       className={`flex flex-col relative overflow-hidden transition-all hover:shadow-md ${
-        isCurrentPlan
-          ? "border-primary ring-2 ring-primary/20"
-          : "border-muted"
+        isCurrentPlan ? "border-primary ring-2 ring-primary/20" : "border-muted"
       }`}
     >
       {isCurrentPlan ? (
@@ -164,9 +168,7 @@ export function CreditsCard({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleBuy(product.priceId)}
-                >
+                <AlertDialogAction onClick={() => handleBuy(product.priceId)}>
                   Confirmar Troca
                 </AlertDialogAction>
               </AlertDialogFooter>

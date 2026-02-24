@@ -233,9 +233,7 @@ function Page() {
                         type="recurring"
                         key={product.productId}
                         hasActiveSubscription={!!subscription}
-                        isCurrentPlan={
-                          subscription?.planName === product.name
-                        }
+                        isCurrentPlan={subscription?.planName === product.name}
                       />
                     ))}
                   </div>

@@ -1,7 +1,11 @@
 "use server";
 
 import { CustomError } from "@/lib/errors/custom-errors";
-import { BuyCreditsProps, VerifyPaymentProps, GetTransactionHistoryProps } from "./dto";
+import {
+  BuyCreditsProps,
+  VerifyPaymentProps,
+  GetTransactionHistoryProps,
+} from "./dto";
 import * as api from "@/service/api";
 import { tokenProps } from "@/types/token";
 import { StripeProduct, SubscriptionInfo } from "@/types/package";
@@ -208,17 +212,10 @@ export async function cancelSubscription({
       return new CustomError("BAD_REQUEST", "Token não fornecido.");
     }
 
-    const response = await api.POST(
-      "/payment/cancel-subscription",
-      {},
-      token,
-    );
+    const response = await api.POST("/payment/cancel-subscription", {}, token);
 
     if (response instanceof CustomError || !response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Erro ao cancelar a assinatura.",
-      );
+      return new CustomError("BAD_REQUEST", "Erro ao cancelar a assinatura.");
     }
 
     return true;

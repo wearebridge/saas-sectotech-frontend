@@ -108,7 +108,7 @@ export async function updateClient({
         phone,
         email,
         gender,
-        status: status === "active"
+        status: status === "active",
       },
       token,
     );

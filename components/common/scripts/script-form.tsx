@@ -233,7 +233,9 @@ export function ScriptForm({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ question: "", linkedClientField: null })}
+                  onClick={() =>
+                    append({ question: "", linkedClientField: null })
+                  }
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Adicionar Pergunta
@@ -266,7 +268,11 @@ export function ScriptForm({
                           render={({ field }) => (
                             <FormItem>
                               <Select
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)}
+                                onValueChange={(value) =>
+                                  field.onChange(
+                                    value === "__none__" ? null : value,
+                                  )
+                                }
                                 value={field.value || "__none__"}
                               >
                                 <FormControl>
@@ -275,8 +281,15 @@ export function ScriptForm({
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="__none__">Nenhum vínculo</SelectItem>
-                                  {(Object.entries(CLIENT_FIELD_LABELS) as [ClientFieldKey, string][]).map(([key, label]) => (
+                                  <SelectItem value="__none__">
+                                    Nenhum vínculo
+                                  </SelectItem>
+                                  {(
+                                    Object.entries(CLIENT_FIELD_LABELS) as [
+                                      ClientFieldKey,
+                                      string,
+                                    ][]
+                                  ).map(([key, label]) => (
                                     <SelectItem key={key} value={key}>
                                       {label}
                                     </SelectItem>

@@ -150,10 +150,7 @@ export async function updateUser({
     );
 
     if (response instanceof Error || !response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Erro ao atualizar usuário",
-      );
+      return new CustomError("BAD_REQUEST", "Erro ao atualizar usuário");
     }
     return true;
   } catch (error) {
@@ -181,10 +178,7 @@ export async function disableUser({
     );
 
     if (response instanceof Error || !response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Erro ao desativar usuário",
-      );
+      return new CustomError("BAD_REQUEST", "Erro ao desativar usuário");
     }
     return true;
   } catch (error) {
@@ -214,10 +208,7 @@ export async function resetUserPassword({
     );
 
     if (response instanceof Error || !response.ok) {
-      return new CustomError(
-        "BAD_REQUEST",
-        "Erro ao resetar senha do usuário",
-      );
+      return new CustomError("BAD_REQUEST", "Erro ao resetar senha do usuário");
     }
     return true;
   } catch (error) {

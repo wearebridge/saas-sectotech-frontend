@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useState, useEffect } from "react"
+import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   useReactTable,
-} from "@tanstack/react-table"
+} from "@tanstack/react-table";
 import {
   IconSearch,
   IconLayoutColumns,
@@ -19,14 +19,14 @@ import {
   IconChevronRight,
   IconChevronsRight,
   IconChevronDown,
-} from "@tabler/icons-react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useKeycloak } from "@/lib/keycloak"
-import { toast } from "sonner"
+} from "@tabler/icons-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useKeycloak } from "@/lib/keycloak";
+import { toast } from "sonner";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -42,38 +42,38 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface User {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  username: string
-  enabled: boolean
-  createdTimestamp: number
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  enabled: boolean;
+  createdTimestamp: number;
 }
 
 interface NewUserForm {
-  firstName: string
-  lastName: string
-  email: string
-  username: string
-  password: string
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  password: string;
 }
 
 const columns: ColumnDef<User>[] = [
@@ -98,12 +98,14 @@ const columns: ColumnDef<User>[] = [
     accessorKey: "enabled",
     header: "Status",
     cell: ({ row }) => (
-      <span className={cn(
-        "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-        row.original.enabled
-          ? "bg-green-100 text-green-800"
-          : "bg-red-100 text-red-800"
-      )}>
+      <span
+        className={cn(
+          "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+          row.original.enabled
+            ? "bg-green-100 text-green-800"
+            : "bg-red-100 text-red-800",
+        )}
+      >
         {row.original.enabled ? "Ativo" : "Inativo"}
       </span>
     ),
@@ -112,8 +114,8 @@ const columns: ColumnDef<User>[] = [
     accessorKey: "createdTimestamp",
     header: "Criado em",
     cell: ({ row }) => {
-      const date = new Date(row.original.createdTimestamp)
-      return date.toLocaleDateString("pt-BR")
+      const date = new Date(row.original.createdTimestamp);
+      return date.toLocaleDateString("pt-BR");
     },
   },
   {
@@ -136,123 +138,131 @@ const columns: ColumnDef<User>[] = [
       </DropdownMenu>
     ),
   },
-]
+];
 
 export function UsersTable() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { token } = useKeycloak()
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { token } = useKeycloak();
 
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [nameSearch, setNameSearch] = React.useState(
-    searchParams.get("name") ?? ""
-  )
+    searchParams.get("name") ?? "",
+  );
   const [emailSearch, setEmailSearch] = React.useState(
-    searchParams.get("email") ?? ""
-  )
+    searchParams.get("email") ?? "",
+  );
   const [pageSize, setPageSize] = React.useState(
-    Number(searchParams.get("pageSize") ?? 10)
-  )
+    Number(searchParams.get("pageSize") ?? 10),
+  );
   const [pageIndex, setPageIndex] = React.useState(
-    Number(searchParams.get("page") ?? 0)
-  )
-  const [openDialog, setOpenDialog] = React.useState(false)
+    Number(searchParams.get("page") ?? 0),
+  );
+  const [openDialog, setOpenDialog] = React.useState(false);
   const [newUser, setNewUser] = React.useState<NewUserForm>({
     firstName: "",
     lastName: "",
     email: "",
     username: "",
     password: "",
-  })
-  const [creating, setCreating] = React.useState(false)
+  });
+  const [creating, setCreating] = React.useState(false);
 
   const fetchUsers = async () => {
     try {
-      setLoading(true)
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const response = await fetch(`${apiUrl}/companies/current/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      })
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        setUsers(data)
+        const data = await response.json();
+        setUsers(data);
       } else {
-        throw new Error('Falha ao carregar usuários')
+        throw new Error("Falha ao carregar usuários");
       }
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error)
-      toast.error("Erro ao carregar usuários da empresa")
+      console.error("Erro ao carregar usuários:", error);
+      toast.error("Erro ao carregar usuários da empresa");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createUser = async () => {
     try {
-      setCreating(true)
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+      setCreating(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const response = await fetch(`${apiUrl}/company/users`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(newUser),
-      })
+      });
 
       if (response.ok) {
-        toast.success("Usuário criado com sucesso!")
-        setOpenDialog(false)
+        toast.success("Usuário criado com sucesso!");
+        setOpenDialog(false);
         setNewUser({
           firstName: "",
           lastName: "",
           email: "",
           username: "",
           password: "",
-        })
-        fetchUsers() // Recarregar a lista
+        });
+        fetchUsers(); // Recarregar a lista
       } else {
-        const error = await response.json()
-        throw new Error(error.message || 'Falha ao criar usuário')
+        try {
+          const error = await response.json();
+          throw new Error(error.message || "Falha ao criar usuário");
+        } catch {
+          throw new Error("Falha ao criar usuário");
+        }
       }
     } catch (error) {
-      console.error('Erro ao criar usuário:', error)
-      toast.error("Erro ao criar usuário: " + (error as Error).message)
+      console.error("Erro ao criar usuário:", error);
+      toast.error("Erro ao criar usuário: " + (error as Error).message);
     } finally {
-      setCreating(false)
+      setCreating(false);
     }
-  }
+  };
 
   React.useEffect(() => {
-    const params = new URLSearchParams()
-    if (nameSearch) params.set("name", nameSearch)
-    if (emailSearch) params.set("email", emailSearch)
-    params.set("page", String(pageIndex))
-    params.set("pageSize", String(pageSize))
-    router.replace(`?${params.toString()}`)
-  }, [nameSearch, emailSearch, pageIndex, pageSize, router])
+    const params = new URLSearchParams();
+    if (nameSearch) params.set("name", nameSearch);
+    if (emailSearch) params.set("email", emailSearch);
+    params.set("page", String(pageIndex));
+    params.set("pageSize", String(pageSize));
+    router.replace(`?${params.toString()}`);
+  }, [nameSearch, emailSearch, pageIndex, pageSize, router]);
 
   React.useEffect(() => {
     if (token) {
-      fetchUsers()
+      fetchUsers();
     }
-  }, [token])
+  }, [token]);
 
   // Filtrar usuários baseado na busca
   const filteredUsers = React.useMemo(() => {
     return users.filter((user) => {
-      const nameMatch = nameSearch === "" || 
-        `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(nameSearch.toLowerCase())
-      const emailMatch = emailSearch === "" || 
-        (user.email || '').toLowerCase().includes(emailSearch.toLowerCase())
-      return nameMatch && emailMatch
-    })
-  }, [users, nameSearch, emailSearch])
+      const nameMatch =
+        nameSearch === "" ||
+        `${user.firstName || ""} ${user.lastName || ""}`
+          .toLowerCase()
+          .includes(nameSearch.toLowerCase());
+      const emailMatch =
+        emailSearch === "" ||
+        (user.email || "").toLowerCase().includes(emailSearch.toLowerCase());
+      return nameMatch && emailMatch;
+    });
+  }, [users, nameSearch, emailSearch]);
 
   const table = useReactTable({
     data: filteredUsers,
@@ -264,13 +274,13 @@ export function UsersTable() {
       const next =
         typeof updater === "function"
           ? updater({ pageIndex, pageSize })
-          : updater
-      setPageIndex(next.pageIndex)
-      setPageSize(next.pageSize)
+          : updater;
+      setPageIndex(next.pageIndex);
+      setPageSize(next.pageSize);
     },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-  })
+  });
 
   if (loading) {
     return (
@@ -286,7 +296,7 @@ export function UsersTable() {
           <div className="h-[400px] bg-muted rounded"></div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -328,8 +338,7 @@ export function UsersTable() {
                 {table
                   .getAllColumns()
                   .filter(
-                    (column) =>
-                      column.getCanHide() && column.id !== "actions"
+                    (column) => column.getCanHide() && column.id !== "actions",
                   )
                   .map((column) => (
                     <DropdownMenuCheckboxItem
@@ -345,7 +354,11 @@ export function UsersTable() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="outline" size="sm" onClick={() => setOpenDialog(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenDialog(true)}
+            >
               <IconPlus className="h-4 w-4" />
               <span className="hidden lg:inline">Novo usuário</span>
             </Button>
@@ -361,7 +374,7 @@ export function UsersTable() {
                     <TableHead key={header.id} className="px-4 font-medium">
                       {flexRender(
                         header.column.columnDef.header,
-                        header.getContext()
+                        header.getContext(),
                       )}
                     </TableHead>
                   ))}
@@ -375,7 +388,7 @@ export function UsersTable() {
                     <TableCell key={cell.id} className="px-4">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -411,7 +424,12 @@ export function UsersTable() {
             </span>
 
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" onClick={() => setPageIndex(0)} disabled={pageIndex === 0}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPageIndex(0)}
+                disabled={pageIndex === 0}
+              >
                 <IconChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
@@ -426,9 +444,7 @@ export function UsersTable() {
                 variant="outline"
                 size="icon"
                 onClick={() =>
-                  setPageIndex((p) =>
-                    Math.min(p + 1, table.getPageCount() - 1)
-                  )
+                  setPageIndex((p) => Math.min(p + 1, table.getPageCount() - 1))
                 }
                 disabled={pageIndex >= table.getPageCount() - 1}
               >
@@ -437,9 +453,7 @@ export function UsersTable() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() =>
-                  setPageIndex(table.getPageCount() - 1)
-                }
+                onClick={() => setPageIndex(table.getPageCount() - 1)}
                 disabled={pageIndex >= table.getPageCount() - 1}
               >
                 <IconChevronsRight className="h-4 w-4" />
@@ -461,7 +475,12 @@ export function UsersTable() {
                 <Input
                   id="firstName"
                   value={newUser.firstName}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUser((prev) => ({
+                      ...prev,
+                      firstName: e.target.value,
+                    }))
+                  }
                   placeholder="Nome"
                 />
               </div>
@@ -470,51 +489,69 @@ export function UsersTable() {
                 <Input
                   id="lastName"
                   value={newUser.lastName}
-                  onChange={(e) => setNewUser(prev => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUser((prev) => ({
+                      ...prev,
+                      lastName: e.target.value,
+                    }))
+                  }
                   placeholder="Sobrenome"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
                 value={newUser.email}
-                onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({ ...prev, email: e.target.value }))
+                }
                 placeholder="email@exemplo.com"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 value={newUser.username}
-                onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({ ...prev, username: e.target.value }))
+                }
                 placeholder="username"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={newUser.password}
-                onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({ ...prev, password: e.target.value }))
+                }
                 placeholder="••••••••"
               />
             </div>
-            
+
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setOpenDialog(false)}>
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={createUser}
-                disabled={creating || !newUser.firstName || !newUser.lastName || !newUser.email || !newUser.username || !newUser.password}
+                disabled={
+                  creating ||
+                  !newUser.firstName ||
+                  !newUser.lastName ||
+                  !newUser.email ||
+                  !newUser.username ||
+                  !newUser.password
+                }
               >
                 {creating ? "Criando..." : "Criar usuário"}
               </Button>
@@ -523,5 +560,5 @@ export function UsersTable() {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

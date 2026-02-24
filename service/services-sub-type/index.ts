@@ -137,7 +137,7 @@ export async function getSubTypeService({
       },
     );
 
-    if (response instanceof CustomError) {
+    if (response instanceof CustomError || !response.ok) {
       return new CustomError(
         "BAD_REQUEST",
         "Erro ao buscar subtipos de serviço.",
