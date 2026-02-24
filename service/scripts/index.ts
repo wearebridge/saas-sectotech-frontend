@@ -121,7 +121,7 @@ export async function deleteScript({
 
     const response = await api.PUT(
       `${baseUrl}/${id}`,
-      { ...item, status: false },
+      { name: item.name, status: false },
       token,
     );
 

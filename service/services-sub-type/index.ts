@@ -170,7 +170,7 @@ export async function deleteServiceSubType({
 
     const response = await api.PUT(
       `${baseUrl}/${item.id}`,
-      { ...item, status: false },
+      { name: item.name, description: item.description, status: false },
       token,
     );
 

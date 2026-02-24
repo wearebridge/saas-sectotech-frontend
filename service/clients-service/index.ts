@@ -174,7 +174,13 @@ export async function deleteClient({
 
     const response = await api.PUT(
       `${baseUrl}/${item.id}`,
-      { ...item, status: false },
+      {
+        fullName: item.fullName,
+        cpf: item.cpf,
+        email: item.email,
+        phone: item.phone,
+        status: false,
+      },
       token,
     );
 

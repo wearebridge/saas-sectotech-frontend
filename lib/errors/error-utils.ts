@@ -5,7 +5,7 @@ export function isSerializedError(value: unknown): value is SerializedError {
     typeof value === "object" &&
     value !== null &&
     "isError" in value &&
-    (value as any).isError === true &&
+    (value as Record<string, unknown>).isError === true &&
     "message" in value &&
     "statusCode" in value
   );
