@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -66,8 +67,11 @@ export function ClientForm({
       await onSubmit(data);
       form.reset();
     } catch (error) {
-      // Error is handled by parent component
       console.error("Error submitting form:", error);
+      toast.error("Erro ao salvar cliente", {
+        description:
+          "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +117,7 @@ export function ClientForm({
             <InputMaskForm
               form={form}
               name="phone"
-              label="Telefone"
+              label="Telefone *"
               placeholder="(00) 00000-0000"
               formatter={PhoneFormatter}
               maxLength={15}
@@ -138,7 +142,7 @@ export function ClientForm({
             <InputMaskForm
               form={form}
               name="cpf"
-              label="CPF"
+              label="CPF *"
               placeholder="000.000.000-00"
               formatter={CPFFormatter}
               maxLength={14}

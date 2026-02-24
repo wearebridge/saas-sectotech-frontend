@@ -35,6 +35,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { PhoneFormatter } from "@/lib/formatters/phone";
+import { CPFFormatter } from "@/lib/formatters/cpf";
 
 const STEPS = [
   { id: 1, label: "Selecionar Script" },
@@ -57,6 +58,23 @@ const stepTitles = [
   },
 ];
 
+const isInsufficientCreditsMessage = (message: string) =>
+  /insuficient|insufficient/i.test(message) &&
+  /cr[eé]dito|credit/i.test(message);
+
+const GENDER_LABELS: Record<string, string> = {
+  MALE: "Masculino",
+  FEMALE: "Feminino",
+  OTHER: "Outro",
+};
+
+const formatClientBirthDate = (birthDate?: string) => {
+  if (!birthDate) return "";
+  const date = new Date(birthDate);
+  if (Number.isNaN(date.getTime())) return birthDate;
+  return date.toLocaleDateString("pt-BR");
+};
+
 export function AnalysisForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedScript, setSelectedScript] = useState<Script | null>(null);
@@ -75,7 +93,7 @@ export function AnalysisForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { token } = useKeycloak();
-  const { refreshCredits } = useCredit();
+  const { credits, loading: creditsLoading, refreshCredits } = useCredit();
 
   const form = useForm<AnalysisFormValues>({
     defaultValues: {
@@ -112,13 +130,15 @@ export function AnalysisForm() {
     (client: ClientResponse, field: ClientFieldKey): string => {
       const fieldMap: Record<ClientFieldKey, string | undefined> = {
         fullName: client.fullName,
-        cpf: client.cpf,
+        cpf: client.cpf ? CPFFormatter(client.cpf) : client.cpf,
         rg: client.rg,
-        birthDate: client.birthDate,
+        birthDate: formatClientBirthDate(client.birthDate),
         address: client.address,
-        phone: client.phone,
+        phone: client.phone ? PhoneFormatter(client.phone) : client.phone,
         email: client.email,
-        gender: client.gender,
+        gender: client.gender
+          ? (GENDER_LABELS[client.gender] ?? client.gender)
+          : undefined,
       };
       return fieldMap[field] || "";
     },
@@ -351,6 +371,21 @@ export function AnalysisForm() {
       return;
     }
 
+    if (creditsLoading) {
+      toast.error("Aguarde o carregamento dos créditos.");
+      return;
+    }
+
+    if (credits <= 0) {
+      toast.error("Créditos insuficientes para realizar a análise.");
+      return;
+    }
+
+    if (estimatedCredits !== null && credits < estimatedCredits) {
+      toast.error("Créditos insuficientes para realizar a análise.");
+      return;
+    }
+
     if (!selectedScript) {
       toast.error("Por favor, selecione um script");
       return;
@@ -432,6 +467,13 @@ export function AnalysisForm() {
         }
 
         console.error("Erro na resposta:", errorMessage);
+        if (
+          response.status === 402 ||
+          isInsufficientCreditsMessage(errorMessage)
+        ) {
+          throw new Error("Créditos insuficientes para realizar a análise.");
+        }
+
         throw new Error(`Erro ao realizar análise: ${errorMessage}`);
       }
 
@@ -460,6 +502,7 @@ export function AnalysisForm() {
       );
     } finally {
       setIsAnalyzing(false);
+      router.refresh();
     }
   };
 

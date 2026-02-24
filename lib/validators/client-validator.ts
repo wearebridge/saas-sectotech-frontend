@@ -8,9 +8,9 @@ export const clientSchema = z.object({
   birthDate: z.string().optional(),
   cpf: z
     .string()
-    .optional()
+    .min(1, "CPF é obrigatório")
     .refine(
-      (val) => !val || /^\d{11}$/.test(val),
+      (val) => /^\d{11}$/.test(val),
       "CPF deve conter exatamente 11 dígitos",
     ),
   rg: z
@@ -29,11 +29,11 @@ export const clientSchema = z.object({
     ),
   phone: z
     .string()
-    .optional()
-    .refine(
-      (val) => !val || val.length <= 20,
-      "Telefone deve ter no máximo 20 caracteres",
-    ),
+    .min(1, "Telefone é obrigatório")
+    .refine((val) => {
+      const digits = val.replace(/\D/g, "");
+      return digits.length === 10 || digits.length === 11;
+    }, "Telefone deve ter 10 dígitos (fixo) ou 11 dígitos (celular)"),
   email: z
     .string()
     .optional()

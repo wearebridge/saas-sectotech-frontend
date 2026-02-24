@@ -7,7 +7,7 @@ export interface Client {
   address?: string;
   phone?: string;
   email?: string;
-  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  gender?: "MALE" | "FEMALE" | "OTHER";
   status: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,27 +16,35 @@ export interface Client {
 export interface ClientRequest {
   fullName: string;
   birthDate?: string;
-  cpf?: string;
+  cpf: string;
   rg?: string;
   address?: string;
-  phone?: string;
+  phone: string;
   email?: string;
-  gender?: 'MALE' | 'FEMALE' | 'OTHER';
-  status: 'active' | 'inactive';
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  status: "active" | "inactive";
 }
 
 export interface ClientResponse extends Client {}
 
 // Campos do cliente que podem ser vinculados a perguntas de script
-export type ClientFieldKey = 'fullName' | 'cpf' | 'rg' | 'birthDate' | 'address' | 'phone' | 'email' | 'gender';
+export type ClientFieldKey =
+  | "fullName"
+  | "cpf"
+  | "rg"
+  | "birthDate"
+  | "address"
+  | "phone"
+  | "email"
+  | "gender";
 
 export const CLIENT_FIELD_LABELS: Record<ClientFieldKey, string> = {
-  fullName: 'Nome Completo',
-  cpf: 'CPF',
-  rg: 'RG',
-  birthDate: 'Data de Nascimento',
-  address: 'Endereço',
-  phone: 'Telefone',
-  email: 'E-mail',
-  gender: 'Sexo',
+  fullName: "Nome Completo",
+  cpf: "CPF",
+  rg: "RG",
+  birthDate: "Data de Nascimento",
+  address: "Endereço",
+  phone: "Telefone",
+  email: "E-mail",
+  gender: "Sexo",
 };

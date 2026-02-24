@@ -38,11 +38,15 @@ const mapAnalysisItem = (item: any): AnalysisItem => ({
   aiOutput: item.aiOutput,
 });
 
+const isInsufficientCreditsMessage = (message: string) =>
+  /insuficient|insufficient/i.test(message) &&
+  /cr[eé]dito|credit/i.test(message);
+
 export default function AnalysisDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { token, authenticated } = useKeycloak();
-  const { refreshCredits } = useCredit();
+  const { credits, loading: creditsLoading, refreshCredits } = useCredit();
   const [analysis, setAnalysis] = useState<AnalysisItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -85,13 +89,49 @@ export default function AnalysisDetailPage() {
   const handleRegenerate = async () => {
     if (!token || !analysisId) return;
 
+    if (creditsLoading) {
+      toast.error("Aguarde o carregamento dos créditos.");
+      return;
+    }
+
+    if (credits <= 0) {
+      toast.error("Créditos insuficientes para re-gerar a análise.");
+      return;
+    }
+
+    if (analysis?.creditsUsed != null && credits < analysis.creditsUsed) {
+      toast.error("Créditos insuficientes para re-gerar a análise.");
+      return;
+    }
+
     setRegenerating(true);
-    const toastId = toast.loading("Re-gerando análise...");
+    const clientName = analysis?.clientName || "Cliente";
+    const scriptName = analysis?.scriptName || "Script";
+    const serviceName = analysis?.service || "Serviço";
+    const subTypeName = analysis?.subType || "Subtipo";
+    const loadingDescription = (
+      <span>
+        Estamos analisando o script <strong>{scriptName}</strong> do serviço{" "}
+        <strong>{serviceName}</strong>, subtipo <strong>{subTypeName}</strong>,
+        do cliente <strong>{clientName}</strong>.
+      </span>
+    );
+
+    const toastId = toast.loading("Gerando novamente", {
+      description: loadingDescription,
+    });
 
     try {
       const result = await regenerateAnalysis({ id: analysisId, token });
 
       if (result instanceof CustomError) {
+        if (isInsufficientCreditsMessage(result.message)) {
+          toast.error("Créditos insuficientes para re-gerar a análise.", {
+            id: toastId,
+          });
+          return;
+        }
+
         toast.error(result.message, { id: toastId });
         return;
       }

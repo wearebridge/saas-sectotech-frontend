@@ -73,7 +73,10 @@ export async function regenerateAnalysis({
 }: RegenerateAnalysisProps): Promise<unknown | CustomError> {
   try {
     if (!token || !id) {
-      return new CustomError("EMPTY_FIELD", "Dados insuficientes para re-gerar a análise");
+      return new CustomError(
+        "EMPTY_FIELD",
+        "Dados insuficientes para re-gerar a análise",
+      );
     }
 
     const response = await api.POST(
@@ -89,9 +92,26 @@ export async function regenerateAnalysis({
     }
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("Regenerate analysis error:", errorBody);
-      return new CustomError("BAD_REQUEST", "Falha ao re-gerar a análise");
+      const contentType = response.headers.get("content-type");
+      let errorMessage = "Falha ao re-gerar a análise";
+
+      if (contentType?.includes("application/json")) {
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+      } else {
+        const errorBody = await response.text();
+        if (errorBody) {
+          errorMessage = errorBody;
+        }
+      }
+
+      console.error("Regenerate analysis error:", errorMessage);
+      return new CustomError("BAD_REQUEST", errorMessage);
     }
 
     return await response.json();
