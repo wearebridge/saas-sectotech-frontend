@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { ServiceSubType } from "@/types/service";
 import { ServiceSubTypeForm } from "./service-sub-type-form";
 
@@ -92,8 +93,9 @@ export function ServiceSubTypeTable() {
     try {
       const data = await getSubTypeService({ token });
 
-      if (data instanceof Error) {
-        toast.error(data.message);
+      const errorMessage = getErrorMessage(data);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setLoading(false);
         return;
       }
@@ -114,13 +116,14 @@ export function ServiceSubTypeTable() {
       try {
         const response = await deleteServiceSubType({ item, token });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
+        const errorMessage = getErrorMessage(response);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setLoading(false);
           return;
         }
 
-        toast.success(response);
+        toast.success(response as string);
 
         handleGetSubTypes();
         setLoading(false);

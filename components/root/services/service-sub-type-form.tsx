@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import {
   createServiceSubType,
   updateServiceSubType,
@@ -113,8 +114,9 @@ export function ServiceSubTypeForm({
           token,
         });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
+        const errorMessage = getErrorMessage(response);
+        if (errorMessage) {
+          toast.error(errorMessage);
           return;
         }
 
@@ -127,8 +129,9 @@ export function ServiceSubTypeForm({
           token,
         });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
+        const errorMessage = getErrorMessage(response);
+        if (errorMessage) {
+          toast.error(errorMessage);
           return;
         }
 

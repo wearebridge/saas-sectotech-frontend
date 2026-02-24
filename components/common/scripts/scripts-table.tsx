@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { Script } from "@/types/service";
 import { ScriptForm } from "./script-form";
 import { scriptsColumns } from "./scripts-columns";
@@ -99,13 +100,14 @@ export function ScriptsTable({
       setLoading(true);
       const result = await getScripts({ token, serviceTypeId });
 
-      if (result instanceof Error) {
-        toast.error(result.message);
+      const errorMessage = getErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setLoading(false);
         return;
       }
 
-      setData(result);
+      setData(result as Script[]);
     } catch (error) {
       toast.error("Erro ao consultar os scripts");
       setLoading(false);
@@ -123,13 +125,14 @@ export function ScriptsTable({
       try {
         const response = await deleteScript({ id: item.id, token, item });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
+        const errorMessage = getErrorMessage(response);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setLoading(false);
           return;
         }
 
-        toast.success(response);
+        toast.success(response as string);
         handleGetScripts();
       } catch (error) {
         console.error(error);

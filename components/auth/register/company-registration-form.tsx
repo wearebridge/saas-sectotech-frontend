@@ -27,6 +27,7 @@ import { IconInput } from "@/components/ui/icon-input";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { registerCompany } from "@/service/auth/register";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -94,8 +95,9 @@ export function CompanyRegistrationForm() {
         companyName,
       });
 
-      if (created instanceof Error) {
-        toast.error(created.message);
+      const errorMessage = getErrorMessage(created);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }

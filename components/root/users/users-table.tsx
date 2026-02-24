@@ -71,6 +71,7 @@ import UsersForm from "./users-form";
 import PasswordResetForm from "./password-reset-form";
 
 import { useKeycloak } from "@/lib/keycloak";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { IconInput } from "@/components/ui/icon-input";
 import { disableUser } from "@/service/users";
 
@@ -120,8 +121,9 @@ export function UsersTable() {
         token,
       });
 
-      if (response instanceof Error) {
-        toast.error(response.message);
+      const errorMessage = getErrorMessage(response);
+      if (errorMessage) {
+        toast.error(errorMessage);
         return;
       }
 

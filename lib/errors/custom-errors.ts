@@ -32,6 +32,12 @@ export const codeErrors = {
 
 export type CodeErrorKeys = keyof typeof codeErrors;
 
+export interface SerializedError {
+  message: string;
+  statusCode: number;
+  isError: true;
+}
+
 export class CustomError extends Error {
   public statusCode: number;
 
@@ -42,6 +48,14 @@ export class CustomError extends Error {
 
     super(finalMsg);
     this.statusCode = code;
+  }
+
+  toJSON(): SerializedError {
+    return {
+      message: this.message,
+      statusCode: this.statusCode,
+      isError: true,
+    };
   }
 }
 

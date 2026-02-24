@@ -29,6 +29,7 @@ import {
 import { z } from "zod";
 import { useKeycloak } from "@/lib/keycloak";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { SubTypeSelect } from "../../../forms/subtype-select";
 import { createService, updateService } from "@/service/services-type";
 
@@ -110,8 +111,9 @@ export function ServiceForm({
           token: token,
         });
 
-        if (result instanceof Error) {
-          toast.error(result.message);
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setIsLoading(false);
           return;
         }
@@ -125,8 +127,9 @@ export function ServiceForm({
           description: data.description,
         });
 
-        if (result instanceof Error) {
-          toast.error(result.message);
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setIsLoading(false);
           return;
         }

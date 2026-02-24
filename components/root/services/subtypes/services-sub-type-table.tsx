@@ -58,6 +58,7 @@ import {
 import { toast } from "sonner";
 import { ServiceForm } from "./service-form";
 import { useKeycloak } from "@/lib/keycloak";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { ServiceType } from "@/types/service";
 import { serviceColumns } from "./services-sub-type-columns";
 import { deleteService, getServices } from "@/service/services-type";
@@ -104,14 +105,15 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
 
       const result = await getServices({ token, serviceSubTypeId });
 
-      if (result instanceof Error) {
-        toast.error(result.message);
+      const errorMessage = getErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setLoading(false);
         return;
       }
 
       setLoading(false);
-      setData(result);
+      setData(result as ServiceType[]);
     } catch (error) {
       console.log(error);
       setLoading(false);
@@ -127,8 +129,9 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
       try {
         const result = await deleteService({ token, item });
 
-        if (result instanceof Error) {
-          toast.error(result.message);
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setLoading(false);
           return;
         }

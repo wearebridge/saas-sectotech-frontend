@@ -6,6 +6,7 @@ import { Script, ServiceType, ServiceSubType } from "@/types/analysis";
 import { ClientResponse } from "@/types/client";
 import { IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { getSubTypeService } from "@/service/services-sub-type";
 import { getServices } from "@/service/services-type";
 import { getScripts } from "@/service/scripts";
@@ -101,12 +102,13 @@ export function ScriptSelector({
     try {
       const result = await getSubTypeService({ token: token });
 
-      if (result instanceof Error) {
-        toast.error(result.message || "Erro ao carregar subtipos de serviço");
+      const errorMessage = getErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
         return;
       }
 
-      setServiceSubTypes(result);
+      setServiceSubTypes(result as ServiceSubType[]);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar subtipos de serviço");
@@ -124,12 +126,13 @@ export function ScriptSelector({
       try {
         const result = await getServices({ serviceSubTypeId, token });
 
-        if (result instanceof Error) {
-          toast.error(result.message || "Erro ao carregar tipos de serviço");
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           return;
         }
 
-        setServiceTypes(result);
+        setServiceTypes(result as ServiceType[]);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar tipos de serviço");
@@ -150,14 +153,15 @@ export function ScriptSelector({
       try {
         const result = await getScripts({ token, serviceTypeId });
 
-        if (result instanceof Error) {
-          toast.error(result.message || "Erro ao carregar scripts");
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setIsLoadingScripts(false);
           fetchingRef.current = false;
           return;
         }
 
-        setScripts(result);
+        setScripts(result as Script[]);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar scripts");

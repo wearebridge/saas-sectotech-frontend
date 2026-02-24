@@ -17,6 +17,7 @@ import {
   userEditSchema,
 } from "@/lib/validators/user-validator";
 import { createUsers, updateUser } from "@/service/users";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { User } from "@/types/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -75,8 +76,9 @@ export default function UsersForm({
 
       const response = await createUsers({ ...data, token });
 
-      if (response instanceof Error) {
-        toast.error(response.message);
+      const errorMessage = getErrorMessage(response);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }
@@ -110,8 +112,9 @@ export default function UsersForm({
         token,
       });
 
-      if (response instanceof Error) {
-        toast.error(response.message);
+      const errorMessage = getErrorMessage(response);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 
 interface CreditsCardProps {
   product: StripeProduct;
@@ -61,12 +62,13 @@ export function CreditsCard({
     try {
       const url = await buyCredits({ priceId, token: token });
 
-      if (url instanceof Error) {
-        toast.error(url.message);
+      const errorMessage = getErrorMessage(url);
+      if (errorMessage) {
+        toast.error(errorMessage);
         return;
       }
 
-      window.location.href = url;
+      window.location.href = url as string;
     } catch (err) {
       console.error(err);
       toast.error("Erro desconhecido");

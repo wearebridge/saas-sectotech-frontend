@@ -20,6 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 
 export function ChangePasswordSection() {
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +49,9 @@ export function ChangePasswordSection() {
         token,
       });
 
-      if (response instanceof Error) {
-        toast.error(response.message);
+      const errorMessage = getErrorMessage(response);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setIsLoading(false);
         return;
       }

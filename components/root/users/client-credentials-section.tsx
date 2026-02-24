@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { ClientCredentials } from "@/types/users";
 import { getCredentials, regenerateCredentials } from "@/service/users";
 
@@ -34,13 +35,14 @@ export function ClientCredentialsSection() {
 
       const result = await getCredentials({ token: token });
 
-      if (result instanceof Error) {
-        toast.error(result.message);
+      const errorMessage = getErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setLoading(false);
         return;
       }
 
-      setCredentials(result);
+      setCredentials(result as ClientCredentials);
       setLoading(false);
     } catch {
       toast.error("Erro ao carregar credenciais da empresa");
@@ -60,13 +62,14 @@ export function ClientCredentialsSection() {
       setRegenerating(true);
       const result = await regenerateCredentials({ token: token });
 
-      if (result instanceof Error) {
-        toast.error(result.message);
+      const errorMessage = getErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
         setRegenerating(false);
         return;
       }
 
-      setCredentials(result);
+      setCredentials(result as ClientCredentials);
 
       toast.success("Client Secret regenerado com sucesso!");
       setShowSecret(true);

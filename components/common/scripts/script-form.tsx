@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { PlusIcon, Trash2 } from "lucide-react";
 import { useKeycloak } from "@/lib/keycloak";
+import { getErrorMessage } from "@/lib/errors/error-utils";
 import { createScript, updateScript } from "@/service/scripts";
 import { CLIENT_FIELD_LABELS, ClientFieldKey } from "@/types/client";
 
@@ -118,13 +119,14 @@ export function ScriptForm({
           scriptItems: values.scriptItems,
         });
 
-        if (result instanceof Error) {
-          toast.error(result.message);
+        const errorMessage = getErrorMessage(result);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setIsLoading(false);
           return;
         }
 
-        toast.success(result);
+        toast.success(result as string);
       } else {
         const response = await createScript({
           name: values.name,
@@ -134,13 +136,14 @@ export function ScriptForm({
           scriptItems: values.scriptItems,
         });
 
-        if (response instanceof Error) {
-          toast.error(response.message);
+        const errorMessage = getErrorMessage(response);
+        if (errorMessage) {
+          toast.error(errorMessage);
           setIsLoading(false);
           return;
         }
 
-        toast.success(response);
+        toast.success(response as string);
       }
 
       if (!isEditing) {
