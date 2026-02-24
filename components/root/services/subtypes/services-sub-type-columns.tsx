@@ -102,7 +102,7 @@ export function serviceColumns({
               className="text-destructive cursor-pointer"
               onClick={() => handleDelete(row.original)}
             >
-              Deletar
+              Desativar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
