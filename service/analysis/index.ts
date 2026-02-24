@@ -1,5 +1,3 @@
-"use server";
-
 import * as api from "@/service/api";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { tokenProps } from "@/types/token";
@@ -22,11 +20,6 @@ export async function getAnalysisById({
     const response = await api.GET(
       `${baseUrl}/${id}`,
       token,
-      {},
-      {
-        revalidate: 30,
-        tags: ["analysis-results", `analysis-${id}`],
-      },
     );
 
     if (!(response instanceof CustomError) && response.ok) {
@@ -36,11 +29,6 @@ export async function getAnalysisById({
     const fallback = await api.GET(
       `${baseUrl}`,
       token,
-      {},
-      {
-        revalidate: 30,
-        tags: ["analysis-results"],
-      },
     );
 
     if (fallback instanceof CustomError || !fallback.ok) {

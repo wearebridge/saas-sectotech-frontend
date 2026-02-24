@@ -1,5 +1,3 @@
-"use server";
-
 import { CustomError } from "@/lib/errors/custom-errors";
 import {
   BuyCreditsProps,
@@ -63,8 +61,6 @@ export async function verifyPayment({
     const response = await api.GET(
       `/payment/verify-payment/${sessionId}`,
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (response instanceof CustomError || !response.ok) {
@@ -94,11 +90,6 @@ export async function getProducts({
     const response = await api.GET(
       "/packages",
       token,
-      {},
-      {
-        revalidate: 3600,
-        tags: ["packages"],
-      },
     );
 
     if (response instanceof CustomError || !response.ok) {
@@ -133,8 +124,6 @@ export async function getTransactionHistory({
     const creditResponse = await api.GET(
       `/companyCredits/byCompanyId/${companyId}`,
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (creditResponse instanceof CustomError || !creditResponse.ok) {
@@ -150,8 +139,6 @@ export async function getTransactionHistory({
     const txResponse = await api.GET(
       `/creditTransactions/byCompanyCredit/${creditData.id}`,
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (txResponse instanceof CustomError || !txResponse.ok) {
@@ -188,8 +175,6 @@ export async function getActiveSubscription({
     const response = await api.GET(
       "/payment/subscription",
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (response instanceof CustomError) return null;
@@ -243,8 +228,6 @@ export async function getCreditLots({
     const creditResponse = await api.GET(
       `/companyCredits/byCompanyId/${companyId}`,
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (creditResponse instanceof CustomError || !creditResponse.ok) {
@@ -259,8 +242,6 @@ export async function getCreditLots({
     const lotsResponse = await api.GET(
       `/creditTransactions/lots/byCompanyCredit/${creditData.id}`,
       token,
-      {},
-      { cache: "no-store" },
     );
 
     if (lotsResponse instanceof CustomError || !lotsResponse.ok) {

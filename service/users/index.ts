@@ -1,4 +1,3 @@
-"use server";
 import { User } from "@/types/users";
 import { CustomError } from "@/lib/errors/custom-errors";
 import * as api from "@/service/api";
@@ -28,11 +27,6 @@ export async function getCredentials({
     const response = await api.GET(
       `${baseUrl}/credentials`,
       token,
-      {},
-      {
-        revalidate: 300,
-        tags: ["credentials"],
-      },
     );
 
     if (response instanceof Error || !response.ok) {

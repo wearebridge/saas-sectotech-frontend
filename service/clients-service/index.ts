@@ -1,5 +1,3 @@
-"use server";
-
 import * as api from "@/service/api";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { Client } from "@/types/client";
@@ -139,11 +137,6 @@ export async function getClients({
     const response = await api.GET(
       `${baseUrl}`,
       token,
-      {},
-      {
-        revalidate: 30,
-        tags: ["clients"],
-      },
     );
 
     if (response instanceof CustomError) {

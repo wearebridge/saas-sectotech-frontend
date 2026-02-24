@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { VersionSkewHandler } from "@/components/common/version-skew-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function AuthLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <VersionSkewHandler />
         <main className="min-h-screen w-full bg-background flex flex-col items-center justify-center">
           {children}
         </main>

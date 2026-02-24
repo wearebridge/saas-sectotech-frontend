@@ -1,5 +1,3 @@
-"use server";
-
 import { CustomError } from "@/lib/errors/custom-errors";
 import * as api from "@/service/api";
 import { CompanyRegistrationDTO } from "./dto";

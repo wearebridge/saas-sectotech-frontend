@@ -1,16 +1,8 @@
-"use server";
-
 import { CustomError } from "@/lib/errors/custom-errors";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export type CacheOptions = {
-  cache?: RequestCache;
-  revalidate?: number | false;
-  tags?: string[];
-};
-
-export type RequestOptions = CacheOptions & {
+export type RequestOptions = {
   timeout?: number;
 };
 
@@ -45,14 +37,6 @@ export async function GET(
         mode: "cors",
         headers,
         signal: controller.signal,
-        // Otimizações de cache do Next.js
-        ...(options?.cache && { cache: options.cache }),
-        ...(options?.revalidate !== undefined && {
-          next: {
-            revalidate: options.revalidate,
-            ...(options?.tags && { tags: options.tags }),
-          },
-        }),
       });
 
       clearTimeout(timeoutId);
@@ -111,7 +95,6 @@ export async function POST(
         headers,
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store", // POST nunca deve fazer cache
       });
 
       clearTimeout(timeoutId);
@@ -159,7 +142,6 @@ export async function PUT(
         },
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store",
       });
 
       clearTimeout(timeoutId);
@@ -207,7 +189,6 @@ export async function DELETE(
         },
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store",
       });
 
       clearTimeout(timeoutId);
