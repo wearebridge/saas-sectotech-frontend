@@ -4,6 +4,7 @@ import { tokenProps } from "@/types/token";
 export interface CreateServiceSubTypeProps extends tokenProps {
   name: string;
   description?: string;
+  status?: string;
 }
 
 export interface UpdateServiceSubTypeProps extends tokenProps {

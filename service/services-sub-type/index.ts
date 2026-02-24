@@ -18,6 +18,7 @@ export async function createServiceSubType({
   token,
   name,
   description,
+  status = "active",
 }: CreateServiceSubTypeProps): Promise<string | CustomError> {
   if (!token) {
     return new CustomError(
@@ -34,7 +35,11 @@ export async function createServiceSubType({
       );
     }
 
-    const response = await api.POST(`${baseUrl}`, { name, description }, token);
+    const response = await api.POST(
+      `${baseUrl}`,
+      { name, description, status: status === "active" },
+      token,
+    );
 
     if (response instanceof CustomError) {
       return new CustomError(

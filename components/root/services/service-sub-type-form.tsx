@@ -123,6 +123,7 @@ export function ServiceSubTypeForm({
         const response = await createServiceSubType({
           name: values.name,
           description: values.description,
+          status: values.status,
           token,
         });
 
