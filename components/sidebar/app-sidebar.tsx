@@ -14,6 +14,7 @@ import {
 
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
+import { useKeycloak } from "@/lib/keycloak";
 
 import {
   Sidebar,
@@ -70,8 +71,14 @@ const baseData = {
   ],
 };
 
+const adminOnlyUrls = ["/creditos", "/scripts", "/subtipos-servicos", "/usuarios"];
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const navItems = [...baseData.navMain];
+  const { isCompanyAdmin } = useKeycloak();
+
+  const navItems = isCompanyAdmin
+    ? [...baseData.navMain]
+    : baseData.navMain.filter((item) => !adminOnlyUrls.includes(item.url));
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

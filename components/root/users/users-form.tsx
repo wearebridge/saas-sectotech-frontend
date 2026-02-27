@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   UserFormValues,
   UserEditFormValues,
@@ -51,6 +53,7 @@ export default function UsersForm({
       email: "",
       username: "",
       password: "",
+      isAdmin: false,
     },
   });
 
@@ -60,6 +63,7 @@ export default function UsersForm({
       firstName: initalData?.firstName || "",
       lastName: initalData?.lastName || "",
       email: initalData?.email || "",
+      isAdmin: initalData?.isAdmin ?? false,
     },
   });
 
@@ -109,6 +113,7 @@ export default function UsersForm({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
+        isAdmin: data.isAdmin,
         token,
       });
 
@@ -216,6 +221,31 @@ export default function UsersForm({
             />
           </>
         )}
+
+        <FormField
+          control={createForm.control}
+          name="isAdmin"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <Checkbox
+                    className="cursor-pointer"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Administrador da empresa</FormLabel>
+                    <FormDescription>
+                      Administradores podem gerenciar usuários, scripts, tipos
+                      de serviço e créditos.
+                    </FormDescription>
+                  </div>
+                </div>
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         <div className="flex w-full gap-2 pt-1 flex-col">
           <Button

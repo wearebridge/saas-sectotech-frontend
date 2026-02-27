@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useKeycloak } from "@/lib/keycloak";
 import { useCredit } from "@/lib/credit-context";
@@ -43,12 +43,23 @@ function Page() {
     null,
   );
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
   const sessionId = searchParams.get("session_id");
 
-  const { token, authenticated, keycloak } = useKeycloak();
+  const { token, authenticated, keycloak, isCompanyAdmin } = useKeycloak();
+
+  useEffect(() => {
+    if (!isCompanyAdmin) {
+      router.replace("/");
+    }
+  }, [isCompanyAdmin, router]);
+
+  if (!isCompanyAdmin) {
+    return null;
+  }
   const {
     credits: currentCredits,
     loading: creditsLoading,

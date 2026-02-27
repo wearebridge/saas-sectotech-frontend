@@ -88,6 +88,7 @@ export async function createUsers({
   lastName,
   username,
   password,
+  isAdmin,
   token,
 }: CreateUsersProps): Promise<CustomError | boolean> {
   try {
@@ -105,6 +106,7 @@ export async function createUsers({
         lastName,
         username,
         password,
+        isAdmin: isAdmin ?? false,
       },
       token,
     );
@@ -139,7 +141,7 @@ export async function updateUser({
 
     const response = await api.PUT(
       `/company/users/${userId}`,
-      { firstName, lastName, email },
+      { firstName, lastName, email, isAdmin },
       token,
     );
 

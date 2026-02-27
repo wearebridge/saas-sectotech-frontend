@@ -69,7 +69,7 @@ export function ScriptsTable({
 }: ScriptsTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
 
   const [data, setData] = React.useState<Script[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -144,8 +144,8 @@ export function ScriptsTable({
   );
 
   const columns: ColumnDef<Script>[] = React.useMemo(
-    () => scriptsColumns({ handleDelete, setEditingItem, setOpenDialog }),
-    [handleDelete],
+    () => scriptsColumns({ handleDelete, setEditingItem, setOpenDialog, isCompanyAdmin }),
+    [handleDelete, isCompanyAdmin],
   );
 
   React.useEffect(() => {
@@ -385,7 +385,7 @@ export function ScriptsTable({
             </Tabs>
           </div>
 
-          {isPage ? null : (
+          {!isPage && isCompanyAdmin && (
             <div className="flex items-center gap-2">
               <Button
                 variant="sectotech"

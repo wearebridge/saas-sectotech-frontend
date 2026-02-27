@@ -71,7 +71,7 @@ type ServicesTableProps = {
 export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
 
   const [data, setData] = useState<ServiceType[]>([]);
 
@@ -155,8 +155,9 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
         setEditingService,
         setOpenDialog,
         serviceSubTypeId,
+        isCompanyAdmin,
       }),
-    [serviceSubTypeId, handleDelete],
+    [serviceSubTypeId, handleDelete, isCompanyAdmin],
   );
 
   useEffect(() => {
@@ -352,14 +353,16 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="sectotech"
-              size="sm"
-              onClick={() => setOpenDialog(true)}
-            >
-              <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo serviço</span>
-            </Button>
+            {isCompanyAdmin && (
+              <Button
+                variant="sectotech"
+                size="sm"
+                onClick={() => setOpenDialog(true)}
+              >
+                <IconPlus className="h-4 w-4" />
+                <span className="hidden lg:inline">Novo serviço</span>
+              </Button>
+            )}
           </div>
         </div>
 

@@ -19,12 +19,14 @@ interface ScriptsColumnsProps {
   setEditingItem: (item: Script) => void;
   setOpenDialog: (open: boolean) => void;
   handleDelete: (item: Script) => void;
+  isCompanyAdmin?: boolean;
 }
 
 export function scriptsColumns({
   setEditingItem,
   setOpenDialog,
   handleDelete,
+  isCompanyAdmin = false,
 }: ScriptsColumnsProps): ColumnDef<Script>[] {
   return [
     {
@@ -56,36 +58,40 @@ export function scriptsColumns({
         </Badge>
       ),
     },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => {
-                setEditingItem(row.original);
-                setOpenDialog(true);
-              }}
-            >
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive cursor-pointer"
-              onClick={() => handleDelete(row.original)}
-            >
-              Desativar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
+    ...(isCompanyAdmin
+      ? [
+          {
+            id: "actions",
+            enableHiding: false,
+            cell: ({ row }: { row: { original: Script } }) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <IconDotsVertical className="h-4 w-4 fill-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setEditingItem(row.original);
+                      setOpenDialog(true);
+                    }}
+                  >
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive cursor-pointer"
+                    onClick={() => handleDelete(row.original)}
+                  >
+                    Desativar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+          },
+        ]
+      : []),
   ];
 }

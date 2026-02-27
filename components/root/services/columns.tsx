@@ -20,12 +20,14 @@ interface ServiceColumnsProps {
   setEditingItem: (item: ServiceSubType) => void;
   setOpenDialog: (open: boolean) => void;
   handleDelete: (item: ServiceSubType) => void;
+  isCompanyAdmin?: boolean;
 }
 
 export const serviceColumns = ({
   handleDelete,
   setEditingItem,
   setOpenDialog,
+  isCompanyAdmin = false,
 }: ServiceColumnsProps) => {
   const columns: ColumnDef<ServiceSubType>[] = [
     {
@@ -80,15 +82,17 @@ export const serviceColumns = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => {
-                setEditingItem(row.original);
-                setOpenDialog(true);
-              }}
-            >
-              Editar
-            </DropdownMenuItem>
+            {isCompanyAdmin && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  setEditingItem(row.original);
+                  setOpenDialog(true);
+                }}
+              >
+                Editar
+              </DropdownMenuItem>
+            )}
 
             <Link href={`/subtipos-servicos/tipos/${row.original.id}`}>
               <DropdownMenuItem className="cursor-pointer">
@@ -96,13 +100,17 @@ export const serviceColumns = ({
               </DropdownMenuItem>
             </Link>
 
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive cursor-pointer"
-              onClick={() => handleDelete(row.original)}
-            >
-              Desativar
-            </DropdownMenuItem>
+            {isCompanyAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive cursor-pointer"
+                  onClick={() => handleDelete(row.original)}
+                >
+                  Desativar
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
