@@ -280,7 +280,9 @@ export function DashboardTable({
                     )}
                   >
                     <IconCalendar className="h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Data"}
+                    {date
+                      ? format(date, "dd/MM/yyyy", { locale: ptBR })
+                      : "Data"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -405,7 +407,8 @@ export function DashboardTable({
                   {table
                     .getAllColumns()
                     .filter(
-                      (column) => column.getCanHide() && column.id !== "actions",
+                      (column) =>
+                        column.getCanHide() && column.id !== "actions",
                     )
                     .map((column) => (
                       <DropdownMenuCheckboxItem
@@ -442,18 +445,29 @@ export function DashboardTable({
             </TableHeader>
 
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nenhum resultado encontrado.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
@@ -507,7 +521,9 @@ export function DashboardTable({
                     size="icon"
                     className="h-8 w-8"
                     onClick={() =>
-                      setPageIndex((p) => Math.min(p + 1, table.getPageCount() - 1))
+                      setPageIndex((p) =>
+                        Math.min(p + 1, table.getPageCount() - 1),
+                      )
                     }
                   >
                     <IconChevronRight className="h-4 w-4" />
@@ -525,7 +541,6 @@ export function DashboardTable({
             </>
           )}
         </div>
-
       </div>
     </>
   );

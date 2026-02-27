@@ -178,7 +178,7 @@ export function ScriptForm({
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar Script" : "Criar Script"}

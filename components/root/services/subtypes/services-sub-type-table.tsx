@@ -393,7 +393,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                     Carregando...
                   </TableCell>
                 </TableRow>
-              ) : (
+              ) : table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
@@ -406,6 +406,15 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                     ))}
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nenhum resultado encontrado.
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
