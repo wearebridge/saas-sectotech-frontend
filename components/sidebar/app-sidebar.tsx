@@ -71,7 +71,7 @@ const baseData = {
   ],
 };
 
-const adminOnlyUrls = ["/creditos", "/scripts", "/subtipos-servicos", "/usuarios"];
+const adminOnlyUrls = ["/creditos", "/usuarios"];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isCompanyAdmin } = useKeycloak();
