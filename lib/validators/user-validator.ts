@@ -27,7 +27,7 @@ export const userSchema = z.object({
       /[!@#$%^&*(),.?":{}|<>]/,
       "Senha deve conter pelo menos um caractere especial",
     ),
-  isAdmin: z.boolean().default(false),
+  isAdmin: z.boolean(),
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
@@ -42,7 +42,7 @@ export const userEditSchema = z.object({
     .min(1, "Sobrenome é obrigatório")
     .max(100, "Sobrenome deve ter no máximo 100 caracteres"),
   email: z.string().min(1, "E-mail é obrigatório").email("E-mail inválido"),
-  isAdmin: z.boolean().default(false),
+  isAdmin: z.boolean(),
 });
 
 export type UserEditFormValues = z.infer<typeof userEditSchema>;
