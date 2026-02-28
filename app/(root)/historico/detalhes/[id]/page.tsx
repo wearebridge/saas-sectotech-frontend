@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { AnalysisItem } from "@/types/analysis";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { useKeycloak } from "@/lib/keycloak";
-import { getAnalysisById, regenerateAnalysis } from "@/service/analysis";
+import { getAnalysisById, regenerateAnalysis, getAudioDownloadUrl } from "@/service/analysis";
 import { useCredit } from "@/lib/credit-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -156,13 +156,24 @@ export default function AnalysisDetailPage() {
     }
   };
 
-  const handleDownloadAudio = (item: AnalysisItem) => {
-    if (!item.audioUrl) {
+  const handleDownloadAudio = async (item: AnalysisItem) => {
+    if (!item.audioFilename) {
       toast.error("Nenhum áudio disponível para esta análise");
       return;
     }
+    if (!token) {
+      toast.error("Você não está autenticado");
+      return;
+    }
+
+    const result = await getAudioDownloadUrl({ id: item.id, token });
+    if (typeof result !== "string") {
+      toast.error("Falha ao gerar URL de download do áudio");
+      return;
+    }
+
     const link = document.createElement("a");
-    link.href = item.audioUrl;
+    link.href = result;
     link.download = item.audioFilename || "audio";
     link.target = "_blank";
     document.body.appendChild(link);

@@ -66,6 +66,7 @@ import { useKeycloak } from "@/lib/keycloak";
 import { toast } from "sonner";
 import { AnalysisItem } from "@/types/analysis";
 import { dashboardColumns } from "./dashboard-columns";
+import { getAudioDownloadUrl } from "@/service/analysis";
 
 interface DashboardTableProps {
   clientId?: string;
@@ -107,19 +108,30 @@ export function DashboardTable({
     Number(searchParams.get("page") ?? 0),
   );
 
-  const handleDownloadAudio = React.useCallback((item: AnalysisItem) => {
-    if (!item.audioUrl) {
+  const handleDownloadAudio = React.useCallback(async (item: AnalysisItem) => {
+    if (!item.audioFilename) {
       toast.error("Nenhum áudio disponível para esta análise");
       return;
     }
+    if (!token) {
+      toast.error("Você não está autenticado");
+      return;
+    }
+
+    const result = await getAudioDownloadUrl({ id: item.id, token });
+    if (typeof result !== "string") {
+      toast.error("Falha ao gerar URL de download do áudio");
+      return;
+    }
+
     const link = document.createElement("a");
-    link.href = item.audioUrl;
+    link.href = result;
     link.download = item.audioFilename || "audio";
     link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, []);
+  }, [token]);
 
   const columns: ColumnDef<AnalysisItem>[] = React.useMemo(
     () => dashboardColumns({ handleDownloadAudio }),

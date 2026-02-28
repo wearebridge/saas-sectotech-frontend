@@ -4,6 +4,37 @@ import { tokenProps } from "@/types/token";
 
 const baseUrl = "/analysis-results";
 
+interface GetAudioDownloadUrlProps extends tokenProps {
+  id: string;
+}
+
+export async function getAudioDownloadUrl({
+  id,
+  token,
+}: GetAudioDownloadUrlProps): Promise<string | CustomError> {
+  try {
+    if (!token || !id) {
+      return new CustomError("EMPTY_FIELD", "Dados insuficientes para gerar URL de download");
+    }
+
+    const response = await api.GET(`${baseUrl}/${id}/download-url`, token);
+
+    if (response instanceof CustomError) {
+      return response;
+    }
+
+    if (!response.ok) {
+      return new CustomError("BAD_REQUEST", "Falha ao gerar URL de download do áudio");
+    }
+
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error("Error getting audio download URL:", error);
+    return new CustomError("BAD_REQUEST", "Erro ao gerar URL de download");
+  }
+}
+
 interface GetAnalysisByIdProps extends tokenProps {
   id: string;
 }
