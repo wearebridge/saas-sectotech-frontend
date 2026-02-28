@@ -129,6 +129,7 @@ export async function updateUser({
   firstName,
   lastName,
   email,
+  isAdmin,
   token,
 }: UpdateUserProps): Promise<CustomError | boolean> {
   try {
