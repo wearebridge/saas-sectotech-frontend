@@ -354,23 +354,31 @@ export default function AnalysisDetailPage() {
                           <span className="text-sm font-medium">
                             Pergunta {index + 1}
                           </span>
-                          <Badge
-                            variant={item.correct ? "default" : "destructive"}
-                          >
-                            {item.correct ? "Correto" : "Incorreto"}
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Badge
+                              variant={item.questionAsked ? "outline" : "destructive"}
+                              className={item.questionAsked ? "border-green-500 text-green-700" : ""}
+                            >
+                              {item.questionAsked ? "Pergunta feita" : "Pergunta não feita"}
+                            </Badge>
+                            <Badge
+                              variant={item.correct ? "default" : "destructive"}
+                            >
+                              {item.correct ? "Correto" : "Incorreto"}
+                            </Badge>
+                          </div>
                         </div>
                         <Separator className="my-3" />
                         <div className="space-y-2">
                           <div>
                             <span className="text-xs font-medium text-muted-foreground">
-                              Pergunta:
+                              Pergunta do script:
                             </span>
                             <p className="text-sm">{item.question}</p>
                           </div>
                           <div>
                             <span className="text-xs font-medium text-muted-foreground">
-                              Resposta:
+                              Resposta encontrada:
                             </span>
                             <p className="text-sm">{item.answer}</p>
                           </div>

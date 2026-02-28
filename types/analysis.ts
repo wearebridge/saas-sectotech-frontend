@@ -69,6 +69,7 @@ export type AnalysisItem = {
       question: string;
       answer: string;
       correct: boolean;
+      questionAsked: boolean;
       analysis: string;
     }[];
   };
