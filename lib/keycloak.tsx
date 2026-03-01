@@ -48,7 +48,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     });
 
     kc.init({
-      onLoad: "check-sso",
+      onLoad: "login-required",
       silentCheckSsoRedirectUri:
         window.location.origin + "/silent-check-sso.html",
     })
@@ -83,11 +83,6 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         console.log("Authenticated: false");
       });
   }, []);
-  useEffect(() => {
-    if (!loading && !authenticated && pathname !== "/") {
-      keycloak?.login();
-    }
-  }, [loading, authenticated, pathname, keycloak]);
 
   const login = () => {
     keycloak?.login();
@@ -97,7 +92,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     keycloak?.logout();
   };
 
-  if (loading || (!authenticated && pathname !== "/")) {
+  if (loading || (!authenticated)) {
     return (
       <div className="h-screen flex flex-row gap-1 w-full items-center justify-center">
         <Loader2Icon className={"animate-spin w-10 h-10"} />
