@@ -57,6 +57,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { disableUser, enableUser } from "@/service/users";
+import { CustomError } from "@/lib/errors/custom-errors";
 
 interface User {
   id: string;
@@ -76,7 +78,13 @@ interface NewUserForm {
   password: string;
 }
 
-const columns: ColumnDef<User>[] = [
+const createColumns = ({
+  onDisable,
+  onEnable,
+}: {
+  onDisable: (user: User) => void;
+  onEnable: (user: User) => void;
+}): ColumnDef<User>[] => [
   {
     accessorKey: "firstName",
     header: "Nome",
@@ -131,9 +139,21 @@ const columns: ColumnDef<User>[] = [
         <DropdownMenuContent align="end">
           <DropdownMenuItem>Editar</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive">
-            Desabilitar
-          </DropdownMenuItem>
+          {row.original.enabled ? (
+            <DropdownMenuItem
+              className="text-destructive cursor-pointer"
+              onClick={() => onDisable(row.original)}
+            >
+              Desabilitar
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              className="text-emerald-600 cursor-pointer"
+              onClick={() => onEnable(row.original)}
+            >
+              Reativar
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -249,6 +269,28 @@ export function UsersTable() {
     }
   }, [token]);
 
+  const handleDisableUser = async (user: User) => {
+    if (!token) return;
+    const result = await disableUser({ userId: user.id, token });
+    if (result instanceof CustomError) {
+      toast.error(result.message);
+    } else {
+      toast.success(`Usuário ${user.firstName} desabilitado com sucesso`);
+      fetchUsers();
+    }
+  };
+
+  const handleEnableUser = async (user: User) => {
+    if (!token) return;
+    const result = await enableUser({ userId: user.id, token });
+    if (result instanceof CustomError) {
+      toast.error(result.message);
+    } else {
+      toast.success(`Usuário ${user.firstName} reativado com sucesso`);
+      fetchUsers();
+    }
+  };
+
   // Filtrar usuários baseado na busca
   const filteredUsers = React.useMemo(() => {
     return users.filter((user) => {
@@ -263,6 +305,11 @@ export function UsersTable() {
       return nameMatch && emailMatch;
     });
   }, [users, nameSearch, emailSearch]);
+
+  const columns = React.useMemo(
+    () => createColumns({ onDisable: handleDisableUser, onEnable: handleEnableUser }),
+    [handleDisableUser, handleEnableUser],
+  );
 
   const table = useReactTable({
     data: filteredUsers,

@@ -7,6 +7,7 @@ import {
   CreateUsersProps,
   UpdateUserProps,
   DisableUserProps,
+  EnableUserProps,
   ResetPasswordProps,
   ChangeOwnPasswordProps,
 } from "./dto";
@@ -181,6 +182,34 @@ export async function disableUser({
   } catch (error) {
     console.error("Erro ao desativar usuário:", error);
     return new CustomError("BAD_REQUEST", "Erro ao desativar usuário");
+  }
+}
+
+export async function enableUser({
+  userId,
+  token,
+}: EnableUserProps): Promise<CustomError | boolean> {
+  try {
+    if (!token) {
+      return new CustomError(
+        "EMPTY_FIELD",
+        "Falha ao ativar usuário. Token de autenticação ausente.",
+      );
+    }
+
+    const response = await api.PUT(
+      `/company/users/${userId}/enable`,
+      {},
+      token,
+    );
+
+    if (response instanceof Error || !response.ok) {
+      return new CustomError("BAD_REQUEST", "Erro ao ativar usuário");
+    }
+    return true;
+  } catch (error) {
+    console.error("Erro ao ativar usuário:", error);
+    return new CustomError("BAD_REQUEST", "Erro ao ativar usuário");
   }
 }
 

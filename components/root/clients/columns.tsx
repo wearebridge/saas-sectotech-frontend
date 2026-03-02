@@ -30,10 +30,12 @@ interface ClientColumnsProps {
   setEditingItem: (item: ClientResponse) => void;
   setOpenDialog: (open: boolean) => void;
   handleDelete: (item: ClientResponse) => void;
+  handleReactivate: (item: ClientResponse) => void;
 }
 
 export const clientColumns = ({
   handleDelete,
+  handleReactivate,
   setEditingItem,
   setOpenDialog,
 }: ClientColumnsProps) => {
@@ -143,12 +145,21 @@ export const clientColumns = ({
             </Link>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive cursor-pointer"
-              onClick={() => handleDelete(row.original)}
-            >
-              Desativar
-            </DropdownMenuItem>
+            {row.original.status ? (
+              <DropdownMenuItem
+                className="text-destructive cursor-pointer"
+                onClick={() => handleDelete(row.original)}
+              >
+                Desativar
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                className="text-emerald-600 cursor-pointer"
+                onClick={() => handleReactivate(row.original)}
+              >
+                Reativar
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

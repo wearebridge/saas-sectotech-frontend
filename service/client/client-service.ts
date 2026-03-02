@@ -117,6 +117,37 @@ export class ClientService {
     }
   }
 
+  static async reactivate(id: string, client: ClientResponse, token: string): Promise<ClientResponse> {
+    const backendData = {
+      fullName: client.fullName,
+      birthDate: client.birthDate,
+      cpf: client.cpf,
+      rg: client.rg,
+      address: client.address,
+      phone: client.phone,
+      email: client.email,
+      gender: client.gender,
+      status: true,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept-Encoding": "gzip, deflate, br",
+      },
+      body: JSON.stringify(backendData),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to reactivate client");
+    }
+
+    return response.json();
+  }
+
   static async search(query: string, token: string): Promise<ClientResponse[]> {
     const response = await fetch(
       `${API_BASE_URL}/clients/search?q=${encodeURIComponent(query)}`,

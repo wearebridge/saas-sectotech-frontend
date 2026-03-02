@@ -16,6 +16,7 @@ interface UsersColumnsProps {
   setSeletedUser: (user: User | null) => void;
   setOpenDialog: (open: boolean) => void;
   onDisableUser: (user: User) => void;
+  onEnableUser: (user: User) => void;
   onResetPassword: (user: User) => void;
   currentUserId?: string;
   isCompanyAdmin: boolean;
@@ -25,6 +26,7 @@ export function columnsUsers({
   setSeletedUser,
   setOpenDialog,
   onDisableUser,
+  onEnableUser,
   onResetPassword,
   currentUserId,
   isCompanyAdmin,
@@ -105,12 +107,19 @@ export function columnsUsers({
                     Resetar Senha
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  {row.original.enabled && (
+                  {row.original.enabled ? (
                     <DropdownMenuItem
                       className="text-destructive"
                       onClick={() => onDisableUser(row.original)}
                     >
                       Desabilitar
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      className="text-emerald-600"
+                      onClick={() => onEnableUser(row.original)}
+                    >
+                      Reativar
                     </DropdownMenuItem>
                   )}
                 </>

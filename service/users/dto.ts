@@ -21,6 +21,10 @@ export interface DisableUserProps extends tokenProps {
   userId: string;
 }
 
+export interface EnableUserProps extends tokenProps {
+  userId: string;
+}
+
 export interface ResetPasswordProps extends tokenProps {
   userId: string;
   newPassword: string;
