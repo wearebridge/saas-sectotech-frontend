@@ -140,6 +140,105 @@ export default function UsersForm({
     ? editForm.handleSubmit(handleUpdateUser)
     : createForm.handleSubmit(handleCreateUser);
 
+  if (isEditing) {
+    return (
+      <Form {...editForm}>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={editForm.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={editForm.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sobrenome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Sobrenome" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={editForm.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={editForm.control}
+            name="isAdmin"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <Checkbox
+                      className="cursor-pointer"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Administrador da empresa</FormLabel>
+                      <FormDescription>
+                        Administradores podem gerenciar usuários, scripts, tipos
+                        de serviço e créditos.
+                      </FormDescription>
+                    </div>
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className="flex w-full gap-2 pt-1 flex-col">
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              variant={"sectotech"}
+              className="cursor-pointer"
+            >
+              {isLoading ? "Atualizando..." : "Atualizar usuário"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => setOpenDialog(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
+  }
+
   return (
     <Form {...createForm}>
       <form onSubmit={onSubmit} className="space-y-4">
@@ -190,37 +289,33 @@ export default function UsersForm({
           )}
         />
 
-        {!isEditing && (
-          <>
-            <FormField
-              control={createForm.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="username" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={createForm.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="username" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={createForm.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
+        <FormField
+          control={createForm.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={createForm.control}
@@ -254,13 +349,7 @@ export default function UsersForm({
             variant={"sectotech"}
             className="cursor-pointer"
           >
-            {isLoading
-              ? isEditing
-                ? "Atualizando..."
-                : "Criando..."
-              : isEditing
-                ? "Atualizar usuário"
-                : "Criar usuário"}
+            {isLoading ? "Criando..." : "Criar usuário"}
           </Button>
           <Button
             type="button"
