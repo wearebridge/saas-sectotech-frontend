@@ -205,21 +205,16 @@ export function ClientCredentialsSection() {
 
         <Separator />
 
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Como usar:</p>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>1. Obter token de acesso:</p>
-            <code className="block bg-muted p-2 rounded text-xs font-mono">
-              POST /realms/secto/protocol/openid-connect/token
-              <br />
-              grant_type=client_credentials&client_id={credentials.clientId}
-              &client_secret=***
-            </code>
-            <p>2. Usar o token nas requisições à API:</p>
-            <code className="block bg-muted p-2 rounded text-xs font-mono">
-              Authorization: Bearer &lt;access_token&gt;
-            </code>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Documentação de Integração</p>
+            <p className="text-xs text-muted-foreground">
+              Veja a documentação completa para aprender como usar a API.
+            </p>
           </div>
+          <Button variant={"outline"} asChild>
+            <a href="/usuarios/documentacao">Acessar Documentação</a>
+          </Button>
         </div>
       </div>
     </div>

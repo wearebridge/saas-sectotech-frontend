@@ -21,6 +21,7 @@ const routeNames: Record<string, string> = {
   configuracoes: "Configurações",
   analises: "Análises",
   historico: "Histórico",
+  documentacao: "Documentação",
 };
 
 function isId(segment: string) {
