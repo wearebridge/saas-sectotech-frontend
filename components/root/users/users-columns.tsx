@@ -50,6 +50,22 @@ export function columnsUsers({
       header: "Username",
     },
     {
+      accessorKey: "isAdmin",
+      header: "Admin",
+      cell: ({ row }) => (
+        <span
+          className={cn(
+            "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
+            row.original.isAdmin
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {row.original.isAdmin ? "Sim" : "Não"}
+        </span>
+      ),
+    },
+    {
       accessorKey: "enabled",
       header: "Status",
       cell: ({ row }) => (
