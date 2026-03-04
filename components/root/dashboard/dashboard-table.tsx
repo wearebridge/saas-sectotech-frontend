@@ -85,6 +85,7 @@ export function DashboardTable({
   const [data, setData] = React.useState<AnalysisItem[]>([]);
   const [services, setServices] = React.useState<string[]>([]);
   const [subTypes, setSubTypes] = React.useState<string[]>([]);
+  const [executors, setExecutors] = React.useState<string[]>([]);
 
   const [date, setDate] = React.useState<Date | undefined>(
     searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined,
@@ -97,6 +98,9 @@ export function DashboardTable({
   );
   const [subType, setSubType] = React.useState(
     searchParams.get("subType") ?? "",
+  );
+  const [executedBy, setExecutedBy] = React.useState(
+    searchParams.get("executedBy") ?? "",
   );
   const [status, setStatus] = React.useState(
     searchParams.get("status") ?? "all",
@@ -188,8 +192,12 @@ export function DashboardTable({
         const uniqueSubTypes = Array.from(
           new Set(mappedData.map((d) => d.subType).filter((s) => s !== "-")),
         ) as string[];
+        const uniqueExecutors = Array.from(
+          new Set(mappedData.map((d) => d.executedBy).filter(Boolean)),
+        ) as string[];
         setServices(uniqueServices);
         setSubTypes(uniqueSubTypes);
+        setExecutors(uniqueExecutors);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar histórico de análises");
@@ -219,6 +227,7 @@ export function DashboardTable({
       }
       if (service && item.service !== service) return false;
       if (subType && item.subType !== subType) return false;
+      if (executedBy && item.executedBy !== executedBy) return false;
 
       if (status === "approved") return item.approved;
       if (status === "rejected") return !item.approved;
@@ -232,7 +241,7 @@ export function DashboardTable({
     }
 
     return filtered;
-  }, [data, date, clientSearch, service, subType, status, isHomeView]);
+  }, [data, date, clientSearch, service, subType, executedBy, status, isHomeView]);
 
   React.useEffect(() => {
     if (clientId) return; // Don't update URL params when filtering by clientId
@@ -241,6 +250,7 @@ export function DashboardTable({
     if (clientSearch) params.set("client", clientSearch);
     if (service) params.set("service", service);
     if (subType) params.set("subType", subType);
+    if (executedBy) params.set("executedBy", executedBy);
     if (status !== "all") params.set("status", status);
     params.set("page", String(pageIndex));
     params.set("pageSize", String(pageSize));
@@ -250,6 +260,7 @@ export function DashboardTable({
     clientSearch,
     service,
     subType,
+    executedBy,
     status,
     pageIndex,
     pageSize,
@@ -386,6 +397,47 @@ export function DashboardTable({
                             className={cn(
                               "mr-2 h-4 w-4",
                               subType === item ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="text-sm">{item}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex w-[200px] items-center justify-between text-sm",
+                      !executedBy && "text-muted-foreground",
+                    )}
+                  >
+                    <span className="truncate">{executedBy || "Executor"}</span>
+                    <IconChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar executor..." />
+                    <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                    <CommandGroup>
+                      {executors.map((item) => (
+                        <CommandItem
+                          key={item}
+                          value={item}
+                          onSelect={() =>
+                            setExecutedBy((prev) => (prev === item ? "" : item))
+                          }
+                        >
+                          <IconCheck
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              executedBy === item ? "opacity-100" : "opacity-0",
                             )}
                           />
                           <span className="text-sm">{item}</span>

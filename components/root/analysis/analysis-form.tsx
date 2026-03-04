@@ -139,6 +139,8 @@ export function AnalysisForm() {
         gender: client.gender
           ? (GENDER_LABELS[client.gender] ?? client.gender)
           : undefined,
+        yesResponse: "Sim",
+        noResponse: "Não",
       };
       return fieldMap[field] || "";
     },
@@ -174,6 +176,33 @@ export function AnalysisForm() {
       );
     }
   }, [clientId, selectedScript, clients, form, getClientFieldValue]);
+
+  // Auto-fill predefined fields (yesResponse/noResponse) when script is selected
+  useEffect(() => {
+    if (!selectedScript?.scriptItems) return;
+
+    const predefinedFields = ["yesResponse", "noResponse"];
+    const currentAnswers = form.getValues("answers") || {};
+    let hasChanges = false;
+
+    selectedScript.scriptItems.forEach((item) => {
+      if (item.linkedClientField && predefinedFields.includes(item.linkedClientField)) {
+        const value = item.linkedClientField === "yesResponse" ? "Sim" : "Não";
+        if (currentAnswers[item.id] !== value) {
+          currentAnswers[item.id] = value;
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      form.setValue(
+        "answers",
+        { ...currentAnswers },
+        { shouldValidate: false },
+      );
+    }
+  }, [selectedScript, form]);
 
   const handleCreateClient = async (data: any) => {
     if (!token) {

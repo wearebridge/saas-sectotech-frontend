@@ -178,8 +178,8 @@ export function ScriptForm({
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>
             {isEditing ? "Editar Script" : "Criar Script"}
           </DialogTitle>
@@ -190,7 +190,8 @@ export function ScriptForm({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 gap-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -245,7 +246,7 @@ export function ScriptForm({
                 </Button>
               </div>
 
-              <div className="h-[300px] w-full rounded-md border p-4 overflow-y-auto">
+              <div className="h-[450px] w-full rounded-md border p-4 overflow-y-auto">
                 <div className="space-y-4">
                   {fields.map((field, index) => (
                     <div
@@ -324,14 +325,18 @@ export function ScriptForm({
               </div>
             </div>
 
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              className="w-full"
-              variant={"sectotech"}
-            >
-              {isEditing ? "Salvar Alterações" : "Criar Script"}
-            </Button>
+            </div>
+
+            <div className="shrink-0 pt-2 border-t">
+              <Button
+                type="submit"
+                isLoading={isLoading}
+                className="w-full"
+                variant={"sectotech"}
+              >
+                {isEditing ? "Salvar Alterações" : "Criar Script"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
