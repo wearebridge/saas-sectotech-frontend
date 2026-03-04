@@ -26,13 +26,13 @@ export async function registerCompany({
       return new CustomError("BAD_REQUEST", "Falha ao registrar empresa.");
     }
 
-    if (response.status === 401) {
-      console.log(response.status);
-
-      return new CustomError(
-        "PERMISSION_DND",
-        "usuário ou email já cadastrado.",
-      );
+    if (!response.ok) {
+      if (response.status === 400) {
+        const body = await response.json().catch(() => null);
+        const message = body?.message || "Usuário ou email já cadastrado.";
+        return new CustomError("BAD_REQUEST", message);
+      }
+      return new CustomError("BAD_REQUEST", "Falha ao registrar empresa.");
     }
 
     return true;
