@@ -10,6 +10,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { IconInput } from "@/components/ui/icon-input";
+import { Eye, EyeOff } from "lucide-react";
 import {
   PasswordResetFormValues,
   passwordResetSchema,
@@ -34,7 +36,7 @@ export default function PasswordResetForm({
   setOpenDialog,
 }: PasswordResetFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-
+  const [viewPassword, setViewPassword] = useState(false);
   const form = useForm<PasswordResetFormValues>({
     resolver: zodResolver(passwordResetSchema),
     defaultValues: {
@@ -89,7 +91,15 @@ export default function PasswordResetForm({
             <FormItem>
               <FormLabel>Nova Senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <IconInput
+                  ButtonIcon={{
+                    onClick: () => setViewPassword(!viewPassword),
+                    icon: viewPassword ? EyeOff : Eye,
+                  }}
+                  placeholder="••••••••"
+                  type={viewPassword ? "text" : "password"}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

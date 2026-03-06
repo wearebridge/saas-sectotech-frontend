@@ -186,7 +186,10 @@ export function AnalysisForm() {
     let hasChanges = false;
 
     selectedScript.scriptItems.forEach((item) => {
-      if (item.linkedClientField && predefinedFields.includes(item.linkedClientField)) {
+      if (
+        item.linkedClientField &&
+        predefinedFields.includes(item.linkedClientField)
+      ) {
         const value = item.linkedClientField === "yesResponse" ? "Sim" : "Não";
         if (currentAnswers[item.id] !== value) {
           currentAnswers[item.id] = value;
@@ -556,14 +559,57 @@ export function AnalysisForm() {
             {currentStepMeta.description}
           </CardDescription>
           {currentStep === 2 && (
-            <CardDescription className="text-center">
-              Contato:{" "}
-              {clientId
-                ? PhoneFormatter(
-                    clients.find((c) => c.id === clientId)?.phone || "",
-                  ) || "Não informado"
-                : "Não informado"}
-            </CardDescription>
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Cliente
+                  </span>
+                  <span className="text-sm font-medium">
+                    {clientId
+                      ? clients.find((c) => c.id === clientId)?.fullName ||
+                        "Não informado"
+                      : "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Contato
+                  </span>
+                  <span className="text-sm font-medium">
+                    {clientId
+                      ? PhoneFormatter(
+                          clients.find((c) => c.id === clientId)?.phone || "",
+                        ) || "Não informado"
+                      : "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Tipo de Serviço
+                  </span>
+                  <span className="text-sm font-medium">
+                    {serviceTypeName || "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Subtipo
+                  </span>
+                  <span className="text-sm font-medium">
+                    {serviceSubTypeName || "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Script
+                  </span>
+                  <span className="text-sm font-medium">
+                    {selectedScript?.name || "Não informado"}
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
         </CardHeader>
 

@@ -11,6 +11,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { IconInput } from "@/components/ui/icon-input";
+import { Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   UserFormValues,
@@ -42,6 +44,7 @@ export default function UsersForm({
   initalData,
 }: UsersFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [viewPassword, setViewPassword] = useState(false);
 
   const isEditing = !!initalData;
 
@@ -310,7 +313,15 @@ export default function UsersForm({
             <FormItem>
               <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <IconInput
+                  ButtonIcon={{
+                    onClick: () => setViewPassword(!viewPassword),
+                    icon: viewPassword ? EyeOff : Eye,
+                  }}
+                  placeholder="••••••••"
+                  type={viewPassword ? "text" : "password"}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
