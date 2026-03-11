@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import {
   ColumnDef,
   flexRender,
@@ -87,9 +88,17 @@ export function DashboardTable({
   const [subTypes, setSubTypes] = React.useState<string[]>([]);
   const [executors, setExecutors] = React.useState<string[]>([]);
 
-  const [date, setDate] = React.useState<Date | undefined>(
-    searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined,
-  );
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(() => {
+    const from = searchParams.get("dateFrom");
+    const to = searchParams.get("dateTo");
+    if (from || to) {
+      return {
+        from: from ? new Date(from) : undefined,
+        to: to ? new Date(to) : undefined,
+      };
+    }
+    return undefined;
+  });
   const [clientSearch, setClientSearch] = React.useState(
     searchParams.get("client") ?? "",
   );
@@ -209,10 +218,9 @@ export function DashboardTable({
 
   const filteredData = React.useMemo(() => {
     let filtered = data.filter((item) => {
-      if (
-        date &&
-        format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")
-      )
+      if (dateRange?.from && item.date < startOfDay(dateRange.from))
+        return false;
+      if (dateRange?.to && item.date > endOfDay(dateRange.to))
         return false;
       if (clientSearch) {
         const search = clientSearch.trim().toLowerCase();
@@ -241,12 +249,13 @@ export function DashboardTable({
     }
 
     return filtered;
-  }, [data, date, clientSearch, service, subType, executedBy, status, isHomeView]);
+  }, [data, dateRange, clientSearch, service, subType, executedBy, status, isHomeView]);
 
   React.useEffect(() => {
     if (clientId) return; // Don't update URL params when filtering by clientId
     const params = new URLSearchParams();
-    if (date) params.set("date", date.toISOString());
+    if (dateRange?.from) params.set("dateFrom", dateRange.from.toISOString());
+    if (dateRange?.to) params.set("dateTo", dateRange.to.toISOString());
     if (clientSearch) params.set("client", clientSearch);
     if (service) params.set("service", service);
     if (subType) params.set("subType", subType);
@@ -256,7 +265,7 @@ export function DashboardTable({
     params.set("pageSize", String(pageSize));
     router.replace(`?${params.toString()}`);
   }, [
-    date,
+    dateRange,
     clientSearch,
     service,
     subType,
@@ -299,19 +308,44 @@ export function DashboardTable({
                     size="sm"
                     className={cn(
                       "justify-start gap-2 text-left font-normal text-sm",
-                      !date && "text-muted-foreground",
+                      !dateRange?.from && "text-muted-foreground",
                     )}
                   >
                     <IconCalendar className="h-4 w-4" />
-                    {date
-                      ? format(date, "dd/MM/yyyy", { locale: ptBR })
-                      : "Data"}
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yy", { locale: ptBR })}
+                          {" - "}
+                          {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                      )
+                    ) : (
+                      "Período"
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date} onSelect={setDate} />
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
                 </PopoverContent>
               </Popover>
+              {dateRange?.from && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-muted-foreground"
+                  onClick={() => setDateRange(undefined)}
+                >
+                  Limpar data
+                </Button>
+              )}
 
               {isClientView === false && (
                 <div className="relative">

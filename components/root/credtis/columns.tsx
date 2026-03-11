@@ -2,7 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { CreditTransaction } from "@/types/credit-transaction";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowDownCircle, ArrowUpCircle, User } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, User, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export const columnsPurchaseHistory: ColumnDef<CreditTransaction>[] = [
   {
@@ -10,6 +11,27 @@ export const columnsPurchaseHistory: ColumnDef<CreditTransaction>[] = [
     header: "Data",
     cell: ({ row }) => {
       return formatDate(row.original.createdAt);
+    },
+  },
+  {
+    accessorKey: "analysisResultId",
+    header: "Análise",
+    cell: ({ row }) => {
+      const { analysisResultId } = row.original;
+      if (!analysisResultId) {
+        return <span className="text-muted-foreground">—</span>;
+      }
+      return (
+        <Link
+          href={`/historico/detalhes/${analysisResultId}`}
+          className="flex items-center gap-1 text-primary hover:underline font-medium"
+        >
+          <span className="truncate max-w-[100px]">
+            {analysisResultId.slice(0, 8)}…
+          </span>
+          <ExternalLink className="h-3 w-3 shrink-0" />
+        </Link>
+      );
     },
   },
   {
