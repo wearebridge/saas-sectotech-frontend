@@ -148,10 +148,12 @@ export function NavUser({
                 </DropdownMenuItem>
               </Link>
 
-              <DropdownMenuItem className="cursor-pointer">
-                <IconCreditCard />
-                Ajuda
-              </DropdownMenuItem>
+              <Link href="/ajuda">
+                <DropdownMenuItem className="cursor-pointer">
+                  <IconCreditCard />
+                  Ajuda
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
