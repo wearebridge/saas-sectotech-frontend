@@ -33,7 +33,7 @@ export const dashboardColumns = ({
       cell: ({ row }) => (
         <Link href={`/historico/detalhes/${row.original.id}`}>
           <span className="cursor-pointer hover:underline">
-            {format(row.original.date, "dd/MM/yyyy", { locale: ptBR })}
+            {format(row.original.date, "dd/MM/yyyy HH:mm", { locale: ptBR })}
           </span>
         </Link>
       ),

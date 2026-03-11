@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -51,7 +52,10 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import type { Control } from "react-hook-form";
 
@@ -117,7 +121,11 @@ function SortableQuestionItem({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input placeholder="Pergunta" {...field} />
+                <Textarea
+                  placeholder="Pergunta"
+                  className="min-h-20 resize-y"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -328,94 +336,99 @@ export function ScriptForm({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 gap-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col flex-1 min-h-0 gap-4"
+          >
             <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Script de vendas" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="flex flex-row  items-center space-x-3 space-y-0 rounded-md border p-4">
-                      <Checkbox
-                        className="cursor-pointer"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Ativo</FormLabel>
-                        <FormDescription>
-                          Este script estará disponível para uso.
-                        </FormDescription>
-                      </div>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <FormLabel>Perguntas do Script</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    append({ question: "", linkedClientField: null })
-                  }
-                >
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  Adicionar Pergunta
-                </Button>
-              </div>
-
-              <div className="h-[450px] w-full rounded-md border p-4 overflow-y-auto">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                  modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-                >
-                  <SortableContext
-                    items={fields.map((f) => f.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-4">
-                      {fields.map((field, index) => (
-                        <SortableQuestionItem
-                          key={field.id}
-                          id={field.id}
-                          index={index}
-                          control={form.control}
-                          onRemove={() => remove(index)}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Script de vendas" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex flex-row  items-center space-x-3 space-y-0 rounded-md border p-4">
+                        <Checkbox
+                          className="cursor-pointer"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
-                      ))}
-                      {fields.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          Nenhum item adicionado.
-                        </p>
-                      )}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            </div>
 
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Ativo</FormLabel>
+                          <FormDescription>
+                            Este script estará disponível para uso.
+                          </FormDescription>
+                        </div>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Perguntas do Script</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      append({ question: "", linkedClientField: null })
+                    }
+                  >
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Adicionar Pergunta
+                  </Button>
+                </div>
+
+                <div className="h-[450px] w-full rounded-md border p-4 overflow-y-auto">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                    modifiers={[
+                      restrictToVerticalAxis,
+                      restrictToParentElement,
+                    ]}
+                  >
+                    <SortableContext
+                      items={fields.map((f) => f.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-4">
+                        {fields.map((field, index) => (
+                          <SortableQuestionItem
+                            key={field.id}
+                            id={field.id}
+                            index={index}
+                            control={form.control}
+                            onRemove={() => remove(index)}
+                          />
+                        ))}
+                        {fields.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Nenhum item adicionado.
+                          </p>
+                        )}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              </div>
             </div>
 
             <div className="shrink-0 pt-2 border-t">
