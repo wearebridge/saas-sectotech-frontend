@@ -343,6 +343,7 @@ export function DashboardTable({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="range"
+                    locale={ptBR}
                     selected={dateRange}
                     onSelect={setDateRange}
                     numberOfMonths={2}
