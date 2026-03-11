@@ -419,12 +419,12 @@ export function HomeDashboard() {
                       "Quantidade de dias do período com débitos registrados.",
                   },
                   {
-                    label: "Total de análises",
+                    label: "Total de transações de crédito",
                     value: integerFormatter.format(
                       dashboard?.creditTransactions.length ?? 0,
                     ),
                     description:
-                      "Número total de análises realizadas no período, incluindo dias sem consumo",
+                      "Número total de transações de crédito no período, incluindo débitos e créditos.",
                   },
                 ].map((item) => (
                   <div
