@@ -45,7 +45,7 @@ const isInsufficientCreditsMessage = (message: string) =>
 export default function AnalysisDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
   const { credits, loading: creditsLoading, refreshCredits } = useCredit();
   const [analysis, setAnalysis] = useState<AnalysisItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -312,7 +312,7 @@ export default function AnalysisDetailPage() {
               />
               {regenerating ? "Re-gerando..." : "Re-gerar Análise"}
             </Button>
-            {analysis.audioUrl && (
+            {isCompanyAdmin && analysis.audioUrl && (
               <Button
                 variant="outline"
                 onClick={() => handleDownloadAudio(analysis)}

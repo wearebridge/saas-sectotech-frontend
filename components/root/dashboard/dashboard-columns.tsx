@@ -21,10 +21,12 @@ import { Button } from "@/components/ui/button";
 
 interface DashboardColumnsProps {
   handleDownloadAudio: (analysis: AnalysisItem) => void;
+  isCompanyAdmin?: boolean;
 }
 
 export const dashboardColumns = ({
   handleDownloadAudio,
+  isCompanyAdmin = false,
 }: DashboardColumnsProps) => {
   const columns: ColumnDef<AnalysisItem>[] = [
     {
@@ -114,14 +116,16 @@ export const dashboardColumns = ({
                 Ver análise
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => handleDownloadAudio(row.original)}
-              disabled={!row.original.audioUrl}
-            >
-              <IconDownload className="mr-2 h-4 w-4" />
-              Baixar áudio
-            </DropdownMenuItem>
+            {isCompanyAdmin && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => handleDownloadAudio(row.original)}
+                disabled={!row.original.audioUrl}
+              >
+                <IconDownload className="mr-2 h-4 w-4" />
+                Baixar áudio
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

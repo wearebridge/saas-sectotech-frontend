@@ -82,7 +82,7 @@ export function DashboardTable({
 }: DashboardTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
   const [data, setData] = React.useState<AnalysisItem[]>([]);
   const [services, setServices] = React.useState<string[]>([]);
   const [subTypes, setSubTypes] = React.useState<string[]>([]);
@@ -152,8 +152,8 @@ export function DashboardTable({
   );
 
   const columns: ColumnDef<AnalysisItem>[] = React.useMemo(
-    () => dashboardColumns({ handleDownloadAudio }),
-    [handleDownloadAudio],
+    () => dashboardColumns({ handleDownloadAudio, isCompanyAdmin }),
+    [handleDownloadAudio, isCompanyAdmin],
   );
 
   React.useEffect(() => {
