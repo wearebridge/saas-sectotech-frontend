@@ -419,12 +419,12 @@ export function HomeDashboard() {
                       "Quantidade de dias do período com débitos registrados.",
                   },
                   {
-                    label: "Movimentações retornadas",
+                    label: "Total de análises",
                     value: integerFormatter.format(
                       dashboard?.creditTransactions.length ?? 0,
                     ),
                     description:
-                      "Transações de crédito consideradas pelo endpoint da dashboard.",
+                      "Número total de análises realizadas no período, incluindo dias sem consumo",
                   },
                 ].map((item) => (
                   <div
