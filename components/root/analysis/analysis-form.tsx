@@ -291,20 +291,32 @@ export function AnalysisForm() {
       "audio/mp3",
       "audio/ogg",
       "audio/m4a",
+      "audio/x-m4a",
       "audio/mp4",
+      "audio/aac",
+      "audio/x-aac",
+      "audio/webm",
       "video/mp4",
+      "application/mp4",
     ];
-    if (
-      !allowedTypes.includes(file.type) &&
-      !file.name.match(/\.(mp3|wav|ogg|m4a|mp4)$/i)
-    ) {
+    const hasSupportedMime = !!file.type && allowedTypes.includes(file.type);
+    const hasSupportedExtension = /\.(mp3|wav|ogg|m4a|mp4|aac|webm)$/i.test(
+      file.name,
+    );
+
+    if (!hasSupportedMime && !hasSupportedExtension) {
       toast.error(
-        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A, MP4)",
+        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A, MP4, AAC, WEBM)",
       );
       return;
     }
 
-    form.setValue("audioFile", file);
+    form.setValue("audioFile", file, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.clearErrors("audioFile");
     setAudioDuration(null);
     setEstimatedCredits(null);
 
@@ -372,7 +384,16 @@ export function AnalysisForm() {
 
     // Step 3: Validar arquivo de áudio e fazer submit
     if (currentStep === 3) {
-      const audioFile = form.getValues("audioFile");
+      const selectedInputFile = fileInputRef.current?.files?.[0];
+      const audioFile = form.getValues("audioFile") || selectedInputFile;
+
+      if (audioFile && !form.getValues("audioFile")) {
+        form.setValue("audioFile", audioFile, {
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true,
+        });
+      }
 
       form.clearErrors("audioFile");
 
