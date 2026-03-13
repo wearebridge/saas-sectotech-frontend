@@ -291,13 +291,15 @@ export function AnalysisForm() {
       "audio/mp3",
       "audio/ogg",
       "audio/m4a",
+      "audio/mp4",
+      "video/mp4",
     ];
     if (
       !allowedTypes.includes(file.type) &&
-      !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)
+      !file.name.match(/\.(mp3|wav|ogg|m4a|mp4)$/i)
     ) {
       toast.error(
-        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A)",
+        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A, MP4)",
       );
       return;
     }
