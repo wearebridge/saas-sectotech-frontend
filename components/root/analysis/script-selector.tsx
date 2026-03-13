@@ -511,7 +511,7 @@ export function ScriptSelector({
                           <Command>
                             <CommandInput placeholder="Buscar por cliente..." />
                             <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                            <CommandGroup>
+                            <CommandGroup className="max-h-64 overflow-y-auto">
                               {sortedClients.map((client) => (
                                 <CommandItem
                                   key={client.id}
