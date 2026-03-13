@@ -266,7 +266,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por subtipo..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {serviceSubTypes
                             .filter((subType) => subType.status)
                             .map((subType) => (
@@ -350,7 +350,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por tipo..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {serviceTypes
                             .filter((type) => type.status)
                             .map((type) => (
@@ -432,7 +432,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por script..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {scripts
                             .filter((script) => script.status)
                             .map((script) => (
