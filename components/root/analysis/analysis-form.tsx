@@ -285,29 +285,24 @@ export function AnalysisForm() {
       return;
     }
 
-    const allowedTypes = [
-      "audio/mpeg",
-      "audio/wav",
-      "audio/mp3",
-      "audio/ogg",
-      "audio/m4a",
-      "audio/x-m4a",
-      "audio/mp4",
-      "audio/aac",
-      "audio/x-aac",
-      "audio/webm",
-      "video/mp4",
-      "application/mp4",
-    ];
-    const hasSupportedMime = !!file.type && allowedTypes.includes(file.type);
-    const hasSupportedExtension = /\.(mp3|wav|ogg|m4a|mp4|aac|webm)$/i.test(
-      file.name,
+    const hasAudioMime = file.type.startsWith("audio/");
+    const hasMp4ContainerMime = ["video/mp4", "application/mp4"].includes(
+      file.type,
     );
+    const hasMpegContainerMime = ["video/mpeg", "application/mpeg"].includes(
+      file.type,
+    );
+    const hasAudioExtension = /\.(mpeg|mpg|mpga)$/i.test(file.name);
+    const hasUnknownMime = !file.type;
 
-    if (!hasSupportedMime && !hasSupportedExtension) {
-      toast.error(
-        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A, MP4, AAC, WEBM)",
-      );
+    if (
+      !hasAudioMime &&
+      !hasMp4ContainerMime &&
+      !hasMpegContainerMime &&
+      !hasAudioExtension &&
+      !hasUnknownMime
+    ) {
+      toast.error("Por favor, selecione um arquivo de áudio válido.");
       return;
     }
 
