@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { IconDownload, IconRefresh } from "@tabler/icons-react";
+import { IconDownload, IconRefresh, IconShieldCheck, IconPencil } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { AnalysisItem } from "@/types/analysis";
 import { CustomError } from "@/lib/errors/custom-errors";
 import { useKeycloak } from "@/lib/keycloak";
-import { getAnalysisById, regenerateAnalysis, getAudioDownloadUrl } from "@/service/analysis";
+import { getAnalysisById, regenerateAnalysis, getAudioDownloadUrl, overrideAnalysisQuestion } from "@/service/analysis";
 import { useCredit } from "@/lib/credit-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,12 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapAnalysisItem = (item: any): AnalysisItem => ({
@@ -51,8 +57,44 @@ export default function AnalysisDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [overriding, setOverriding] = useState<number | null>(null);
 
   const analysisId = params.id as string;
+
+  const handleOverride = async (
+    questionIndex: number,
+    field: "correct" | "questionAsked",
+    currentValue: boolean,
+  ) => {
+    if (!token || !analysisId || overriding !== null) return;
+
+    setOverriding(questionIndex);
+    try {
+      const payload: {
+        id: string;
+        questionIndex: number;
+        correct?: boolean;
+        questionAsked?: boolean;
+        token: string;
+      } = { id: analysisId, questionIndex, token };
+
+      payload[field] = !currentValue;
+
+      const result = await overrideAnalysisQuestion(payload);
+
+      if (result instanceof CustomError) {
+        toast.error(result.message || "Erro ao corrigir a questão");
+        return;
+      }
+
+      setAnalysis(mapAnalysisItem(result));
+      toast.success("Questão corrigida com sucesso");
+    } catch {
+      toast.error("Erro ao corrigir a questão");
+    } finally {
+      setOverriding(null);
+    }
+  };
 
   useEffect(() => {
     const loadAnalysis = async () => {
@@ -286,14 +328,23 @@ export default function AnalysisDetailPage() {
                   <Label className="text-xs font-medium text-muted-foreground">
                     Resultado
                   </Label>
-                  {analysis && (
-                    <Badge
-                      variant={analysis.approved ? "default" : "destructive"}
-                      className="mt-1"
-                    >
-                      {analysis.approved ? "Aprovado" : "Reprovado"}
-                    </Badge>
-                  )}
+                  {analysis && (() => {
+                    const hasOverrides = analysis.aiOutput?.output?.some(item => item.adminOverride);
+                    const effectiveApproved = hasOverrides
+                      ? analysis.aiOutput!.output!.every(item => {
+                          const eff = item.adminOverride?.correct ?? item.correct;
+                          return eff;
+                        })
+                      : analysis.approved;
+                    return (
+                      <Badge
+                        variant={effectiveApproved ? "default" : "destructive"}
+                        className="mt-1"
+                      >
+                        {effectiveApproved ? "Aprovado" : "Reprovado"}
+                      </Badge>
+                    );
+                  })()}
                 </div>
               </div>
             </>
@@ -347,25 +398,162 @@ export default function AnalysisDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="font-semibold mb-3">Análise por Pergunta</h3>
+                  {isCompanyAdmin && (
+                    <div className="mb-4 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                      <IconPencil className="h-4 w-4 shrink-0" />
+                      <span>Como administrador, você pode clicar nos badges para corrigir o resultado da IA.</span>
+                    </div>
+                  )}
                   <div className="space-y-3">
-                    {analysis.aiOutput.output.map((item, index) => (
+                    <TooltipProvider>
+                    {analysis.aiOutput.output.map((item, index) => {
+                      const effectiveQuestionAsked = item.adminOverride?.questionAsked ?? item.questionAsked;
+                      const effectiveCorrect = item.adminOverride?.correct ?? item.correct;
+                      const hasOverride = !!item.adminOverride;
+
+                      return (
                       <div key={index} className="rounded-lg border p-4">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">
                             Pergunta {index + 1}
                           </span>
-                          <div className="flex gap-2">
-                            <Badge
-                              variant={item.questionAsked ? "outline" : "destructive"}
-                              className={item.questionAsked ? "border-green-500 text-green-700" : ""}
-                            >
-                              {item.questionAsked ? "Pergunta feita" : "Pergunta não feita"}
-                            </Badge>
-                            <Badge
-                              variant={item.correct ? "default" : "destructive"}
-                            >
-                              {item.correct ? "Correto" : "Incorreto"}
-                            </Badge>
+                          <div className="flex items-center gap-2">
+                            {isCompanyAdmin ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    disabled={overriding !== null}
+                                    onClick={() => handleOverride(index, "questionAsked", effectiveQuestionAsked)}
+                                    className="inline-flex items-center gap-1 cursor-pointer disabled:opacity-50 rounded-md hover:ring-2 hover:ring-blue-300 transition-all"
+                                  >
+                                    <Badge
+                                      variant={effectiveQuestionAsked ? "outline" : "destructive"}
+                                      className={
+                                        effectiveQuestionAsked
+                                          ? `border-green-500 text-green-700 ${item.adminOverride?.questionAsked !== undefined ? "border-dashed" : ""}`
+                                          : item.adminOverride?.questionAsked !== undefined ? "border-dashed border" : ""
+                                      }
+                                    >
+                                      {item.adminOverride?.questionAsked !== undefined && (
+                                        <IconShieldCheck className="mr-1 h-3 w-3" />
+                                      )}
+                                      {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}
+                                    </Badge>
+                                    <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {item.adminOverride?.questionAsked !== undefined ? (
+                                    <div className="space-y-1 text-xs max-w-[220px]">
+                                      <p><span className="font-medium">IA original:</span> {item.questionAsked ? "Pergunta feita" : "Pergunta não feita"}</p>
+                                      <p><span className="font-medium">Corrigido para:</span> {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}</p>
+                                      <p><span className="font-medium">Por:</span> {item.adminOverride.overriddenBy}</p>
+                                      <p><span className="font-medium">Em:</span> {new Date(item.adminOverride.overriddenAt).toLocaleString("pt-BR")}</p>
+                                      <p className="border-t pt-1 mt-1 text-muted-foreground">Clique para alternar novamente</p>
+                                    </div>
+                                  ) : (
+                                    <p>Clique para alternar para &quot;{effectiveQuestionAsked ? "Pergunta não feita" : "Pergunta feita"}&quot;</p>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : item.adminOverride?.questionAsked !== undefined ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={effectiveQuestionAsked ? "outline" : "destructive"}
+                                    className={
+                                      effectiveQuestionAsked
+                                        ? "border-green-500 text-green-700 border-dashed cursor-help"
+                                        : "border-dashed border cursor-help"
+                                    }
+                                  >
+                                    <IconShieldCheck className="mr-1 h-3 w-3" />
+                                    {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1 text-xs max-w-[220px]">
+                                    <p><span className="font-medium">IA original:</span> {item.questionAsked ? "Pergunta feita" : "Pergunta não feita"}</p>
+                                    <p><span className="font-medium">Corrigido para:</span> {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}</p>
+                                    <p><span className="font-medium">Por:</span> {item.adminOverride.overriddenBy}</p>
+                                    <p><span className="font-medium">Em:</span> {new Date(item.adminOverride.overriddenAt).toLocaleString("pt-BR")}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Badge
+                                variant={effectiveQuestionAsked ? "outline" : "destructive"}
+                                className={
+                                  effectiveQuestionAsked ? "border-green-500 text-green-700" : ""
+                                }
+                              >
+                                {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}
+                              </Badge>
+                            )}
+
+                            {isCompanyAdmin ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    disabled={overriding !== null}
+                                    onClick={() => handleOverride(index, "correct", effectiveCorrect)}
+                                    className="inline-flex items-center gap-1 cursor-pointer disabled:opacity-50 rounded-md hover:ring-2 hover:ring-blue-300 transition-all"
+                                  >
+                                    <Badge
+                                      variant={effectiveCorrect ? "default" : "destructive"}
+                                      className={item.adminOverride?.correct !== undefined ? "border-dashed border" : ""}
+                                    >
+                                      {item.adminOverride?.correct !== undefined && (
+                                        <IconShieldCheck className="mr-1 h-3 w-3" />
+                                      )}
+                                      {effectiveCorrect ? "Correto" : "Incorreto"}
+                                    </Badge>
+                                    <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {item.adminOverride?.correct !== undefined ? (
+                                    <div className="space-y-1 text-xs max-w-[220px]">
+                                      <p><span className="font-medium">IA original:</span> {item.correct ? "Correto" : "Incorreto"}</p>
+                                      <p><span className="font-medium">Corrigido para:</span> {effectiveCorrect ? "Correto" : "Incorreto"}</p>
+                                      <p><span className="font-medium">Por:</span> {item.adminOverride.overriddenBy}</p>
+                                      <p><span className="font-medium">Em:</span> {new Date(item.adminOverride.overriddenAt).toLocaleString("pt-BR")}</p>
+                                      <p className="border-t pt-1 mt-1 text-muted-foreground">Clique para alternar novamente</p>
+                                    </div>
+                                  ) : (
+                                    <p>Clique para alternar para &quot;{effectiveCorrect ? "Incorreto" : "Correto"}&quot;</p>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : item.adminOverride?.correct !== undefined ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={effectiveCorrect ? "default" : "destructive"}
+                                    className="border-dashed border cursor-help"
+                                  >
+                                    <IconShieldCheck className="mr-1 h-3 w-3" />
+                                    {effectiveCorrect ? "Correto" : "Incorreto"}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1 text-xs max-w-[220px]">
+                                    <p><span className="font-medium">IA original:</span> {item.correct ? "Correto" : "Incorreto"}</p>
+                                    <p><span className="font-medium">Corrigido para:</span> {effectiveCorrect ? "Correto" : "Incorreto"}</p>
+                                    <p><span className="font-medium">Por:</span> {item.adminOverride.overriddenBy}</p>
+                                    <p><span className="font-medium">Em:</span> {new Date(item.adminOverride.overriddenAt).toLocaleString("pt-BR")}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Badge
+                                variant={effectiveCorrect ? "default" : "destructive"}
+                              >
+                                {effectiveCorrect ? "Correto" : "Incorreto"}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <Separator className="my-3" />
@@ -388,9 +576,26 @@ export default function AnalysisDetailPage() {
                             </span>
                             <p className="text-sm">{item.analysis}</p>
                           </div>
+                          {hasOverride && (
+                            <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground border-t pt-2">
+                              <IconShieldCheck className="h-3.5 w-3.5" />
+                              <span>
+                                Corrigido por <strong>{item.adminOverride!.overriddenBy}</strong> em{" "}
+                                {new Date(item.adminOverride!.overriddenAt).toLocaleDateString("pt-BR", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
+                    </TooltipProvider>
                   </div>
                 </div>
               </CardContent>

@@ -163,6 +163,57 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  url: string,
+  body: object,
+  auth: string,
+  options?: RequestOptions,
+): Promise<Response | CustomError> {
+  try {
+    if (!url || !body || !auth) {
+      return new CustomError("EMPTY_FIELD");
+    }
+
+    const controller = new AbortController();
+    const timeout = options?.timeout ?? 30000;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(`${baseUrl}${url}`, {
+        method: "PATCH",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip, deflate, br",
+          Authorization: `Bearer ${auth}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 403) {
+        return new CustomError("PERMISSION_DND");
+      }
+
+      if (response.status === 400) {
+        return new CustomError("BAD_REQUEST");
+      }
+
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if ((error as Error).name === "AbortError") {
+        return new CustomError("API_PROBLEM");
+      }
+      throw error;
+    }
+  } catch {
+    return new CustomError("API_PROBLEM");
+  }
+}
+
 export async function DELETE(
   url: string,
   body: object,

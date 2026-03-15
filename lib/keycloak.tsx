@@ -58,8 +58,22 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         setToken(kc.token);
         if (auth && kc.tokenParsed) {
           setCurrentUserId(kc.tokenParsed.sub);
+
+          // Collect roles from realm_access and all resource_access clients
+          const allRoles = new Set<string>();
           const realmAccess = (kc.tokenParsed as Record<string, unknown>).realm_access as { roles?: string[] } | undefined;
-          setRoles(realmAccess?.roles ?? []);
+          if (realmAccess?.roles) {
+            realmAccess.roles.forEach((r) => allRoles.add(r));
+          }
+          const resourceAccess = (kc.tokenParsed as Record<string, unknown>).resource_access as Record<string, { roles?: string[] }> | undefined;
+          if (resourceAccess) {
+            Object.values(resourceAccess).forEach((client) => {
+              if (client?.roles) {
+                client.roles.forEach((r) => allRoles.add(r));
+              }
+            });
+          }
+          setRoles(Array.from(allRoles));
         }
         setLoading(false);
 

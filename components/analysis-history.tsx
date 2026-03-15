@@ -26,7 +26,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { Eye, CheckCircle, XCircle, Calendar, User, Search, Filter } from "lucide-react"
+import { Eye, CheckCircle, XCircle, Calendar, User, Search, Filter, ShieldCheck } from "lucide-react"
 
 interface AnalysisHistoryItem {
   id: string
@@ -322,13 +322,41 @@ export function AnalysisHistory() {
                               <div>
                                 <Label className="text-sm font-medium">Resultado da Análise</Label>
                                 <div className="space-y-3 mt-2">
-                                  {selectedAnalysis.aiOutput.output.map((item: any, index: number) => (
+                                  {selectedAnalysis.aiOutput.output.map((item: any, index: number) => {
+                                    const effectiveCorrect = item.adminOverride?.correct ?? item.correct;
+                                    const effectiveQuestionAsked = item.adminOverride?.questionAsked ?? item.questionAsked;
+                                    const hasOverride = !!item.adminOverride;
+
+                                    return (
                                     <div key={index} className="border rounded-lg p-4">
                                       <div className="flex items-center justify-between mb-2">
                                         <span className="text-sm font-medium">Pergunta {index + 1}</span>
-                                        <Badge variant={item.correct ? "default" : "destructive"}>
-                                          {item.correct ? "Correto" : "Incorreto"}
-                                        </Badge>
+                                        <div className="flex gap-2">
+                                          {effectiveQuestionAsked !== undefined && (
+                                            <Badge
+                                              variant={effectiveQuestionAsked ? "outline" : "destructive"}
+                                              className={
+                                                effectiveQuestionAsked
+                                                  ? `border-green-500 text-green-700 ${item.adminOverride?.questionAsked !== undefined ? "border-dashed" : ""}`
+                                                  : item.adminOverride?.questionAsked !== undefined ? "border-dashed border" : ""
+                                              }
+                                            >
+                                              {item.adminOverride?.questionAsked !== undefined && (
+                                                <ShieldCheck className="mr-1 h-3 w-3" />
+                                              )}
+                                              {effectiveQuestionAsked ? "Pergunta feita" : "Pergunta não feita"}
+                                            </Badge>
+                                          )}
+                                          <Badge
+                                            variant={effectiveCorrect ? "default" : "destructive"}
+                                            className={item.adminOverride?.correct !== undefined ? "border-dashed border" : ""}
+                                          >
+                                            {item.adminOverride?.correct !== undefined && (
+                                              <ShieldCheck className="mr-1 h-3 w-3" />
+                                            )}
+                                            {effectiveCorrect ? "Correto" : "Incorreto"}
+                                          </Badge>
+                                        </div>
                                       </div>
                                       <div className="space-y-2">
                                         <div>
@@ -343,9 +371,25 @@ export function AnalysisHistory() {
                                           <span className="text-xs font-medium text-muted-foreground">Análise:</span>
                                           <p className="text-sm">{item.analysis}</p>
                                         </div>
+                                        {hasOverride && (
+                                          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground border-t pt-2">
+                                            <ShieldCheck className="h-3.5 w-3.5" />
+                                            <span>
+                                              Corrigido por <strong>{item.adminOverride.overriddenBy}</strong> em{" "}
+                                              {new Date(item.adminOverride.overriddenAt).toLocaleDateString("pt-BR", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
