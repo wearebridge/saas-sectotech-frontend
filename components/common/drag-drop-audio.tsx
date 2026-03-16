@@ -18,7 +18,7 @@ export function DragDropAudio({
   onFileSelect,
   isCalculatingCredits,
   selectedFileName,
-  accept = "audio/*,video/mp4,application/mp4,video/mpeg,application/mpeg,.mpeg,.mpg,.mpga",
+  accept = ".mp3,.ogg,.flac,.m4a,.mp4,.wav,.wma,audio/mpeg,audio/ogg,audio/flac,audio/mp4,audio/x-m4a,video/mp4,audio/wav,audio/x-wav,audio/wave,audio/x-ms-wma",
   className,
 }: DragDropAudioProps) {
   const [isDragActive, setIsDragActive] = useState(false);
@@ -83,7 +83,7 @@ export function DragDropAudio({
               : "Arraste e solte o audio aqui"}
           </p>
           <p className="text-xs text-muted-foreground">
-            Qualquer formato de áudio (incluindo MPEG)
+            Formatos permitidos: MP3, OGG, FLAC, M4A, MP4, WAV e WMA
           </p>
           {selectedFileName ? (
             <div className="flex items-center justify-center">

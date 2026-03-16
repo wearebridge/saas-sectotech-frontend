@@ -62,6 +62,21 @@ const isInsufficientCreditsMessage = (message: string) =>
   /insuficient|insufficient/i.test(message) &&
   /cr[eé]dito|credit/i.test(message);
 
+const ALLOWED_AUDIO_EXTENSIONS = [
+  ".mp3",
+  ".ogg",
+  ".flac",
+  ".m4a",
+  ".mp4",
+  ".wav",
+  ".wma",
+];
+
+const hasAllowedAudioExtension = (fileName: string) => {
+  const normalizedName = fileName.toLowerCase();
+  return ALLOWED_AUDIO_EXTENSIONS.some((ext) => normalizedName.endsWith(ext));
+};
+
 const GENDER_LABELS: Record<string, string> = {
   MALE: "Masculino",
   FEMALE: "Feminino",
@@ -285,24 +300,15 @@ export function AnalysisForm() {
       return;
     }
 
-    const hasAudioMime = file.type.startsWith("audio/");
-    const hasMp4ContainerMime = ["video/mp4", "application/mp4"].includes(
-      file.type,
-    );
-    const hasMpegContainerMime = ["video/mpeg", "application/mpeg"].includes(
-      file.type,
-    );
-    const hasAudioExtension = /\.(mpeg|mpg|mpga)$/i.test(file.name);
-    const hasUnknownMime = !file.type;
-
-    if (
-      !hasAudioMime &&
-      !hasMp4ContainerMime &&
-      !hasMpegContainerMime &&
-      !hasAudioExtension &&
-      !hasUnknownMime
-    ) {
-      toast.error("Por favor, selecione um arquivo de áudio válido.");
+    if (!hasAllowedAudioExtension(file.name)) {
+      toast.error(
+        "Formato inválido. Use apenas: MP3, OGG, FLAC, M4A, MP4, WAV ou WMA.",
+      );
+      form.setValue("audioFile", undefined, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
       return;
     }
 
@@ -396,6 +402,14 @@ export function AnalysisForm() {
         form.setError("audioFile", {
           type: "manual",
           message: "Selecione um arquivo de audio",
+        });
+        return;
+      }
+
+      if (!hasAllowedAudioExtension(audioFile.name)) {
+        form.setError("audioFile", {
+          type: "manual",
+          message: "Formato inválido. Permitidos: MP3, OGG, FLAC, M4A, MP4, WAV e WMA.",
         });
         return;
       }
