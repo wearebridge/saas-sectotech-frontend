@@ -24,7 +24,12 @@ const faqItems = [
   {
     question: "Quais formatos de áudio são aceitos?",
     answer:
-      "Os formatos disponíveis dependem da configuração do serviço. Se um arquivo não for aceito, tente converter para um formato mais comum (como MP3 ou WAV) e reenviar.",
+      "Tipo de áudio permitido: MP3 (.mp3), OGG (.ogg), FLAC (.flac), M4A (.m4a), MP4 (.mp4), WAV (.wav) e WMA (.wma).",
+  },
+  {
+    question: "Como devem ser as perguntas?",
+    answer:
+      "As perguntas devem ser objetivas e fechadas, com possibilidade de resposta clara. Não pode ter perguntas abertas ou sem resposta.",
   },
   {
     question: "Onde acompanho o resultado das minhas análises?",
