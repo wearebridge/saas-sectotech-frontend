@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SECTOTECH - Auth",
-  description: "Autenticação e Registro",
+  title: "Listen Solution",
+  description: "Validador de áudio Listen Solution",
 };
 
 export default function AuthLayout({

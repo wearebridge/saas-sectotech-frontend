@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SECTOTECH",
-  description: "Validador de áudio SectoTech",
+  title: "Listen Solution",
+  description: "Validador de áudio Listen Solution",
 };
 
 export default function RootLayout({
