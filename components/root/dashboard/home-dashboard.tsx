@@ -341,43 +341,43 @@ export function HomeDashboard() {
               <Skeleton className="h-56 sm:h-72 md:h-85 w-full" />
             ) : chartData.length > 0 ? (
               <div className="w-full overflow-hidden">
-              <ChartContainer
-                config={chartConfig}
-                className="h-56 sm:h-72 md:h-85 w-full"
-              >
-                <BarChart accessibilityLayer data={chartData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="dateLabel"
-                    axisLine={false}
-                    tickLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(value: number) =>
-                      creditFormatter.format(value)
-                    }
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) => [
-                          `${creditFormatter.format(Number(value))} `,
-                          "créditos usados",
-                        ]}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="creditsUsed"
-                    radius={[10, 10, 0, 0]}
-                    fill="var(--color-creditsUsed)"
-                  />
-                </BarChart>
-              </ChartContainer>
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-56 sm:h-72 md:h-85 w-full"
+                >
+                  <BarChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="dateLabel"
+                      axisLine={false}
+                      tickLine={false}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value: number) =>
+                        creditFormatter.format(value)
+                      }
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => [
+                            `${creditFormatter.format(Number(value))} `,
+                            "créditos usados",
+                          ]}
+                        />
+                      }
+                    />
+                    <Bar
+                      dataKey="creditsUsed"
+                      radius={[10, 10, 0, 0]}
+                      fill="var(--color-creditsUsed)"
+                    />
+                  </BarChart>
+                </ChartContainer>
               </div>
             ) : (
               <div className="text-muted-foreground flex h-56 sm:h-72 md:h-85 items-center justify-center rounded-xl border border-dashed text-sm">
