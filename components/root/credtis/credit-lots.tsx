@@ -148,34 +148,43 @@ export function CreditLots() {
     );
   };
 
+  const statusOrder: Record<string, number> = {
+    active: 0,
+    "expiring-soon": 1,
+    expired: 2,
+    depleted: 3,
+  };
+
+  const sortedLots = [...lots].sort((a, b) => {
+    const statusA = statusOrder[getStatus(a)] ?? 99;
+    const statusB = statusOrder[getStatus(b)] ?? 99;
+    if (statusA !== statusB) return statusA - statusB;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="px-4 font-medium">
-                Data de Compra
-              </TableHead>
+              <TableHead className="px-4 font-medium">Data de Compra</TableHead>
               <TableHead className="px-4 font-medium">Tipo</TableHead>
               <TableHead className="px-4 font-medium">
                 Créditos Originais
               </TableHead>
               <TableHead className="px-4 font-medium">Restantes</TableHead>
               <TableHead className="px-4 font-medium">Expiração</TableHead>
-              <TableHead className="px-4 font-medium">
-                Dias Restantes
-              </TableHead>
+              <TableHead className="px-4 font-medium">Dias Restantes</TableHead>
               <TableHead className="px-4 font-medium">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {lots.map((lot) => {
+            {sortedLots.map((lot) => {
               const status = getStatus(lot);
               const original = Number(lot.amount);
               const remaining = Number(lot.remainingAmount ?? 0);
-              const progress =
-                original > 0 ? (remaining / original) * 100 : 0;
+              const progress = original > 0 ? (remaining / original) * 100 : 0;
               const daysRemaining = getDaysRemaining(lot.expiresAt);
 
               return (
@@ -223,7 +232,9 @@ export function CreditLots() {
                               : ""
                         }
                       >
-                        {daysRemaining > 0 ? `${daysRemaining} dias` : "Expirado"}
+                        {daysRemaining > 0
+                          ? `${daysRemaining} dias`
+                          : "Expirado"}
                       </span>
                     ) : (
                       "—"

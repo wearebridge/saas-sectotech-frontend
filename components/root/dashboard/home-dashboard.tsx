@@ -202,7 +202,7 @@ export function HomeDashboard() {
   }, [dashboard]);
 
   return (
-    <div className="flex flex-col gap-5 md:gap-6">
+    <div className="flex w-full flex-col gap-5 md:gap-6">
       <Card className="border-border/60 bg-linear-to-br from-card via-card to-muted/50">
         <CardHeader className="gap-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -211,7 +211,7 @@ export function HomeDashboard() {
                 <CalendarDays className="h-4 w-4" />
                 Dashboard operacional
               </div>
-              <CardTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              <CardTitle className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">
                 Visão geral da operação
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm sm:text-base">
@@ -270,7 +270,7 @@ export function HomeDashboard() {
         </CardHeader>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
               <Card key={index}>
@@ -315,8 +315,8 @@ export function HomeDashboard() {
             })}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <Card className="border-border/60">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] min-w-0 overflow-hidden">
+        <Card className="border-border/60 overflow-hidden min-w-0">
           <CardHeader className="gap-3 pb-2">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="space-y-1">
@@ -338,9 +338,13 @@ export function HomeDashboard() {
 
           <CardContent>
             {loading ? (
-              <Skeleton className="h-85 w-full" />
+              <Skeleton className="h-56 sm:h-72 md:h-85 w-full" />
             ) : chartData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="h-85 w-full">
+              <div className="w-full overflow-hidden">
+              <ChartContainer
+                config={chartConfig}
+                className="h-56 sm:h-72 md:h-85 w-full"
+              >
                 <BarChart accessibilityLayer data={chartData}>
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -361,8 +365,8 @@ export function HomeDashboard() {
                     content={
                       <ChartTooltipContent
                         formatter={(value) => [
-                          `${creditFormatter.format(Number(value))} créditos`,
-                          "Créditos usados",
+                          `${creditFormatter.format(Number(value))} `,
+                          "créditos usados",
                         ]}
                       />
                     }
@@ -374,15 +378,16 @@ export function HomeDashboard() {
                   />
                 </BarChart>
               </ChartContainer>
+              </div>
             ) : (
-              <div className="text-muted-foreground flex h-85 items-center justify-center rounded-xl border border-dashed text-sm">
+              <div className="text-muted-foreground flex h-56 sm:h-72 md:h-85 items-center justify-center rounded-xl border border-dashed text-sm">
                 Nenhum consumo de crédito encontrado para o período selecionado.
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-border/60">
+        <Card className="border-border/60 overflow-hidden min-w-0">
           <CardHeader className="gap-1">
             <CardTitle>Resumo do período</CardTitle>
             <CardDescription>

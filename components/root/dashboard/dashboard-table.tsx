@@ -547,7 +547,7 @@ export function DashboardTable({
           </div>
         )}
 
-        <div className="rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border">
           <Table className="min-w-max">
             <TableHeader className="bg-muted/50">
               {table.getHeaderGroups().map((headerGroup) => (
