@@ -194,17 +194,7 @@ export function CompanyRegistrationForm() {
                 <FormItem>
                   <FormLabel>Usuário (Login)</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Ex: joao.silva"
-                      {...field}
-                      onChange={(e) => {
-                        const filtered = e.target.value.replace(
-                          /[^a-zA-Z0-9._\-]/g,
-                          "",
-                        );
-                        field.onChange(filtered);
-                      }}
-                    />
+                    <Input placeholder="Ex: joao.silva" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
