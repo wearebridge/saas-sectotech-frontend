@@ -2,6 +2,29 @@ import { ClientRequest, ClientResponse } from "@/types/client";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+async function getResponseErrorMessage(
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> {
+  try {
+    const errorData = await response.json();
+
+    if (
+      typeof errorData === "object" &&
+      errorData !== null &&
+      "message" in errorData &&
+      typeof errorData.message === "string" &&
+      errorData.message.trim()
+    ) {
+      return errorData.message;
+    }
+  } catch {
+    // Ignore JSON parsing errors and keep the fallback below.
+  }
+
+  return fallbackMessage;
+}
+
 export class ClientService {
   static async findAll(token: string): Promise<ClientResponse[]> {
     const response = await fetch(`${API_BASE_URL}/clients`, {
@@ -47,7 +70,6 @@ export class ClientService {
     data: ClientRequest,
     token: string,
   ): Promise<ClientResponse> {
-    // Convert string status to boolean for backend
     const backendData = {
       ...data,
       status: data.status === "active",
@@ -65,7 +87,9 @@ export class ClientService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to create client");
+      throw new Error(
+        await getResponseErrorMessage(response, "Falha ao criar cliente"),
+      );
     }
 
     return response.json();

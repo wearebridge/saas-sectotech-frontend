@@ -235,7 +235,6 @@ export function AnalysisForm() {
       toast.success("Cliente criado com sucesso");
     } catch (error) {
       console.error("Erro ao criar cliente:", error);
-      toast.error("Falha ao criar cliente");
       throw error;
     }
   };
