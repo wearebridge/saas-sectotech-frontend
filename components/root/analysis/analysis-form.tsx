@@ -62,6 +62,21 @@ const isInsufficientCreditsMessage = (message: string) =>
   /insuficient|insufficient/i.test(message) &&
   /cr[eé]dito|credit/i.test(message);
 
+const ALLOWED_AUDIO_EXTENSIONS = [
+  ".mp3",
+  ".ogg",
+  ".flac",
+  ".m4a",
+  ".mp4",
+  ".wav",
+  ".wma",
+];
+
+const hasAllowedAudioExtension = (fileName: string) => {
+  const normalizedName = fileName.toLowerCase();
+  return ALLOWED_AUDIO_EXTENSIONS.some((ext) => normalizedName.endsWith(ext));
+};
+
 const GENDER_LABELS: Record<string, string> = {
   MALE: "Masculino",
   FEMALE: "Feminino",
@@ -139,6 +154,8 @@ export function AnalysisForm() {
         gender: client.gender
           ? (GENDER_LABELS[client.gender] ?? client.gender)
           : undefined,
+        yesResponse: "Sim",
+        noResponse: "Não",
       };
       return fieldMap[field] || "";
     },
@@ -175,6 +192,36 @@ export function AnalysisForm() {
     }
   }, [clientId, selectedScript, clients, form, getClientFieldValue]);
 
+  // Auto-fill predefined fields (yesResponse/noResponse) when script is selected
+  useEffect(() => {
+    if (!selectedScript?.scriptItems) return;
+
+    const predefinedFields = ["yesResponse", "noResponse"];
+    const currentAnswers = form.getValues("answers") || {};
+    let hasChanges = false;
+
+    selectedScript.scriptItems.forEach((item) => {
+      if (
+        item.linkedClientField &&
+        predefinedFields.includes(item.linkedClientField)
+      ) {
+        const value = item.linkedClientField === "yesResponse" ? "Sim" : "Não";
+        if (currentAnswers[item.id] !== value) {
+          currentAnswers[item.id] = value;
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      form.setValue(
+        "answers",
+        { ...currentAnswers },
+        { shouldValidate: false },
+      );
+    }
+  }, [selectedScript, form]);
+
   const handleCreateClient = async (data: any) => {
     if (!token) {
       return;
@@ -188,7 +235,6 @@ export function AnalysisForm() {
       toast.success("Cliente criado com sucesso");
     } catch (error) {
       console.error("Erro ao criar cliente:", error);
-      toast.error("Falha ao criar cliente");
       throw error;
     }
   };
@@ -253,24 +299,24 @@ export function AnalysisForm() {
       return;
     }
 
-    const allowedTypes = [
-      "audio/mpeg",
-      "audio/wav",
-      "audio/mp3",
-      "audio/ogg",
-      "audio/m4a",
-    ];
-    if (
-      !allowedTypes.includes(file.type) &&
-      !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)
-    ) {
+    if (!hasAllowedAudioExtension(file.name)) {
       toast.error(
-        "Por favor, selecione um arquivo de áudio válido (MP3, WAV, OGG, M4A)",
+        "Formato inválido. Use apenas: MP3, OGG, FLAC, M4A, MP4, WAV ou WMA.",
       );
+      form.setValue("audioFile", undefined, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
       return;
     }
 
-    form.setValue("audioFile", file);
+    form.setValue("audioFile", file, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+    form.clearErrors("audioFile");
     setAudioDuration(null);
     setEstimatedCredits(null);
 
@@ -338,7 +384,16 @@ export function AnalysisForm() {
 
     // Step 3: Validar arquivo de áudio e fazer submit
     if (currentStep === 3) {
-      const audioFile = form.getValues("audioFile");
+      const selectedInputFile = fileInputRef.current?.files?.[0];
+      const audioFile = form.getValues("audioFile") || selectedInputFile;
+
+      if (audioFile && !form.getValues("audioFile")) {
+        form.setValue("audioFile", audioFile, {
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true,
+        });
+      }
 
       form.clearErrors("audioFile");
 
@@ -346,6 +401,14 @@ export function AnalysisForm() {
         form.setError("audioFile", {
           type: "manual",
           message: "Selecione um arquivo de audio",
+        });
+        return;
+      }
+
+      if (!hasAllowedAudioExtension(audioFile.name)) {
+        form.setError("audioFile", {
+          type: "manual",
+          message: "Formato inválido. Permitidos: MP3, OGG, FLAC, M4A, MP4, WAV e WMA.",
         });
         return;
       }
@@ -527,14 +590,57 @@ export function AnalysisForm() {
             {currentStepMeta.description}
           </CardDescription>
           {currentStep === 2 && (
-            <CardDescription className="text-center">
-              Contato:{" "}
-              {clientId
-                ? PhoneFormatter(
-                    clients.find((c) => c.id === clientId)?.phone || "",
-                  ) || "Não informado"
-                : "Não informado"}
-            </CardDescription>
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Cliente
+                  </span>
+                  <span className="text-sm font-medium">
+                    {clientId
+                      ? clients.find((c) => c.id === clientId)?.fullName ||
+                        "Não informado"
+                      : "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Contato
+                  </span>
+                  <span className="text-sm font-medium">
+                    {clientId
+                      ? PhoneFormatter(
+                          clients.find((c) => c.id === clientId)?.phone || "",
+                        ) || "Não informado"
+                      : "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Tipo de Serviço
+                  </span>
+                  <span className="text-sm font-medium">
+                    {serviceTypeName || "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Subtipo
+                  </span>
+                  <span className="text-sm font-medium">
+                    {serviceSubTypeName || "Não informado"}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-muted-foreground text-xs mb-2">
+                    Script
+                  </span>
+                  <span className="text-sm font-medium">
+                    {selectedScript?.name || "Não informado"}
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
         </CardHeader>
 

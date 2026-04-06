@@ -36,7 +36,9 @@ export type ClientFieldKey =
   | "address"
   | "phone"
   | "email"
-  | "gender";
+  | "gender"
+  | "yesResponse"
+  | "noResponse";
 
 export const CLIENT_FIELD_LABELS: Record<ClientFieldKey, string> = {
   fullName: "Nome Completo",
@@ -47,4 +49,6 @@ export const CLIENT_FIELD_LABELS: Record<ClientFieldKey, string> = {
   phone: "Telefone",
   email: "E-mail",
   gender: "Sexo",
+  yesResponse: "Resposta Sim",
+  noResponse: "Resposta Não",
 };

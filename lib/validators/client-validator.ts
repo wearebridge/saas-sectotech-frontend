@@ -9,10 +9,32 @@ export const clientSchema = z.object({
   cpf: z
     .string()
     .min(1, "CPF é obrigatório")
-    .refine(
-      (val) => /^\d{11}$/.test(val),
-      "CPF deve conter exatamente 11 dígitos",
-    ),
+    .refine((val) => {
+      const digits = (val || "").replace(/\D/g, "");
+
+      if (!/^\d{11}$/.test(digits)) return false;
+      // Reject CPFs with all identical digits
+      if (/^(\d)\1{10}$/.test(digits)) return false;
+
+      const calcCheckDigit = (cpfDigits: string, factorStart: number) => {
+        let total = 0;
+        for (let i = 0; i < cpfDigits.length; i++) {
+          total += parseInt(cpfDigits.charAt(i), 10) * (factorStart - i);
+        }
+        const remainder = total % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
+      };
+
+      const firstNine = digits.substr(0, 9);
+      const firstCheck = calcCheckDigit(firstNine, 10);
+      if (firstCheck !== parseInt(digits.charAt(9), 10)) return false;
+
+      const firstTen = digits.substr(0, 10);
+      const secondCheck = calcCheckDigit(firstTen, 11);
+      if (secondCheck !== parseInt(digits.charAt(10), 10)) return false;
+
+      return true;
+    }, "CPF inválido"),
   rg: z
     .string()
     .optional()

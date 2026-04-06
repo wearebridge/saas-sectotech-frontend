@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import {
   ColumnDef,
   flexRender,
@@ -66,6 +67,7 @@ import { useKeycloak } from "@/lib/keycloak";
 import { toast } from "sonner";
 import { AnalysisItem } from "@/types/analysis";
 import { dashboardColumns } from "./dashboard-columns";
+import { getAudioDownloadUrl } from "@/service/analysis";
 
 interface DashboardTableProps {
   clientId?: string;
@@ -80,13 +82,24 @@ export function DashboardTable({
 }: DashboardTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
   const [data, setData] = React.useState<AnalysisItem[]>([]);
   const [services, setServices] = React.useState<string[]>([]);
   const [subTypes, setSubTypes] = React.useState<string[]>([]);
+  const [executors, setExecutors] = React.useState<string[]>([]);
 
-  const [date, setDate] = React.useState<Date | undefined>(
-    searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined,
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(
+    () => {
+      const from = searchParams.get("dateFrom");
+      const to = searchParams.get("dateTo");
+      if (from || to) {
+        return {
+          from: from ? new Date(from) : undefined,
+          to: to ? new Date(to) : undefined,
+        };
+      }
+      return undefined;
+    },
   );
   const [clientSearch, setClientSearch] = React.useState(
     searchParams.get("client") ?? "",
@@ -96,6 +109,9 @@ export function DashboardTable({
   );
   const [subType, setSubType] = React.useState(
     searchParams.get("subType") ?? "",
+  );
+  const [executedBy, setExecutedBy] = React.useState(
+    searchParams.get("executedBy") ?? "",
   );
   const [status, setStatus] = React.useState(
     searchParams.get("status") ?? "all",
@@ -107,23 +123,37 @@ export function DashboardTable({
     Number(searchParams.get("page") ?? 0),
   );
 
-  const handleDownloadAudio = React.useCallback((item: AnalysisItem) => {
-    if (!item.audioUrl) {
-      toast.error("Nenhum áudio disponível para esta análise");
-      return;
-    }
-    const link = document.createElement("a");
-    link.href = item.audioUrl;
-    link.download = item.audioFilename || "audio";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, []);
+  const handleDownloadAudio = React.useCallback(
+    async (item: AnalysisItem) => {
+      if (!item.audioFilename) {
+        toast.error("Nenhum áudio disponível para esta análise");
+        return;
+      }
+      if (!token) {
+        toast.error("Você não está autenticado");
+        return;
+      }
+
+      const result = await getAudioDownloadUrl({ id: item.id, token });
+      if (typeof result !== "string") {
+        toast.error("Falha ao gerar URL de download do áudio");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = result;
+      link.download = item.audioFilename || "audio";
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+    [token],
+  );
 
   const columns: ColumnDef<AnalysisItem>[] = React.useMemo(
-    () => dashboardColumns({ handleDownloadAudio }),
-    [handleDownloadAudio],
+    () => dashboardColumns({ handleDownloadAudio, isCompanyAdmin }),
+    [handleDownloadAudio, isCompanyAdmin],
   );
 
   React.useEffect(() => {
@@ -176,8 +206,12 @@ export function DashboardTable({
         const uniqueSubTypes = Array.from(
           new Set(mappedData.map((d) => d.subType).filter((s) => s !== "-")),
         ) as string[];
+        const uniqueExecutors = Array.from(
+          new Set(mappedData.map((d) => d.executedBy).filter(Boolean)),
+        ) as string[];
         setServices(uniqueServices);
         setSubTypes(uniqueSubTypes);
+        setExecutors(uniqueExecutors);
       } catch (error) {
         console.error(error);
         toast.error("Erro ao carregar histórico de análises");
@@ -189,11 +223,9 @@ export function DashboardTable({
 
   const filteredData = React.useMemo(() => {
     let filtered = data.filter((item) => {
-      if (
-        date &&
-        format(item.date, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd")
-      )
+      if (dateRange?.from && item.date < startOfDay(dateRange.from))
         return false;
+      if (dateRange?.to && item.date > endOfDay(dateRange.to)) return false;
       if (clientSearch) {
         const search = clientSearch.trim().toLowerCase();
         const fullName = (item.clientName || "").toLowerCase();
@@ -207,6 +239,7 @@ export function DashboardTable({
       }
       if (service && item.service !== service) return false;
       if (subType && item.subType !== subType) return false;
+      if (executedBy && item.executedBy !== executedBy) return false;
 
       if (status === "approved") return item.approved;
       if (status === "rejected") return !item.approved;
@@ -220,24 +253,36 @@ export function DashboardTable({
     }
 
     return filtered;
-  }, [data, date, clientSearch, service, subType, status, isHomeView]);
+  }, [
+    data,
+    dateRange,
+    clientSearch,
+    service,
+    subType,
+    executedBy,
+    status,
+    isHomeView,
+  ]);
 
   React.useEffect(() => {
     if (clientId) return; // Don't update URL params when filtering by clientId
     const params = new URLSearchParams();
-    if (date) params.set("date", date.toISOString());
+    if (dateRange?.from) params.set("dateFrom", dateRange.from.toISOString());
+    if (dateRange?.to) params.set("dateTo", dateRange.to.toISOString());
     if (clientSearch) params.set("client", clientSearch);
     if (service) params.set("service", service);
     if (subType) params.set("subType", subType);
+    if (executedBy) params.set("executedBy", executedBy);
     if (status !== "all") params.set("status", status);
     params.set("page", String(pageIndex));
     params.set("pageSize", String(pageSize));
     router.replace(`?${params.toString()}`);
   }, [
-    date,
+    dateRange,
     clientSearch,
     service,
     subType,
+    executedBy,
     status,
     pageIndex,
     pageSize,
@@ -267,26 +312,54 @@ export function DashboardTable({
     <>
       <div className="flex flex-col gap-4">
         {!isHomeView && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "justify-start gap-2 text-left font-normal text-sm",
-                      !date && "text-muted-foreground",
+                      "h-9 w-full justify-start gap-2 text-left text-sm font-normal sm:w-auto",
+                      !dateRange?.from && "text-muted-foreground",
                     )}
                   >
                     <IconCalendar className="h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : "Data"}
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yy", { locale: ptBR })}
+                          {" - "}
+                          {format(dateRange.to, "dd/MM/yy", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
+                      )
+                    ) : (
+                      "Período"
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date} onSelect={setDate} />
+                  <Calendar
+                    mode="range"
+                    locale={ptBR}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
                 </PopoverContent>
               </Popover>
+              {dateRange?.from && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-muted-foreground"
+                  onClick={() => setDateRange(undefined)}
+                >
+                  Limpar data
+                </Button>
+              )}
 
               {isClientView === false && (
                 <div className="relative">
@@ -295,7 +368,7 @@ export function DashboardTable({
                     value={clientSearch}
                     onChange={(e) => setClientSearch(e.target.value)}
                     placeholder="Buscar por nome ou CPF"
-                    className="h-8 w-[220px] pl-8 text-sm leading-none"
+                    className="h-9 w-full pl-8 text-sm leading-none sm:w-55"
                   />
                 </div>
               )}
@@ -306,7 +379,7 @@ export function DashboardTable({
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "flex w-[200px] items-center justify-between text-sm",
+                      "flex h-9 w-full items-center justify-between text-sm sm:w-50",
                       !service && "text-muted-foreground",
                     )}
                   >
@@ -314,7 +387,7 @@ export function DashboardTable({
                     <IconChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
+                <PopoverContent className="w-full p-0 sm:w-50">
                   <Command>
                     <CommandInput placeholder="Buscar serviço..." />
                     <CommandEmpty>Nenhum resultado.</CommandEmpty>
@@ -347,7 +420,7 @@ export function DashboardTable({
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "flex w-[200px] items-center justify-between text-sm",
+                      "flex h-9 w-full items-center justify-between text-sm sm:w-50",
                       !subType && "text-muted-foreground",
                     )}
                   >
@@ -355,7 +428,7 @@ export function DashboardTable({
                     <IconChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
+                <PopoverContent className="w-full p-0 sm:w-50">
                   <Command>
                     <CommandInput placeholder="Buscar Subtipo..." />
                     <CommandEmpty>Nenhum resultado.</CommandEmpty>
@@ -382,8 +455,53 @@ export function DashboardTable({
                 </PopoverContent>
               </Popover>
 
-              <Tabs value={status} onValueChange={setStatus} className="ml-2">
-                <TabsList>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex h-9 w-full items-center justify-between text-sm sm:w-50",
+                      !executedBy && "text-muted-foreground",
+                    )}
+                  >
+                    <span className="truncate">{executedBy || "Executor"}</span>
+                    <IconChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 sm:w-50">
+                  <Command>
+                    <CommandInput placeholder="Buscar executor..." />
+                    <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                    <CommandGroup>
+                      {executors.map((item) => (
+                        <CommandItem
+                          key={item}
+                          value={item}
+                          onSelect={() =>
+                            setExecutedBy((prev) => (prev === item ? "" : item))
+                          }
+                        >
+                          <IconCheck
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              executedBy === item ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="text-sm">{item}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Tabs
+                value={status}
+                onValueChange={setStatus}
+                className="w-full sm:ml-2 sm:w-auto"
+              >
+                <TabsList className="grid w-full grid-cols-3 sm:w-auto">
                   <TabsTrigger value="all">Todos</TabsTrigger>
                   <TabsTrigger value="approved">Aprovados</TabsTrigger>
                   <TabsTrigger value="rejected">Reprovados</TabsTrigger>
@@ -391,10 +509,14 @@ export function DashboardTable({
               </Tabs>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2 xl:w-auto xl:justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <IconLayoutColumns className="h-4 w-4" />
                     <span className="hidden lg:inline">Colunas</span>
                     <span className="lg:hidden">Colunas</span>
@@ -405,7 +527,8 @@ export function DashboardTable({
                   {table
                     .getAllColumns()
                     .filter(
-                      (column) => column.getCanHide() && column.id !== "actions",
+                      (column) =>
+                        column.getCanHide() && column.id !== "actions",
                     )
                     .map((column) => (
                       <DropdownMenuCheckboxItem
@@ -424,8 +547,8 @@ export function DashboardTable({
           </div>
         )}
 
-        <div className="rounded-lg border">
-          <Table>
+        <div className="overflow-x-auto rounded-lg border">
+          <Table className="min-w-max">
             <TableHeader className="bg-muted/50">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -442,32 +565,43 @@ export function DashboardTable({
             </TableHeader>
 
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nenhum resultado encontrado.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
 
-        <div className="flex items-center justify-end gap-8 px-2">
+        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
           {!isHomeView && (
             <>
-              <div className="flex items-center gap-2 text-sm font-medium">
+              <div className="flex items-center justify-between gap-2 text-sm font-medium sm:justify-start">
                 <span>Linhas por página</span>
                 <Select
                   value={`${pageSize}`}
                   onValueChange={(v) => setPageSize(Number(v))}
                 >
-                  <SelectTrigger className="h-8 w-[70px]">
+                  <SelectTrigger className="h-8 w-17.5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -480,12 +614,12 @@ export function DashboardTable({
                 </Select>
               </div>
 
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                 <span className="text-sm font-medium">
                   Página {pageIndex + 1} de {table.getPageCount()}
                 </span>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 self-start sm:self-auto">
                   <Button
                     variant="outline"
                     size="icon"
@@ -507,7 +641,9 @@ export function DashboardTable({
                     size="icon"
                     className="h-8 w-8"
                     onClick={() =>
-                      setPageIndex((p) => Math.min(p + 1, table.getPageCount() - 1))
+                      setPageIndex((p) =>
+                        Math.min(p + 1, table.getPageCount() - 1),
+                      )
                     }
                   >
                     <IconChevronRight className="h-4 w-4" />
@@ -525,7 +661,6 @@ export function DashboardTable({
             </>
           )}
         </div>
-
       </div>
     </>
   );

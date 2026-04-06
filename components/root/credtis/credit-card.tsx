@@ -184,7 +184,7 @@ export function CreditsCard({
             size="lg"
             variant={"sectotech"}
           >
-            Comprar Agora
+            {type === "recurring" ? "Contratar Plano" : "Comprar Agora"}
           </Button>
         )}
       </CardFooter>

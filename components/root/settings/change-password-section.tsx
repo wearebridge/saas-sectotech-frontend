@@ -10,6 +10,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { IconInput } from "@/components/ui/icon-input";
+import { Eye, EyeOff } from "lucide-react";
 import {
   ChangeOwnPasswordFormValues,
   changeOwnPasswordSchema,
@@ -24,7 +26,13 @@ import { getErrorMessage } from "@/lib/errors/error-utils";
 
 export function ChangePasswordSection() {
   const [isLoading, setIsLoading] = useState(false);
+  const [viewCurrentPassword, setViewCurrentPassword] = useState(false);
+  const [viewNewPassword, setViewNewPassword] = useState(false);
   const { token } = useKeycloak();
+
+  const validatePassword = (password: string) => {
+    // Placeholder para possíveis validações futuras
+  };
 
   const form = useForm<ChangeOwnPasswordFormValues>({
     resolver: zodResolver(changeOwnPasswordSchema),
@@ -87,7 +95,16 @@ export function ChangePasswordSection() {
               <FormItem>
                 <FormLabel>Senha Atual</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <IconInput
+                    ButtonIcon={{
+                      onClick: () =>
+                        setViewCurrentPassword(!viewCurrentPassword),
+                      icon: viewCurrentPassword ? EyeOff : Eye,
+                    }}
+                    placeholder="••••••••"
+                    type={viewCurrentPassword ? "text" : "password"}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -101,7 +118,21 @@ export function ChangePasswordSection() {
               <FormItem>
                 <FormLabel>Nova Senha</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <div className="flex gap-2 flex-col">
+                    <IconInput
+                      ButtonIcon={{
+                        onClick: () => setViewNewPassword(!viewNewPassword),
+                        icon: viewNewPassword ? EyeOff : Eye,
+                      }}
+                      placeholder="••••••••"
+                      type={viewNewPassword ? "text" : "password"}
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        validatePassword(e.target.value);
+                      }}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

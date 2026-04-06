@@ -1,16 +1,8 @@
-"use server";
-
 import { CustomError } from "@/lib/errors/custom-errors";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export type CacheOptions = {
-  cache?: RequestCache;
-  revalidate?: number | false;
-  tags?: string[];
-};
-
-export type RequestOptions = CacheOptions & {
+export type RequestOptions = {
   timeout?: number;
 };
 
@@ -45,14 +37,6 @@ export async function GET(
         mode: "cors",
         headers,
         signal: controller.signal,
-        // Otimizações de cache do Next.js
-        ...(options?.cache && { cache: options.cache }),
-        ...(options?.revalidate !== undefined && {
-          next: {
-            revalidate: options.revalidate,
-            ...(options?.tags && { tags: options.tags }),
-          },
-        }),
       });
 
       clearTimeout(timeoutId);
@@ -111,7 +95,6 @@ export async function POST(
         headers,
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store", // POST nunca deve fazer cache
       });
 
       clearTimeout(timeoutId);
@@ -159,13 +142,63 @@ export async function PUT(
         },
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store",
       });
 
       clearTimeout(timeoutId);
 
       if (response.status === 403) {
         return new CustomError("PERMISSION_DND");
+      }
+
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if ((error as Error).name === "AbortError") {
+        return new CustomError("API_PROBLEM");
+      }
+      throw error;
+    }
+  } catch {
+    return new CustomError("API_PROBLEM");
+  }
+}
+
+export async function PATCH(
+  url: string,
+  body: object,
+  auth: string,
+  options?: RequestOptions,
+): Promise<Response | CustomError> {
+  try {
+    if (!url || !body || !auth) {
+      return new CustomError("EMPTY_FIELD");
+    }
+
+    const controller = new AbortController();
+    const timeout = options?.timeout ?? 30000;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(`${baseUrl}${url}`, {
+        method: "PATCH",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip, deflate, br",
+          Authorization: `Bearer ${auth}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 403) {
+        return new CustomError("PERMISSION_DND");
+      }
+
+      if (response.status === 400) {
+        return new CustomError("BAD_REQUEST");
       }
 
       return response;
@@ -207,7 +240,6 @@ export async function DELETE(
         },
         body: JSON.stringify(body),
         signal: controller.signal,
-        cache: "no-store",
       });
 
       clearTimeout(timeoutId);

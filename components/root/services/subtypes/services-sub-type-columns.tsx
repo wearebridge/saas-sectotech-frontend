@@ -21,6 +21,7 @@ interface ServiceColumnsProps {
   handleDelete: (service: ServiceType) => void;
   setEditingService: (service: ServiceType) => void;
   setOpenDialog: (open: boolean) => void;
+  isCompanyAdmin?: boolean;
 }
 
 export function serviceColumns({
@@ -28,6 +29,7 @@ export function serviceColumns({
   setEditingService,
   setOpenDialog,
   serviceSubTypeId,
+  isCompanyAdmin = false,
 }: ServiceColumnsProps): ColumnDef<ServiceType>[] {
   return [
     {
@@ -80,15 +82,17 @@ export function serviceColumns({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => {
-                setEditingService(row.original);
-                setOpenDialog(true);
-              }}
-            >
-              Editar
-            </DropdownMenuItem>
+            {isCompanyAdmin && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  setEditingService(row.original);
+                  setOpenDialog(true);
+                }}
+              >
+                Editar
+              </DropdownMenuItem>
+            )}
 
             <Link
               href={`/subtipos-servicos/tipos/${row.original.serviceSubTypeId ?? serviceSubTypeId}/scripts/${row.original.id}`}
@@ -97,13 +101,17 @@ export function serviceColumns({
                 Scripts
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive cursor-pointer"
-              onClick={() => handleDelete(row.original)}
-            >
-              Desativar
-            </DropdownMenuItem>
+            {isCompanyAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive cursor-pointer"
+                  onClick={() => handleDelete(row.original)}
+                >
+                  Desativar
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

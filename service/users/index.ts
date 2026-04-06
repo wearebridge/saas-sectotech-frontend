@@ -1,4 +1,3 @@
-"use server";
 import { User } from "@/types/users";
 import { CustomError } from "@/lib/errors/custom-errors";
 import * as api from "@/service/api";
@@ -8,6 +7,7 @@ import {
   CreateUsersProps,
   UpdateUserProps,
   DisableUserProps,
+  EnableUserProps,
   ResetPasswordProps,
   ChangeOwnPasswordProps,
 } from "./dto";
@@ -28,11 +28,6 @@ export async function getCredentials({
     const response = await api.GET(
       `${baseUrl}/credentials`,
       token,
-      {},
-      {
-        revalidate: 300,
-        tags: ["credentials"],
-      },
     );
 
     if (response instanceof Error || !response.ok) {
@@ -94,6 +89,7 @@ export async function createUsers({
   lastName,
   username,
   password,
+  isAdmin,
   token,
 }: CreateUsersProps): Promise<CustomError | boolean> {
   try {
@@ -111,6 +107,7 @@ export async function createUsers({
         lastName,
         username,
         password,
+        isAdmin: isAdmin ?? false,
       },
       token,
     );
@@ -133,6 +130,7 @@ export async function updateUser({
   firstName,
   lastName,
   email,
+  isAdmin,
   token,
 }: UpdateUserProps): Promise<CustomError | boolean> {
   try {
@@ -145,7 +143,7 @@ export async function updateUser({
 
     const response = await api.PUT(
       `/company/users/${userId}`,
-      { firstName, lastName, email },
+      { firstName, lastName, email, isAdmin },
       token,
     );
 
@@ -184,6 +182,34 @@ export async function disableUser({
   } catch (error) {
     console.error("Erro ao desativar usuário:", error);
     return new CustomError("BAD_REQUEST", "Erro ao desativar usuário");
+  }
+}
+
+export async function enableUser({
+  userId,
+  token,
+}: EnableUserProps): Promise<CustomError | boolean> {
+  try {
+    if (!token) {
+      return new CustomError(
+        "EMPTY_FIELD",
+        "Falha ao ativar usuário. Token de autenticação ausente.",
+      );
+    }
+
+    const response = await api.PUT(
+      `/company/users/${userId}/enable`,
+      {},
+      token,
+    );
+
+    if (response instanceof Error || !response.ok) {
+      return new CustomError("BAD_REQUEST", "Erro ao ativar usuário");
+    }
+    return true;
+  } catch (error) {
+    console.error("Erro ao ativar usuário:", error);
+    return new CustomError("BAD_REQUEST", "Erro ao ativar usuário");
   }
 }
 

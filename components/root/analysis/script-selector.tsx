@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useKeycloak } from "@/lib/keycloak";
 import { Script, ServiceType, ServiceSubType } from "@/types/analysis";
 import { ClientResponse } from "@/types/client";
@@ -92,6 +92,16 @@ export function ScriptSelector({
   const [isLoadingTypes, setIsLoadingTypes] = useState(false);
   const [isLoadingScripts, setIsLoadingScripts] = useState(false);
   const { token, authenticated } = useKeycloak();
+
+  const sortedClients = useMemo(
+    () =>
+      [...clients].sort((a, b) =>
+        a.fullName.localeCompare(b.fullName, "pt-BR", {
+          sensitivity: "base",
+        }),
+      ),
+    [clients],
+  );
 
   const fetchingRef = useRef(false);
 
@@ -256,7 +266,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por subtipo..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {serviceSubTypes
                             .filter((subType) => subType.status)
                             .map((subType) => (
@@ -340,7 +350,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por tipo..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {serviceTypes
                             .filter((type) => type.status)
                             .map((type) => (
@@ -422,7 +432,7 @@ export function ScriptSelector({
                       <Command>
                         <CommandInput placeholder="Buscar por script..." />
                         <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="max-h-64 overflow-y-auto">
                           {scripts
                             .filter((script) => script.status)
                             .map((script) => (
@@ -489,7 +499,7 @@ export function ScriptSelector({
                           >
                             <span className="truncate text-left flex-1">
                               {selectedClientId
-                                ? clients.find(
+                                ? sortedClients.find(
                                     (client) => client.id === selectedClientId,
                                   )?.fullName
                                 : "Selecione um cliente"}
@@ -501,8 +511,8 @@ export function ScriptSelector({
                           <Command>
                             <CommandInput placeholder="Buscar por cliente..." />
                             <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                            <CommandGroup>
-                              {clients.map((client) => (
+                            <CommandGroup className="max-h-64 overflow-y-auto">
+                              {sortedClients.map((client) => (
                                 <CommandItem
                                   key={client.id}
                                   value={client.id}

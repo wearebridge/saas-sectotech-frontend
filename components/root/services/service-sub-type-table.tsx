@@ -70,7 +70,7 @@ import {
 export function ServiceSubTypeTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
 
   const [data, setData] = useState<ServiceSubType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,8 +141,9 @@ export function ServiceSubTypeTable() {
         handleDelete,
         setEditingItem,
         setOpenDialog,
+        isCompanyAdmin,
       }),
-    [handleDelete, setEditingItem, setOpenDialog],
+    [handleDelete, setEditingItem, setOpenDialog, isCompanyAdmin],
   );
 
   useEffect(() => {
@@ -284,17 +285,19 @@ export function ServiceSubTypeTable() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="sectotech"
-              size="sm"
-              onClick={() => {
-                setEditingItem(null);
-                setOpenDialog(true);
-              }}
-            >
-              <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo Subtipo</span>
-            </Button>
+            {isCompanyAdmin && (
+              <Button
+                variant="sectotech"
+                size="sm"
+                onClick={() => {
+                  setEditingItem(null);
+                  setOpenDialog(true);
+                }}
+              >
+                <IconPlus className="h-4 w-4" />
+                <span className="hidden lg:inline">Novo Subtipo</span>
+              </Button>
+            )}
           </div>
         </div>
 

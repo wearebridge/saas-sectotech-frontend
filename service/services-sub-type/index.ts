@@ -1,6 +1,3 @@
-"use server";
-
-import { updateTag } from "next/cache";
 import * as api from "@/service/api";
 import { CustomError } from "@/lib/errors/custom-errors";
 
@@ -55,7 +52,6 @@ export async function createServiceSubType({
       );
     }
 
-    updateTag("service-subtypes");
     return "Subtipo de serviço criado com sucesso!";
   } catch (error) {
     console.error("Error creating service:", error);
@@ -105,7 +101,6 @@ export async function updateServiceSubType({
       );
     }
 
-    updateTag("service-subtypes");
     return "Subtipo de serviço atualizado com sucesso";
   } catch (error) {
     console.error("Error updating service sub type:", error);
@@ -130,11 +125,6 @@ export async function getSubTypeService({
     const response = await api.GET(
       `${baseUrl}`,
       token,
-      {},
-      {
-        revalidate: 300,
-        tags: ["service-subtypes"],
-      },
     );
 
     if (response instanceof CustomError || !response.ok) {
@@ -188,7 +178,6 @@ export async function deleteServiceSubType({
       );
     }
 
-    updateTag("service-subtypes");
     return "Subtipo de serviço desativado com sucesso";
   } catch (error) {
     console.error("Error deleting service sub type:", error);

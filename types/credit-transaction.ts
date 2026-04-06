@@ -9,4 +9,5 @@ export interface CreditTransaction {
   remainingAmount?: number
   sourceType?: string
   intervalType?: string
+  analysisResultId?: string
 }

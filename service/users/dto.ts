@@ -6,6 +6,7 @@ export interface CreateUsersProps extends tokenProps {
   email: string;
   username: string;
   password: string;
+  isAdmin?: boolean;
 }
 
 export interface UpdateUserProps extends tokenProps {
@@ -13,9 +14,14 @@ export interface UpdateUserProps extends tokenProps {
   firstName: string;
   lastName: string;
   email: string;
+  isAdmin?: boolean;
 }
 
 export interface DisableUserProps extends tokenProps {
+  userId: string;
+}
+
+export interface EnableUserProps extends tokenProps {
   userId: string;
 }
 

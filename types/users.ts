@@ -11,4 +11,5 @@ export interface User {
   username: string;
   enabled: boolean;
   createdTimestamp: number;
+  isAdmin?: boolean;
 }

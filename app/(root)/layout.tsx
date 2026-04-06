@@ -8,6 +8,7 @@ import { CreditProvider } from "@/lib/credit-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/common/themes/theme-provider";
+import { VersionSkewHandler } from "@/components/common/version-skew-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SECTOTECH",
-  description: "Validador de áudio SectoTech",
+  title: "Listen Solution",
+  description: "Validador de áudio Listen Solution",
 };
 
 export default function RootLayout({
@@ -40,6 +41,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <VersionSkewHandler />
           <KeycloakProvider>
             <CreditProvider>
               <SidebarProvider

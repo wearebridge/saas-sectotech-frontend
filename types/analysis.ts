@@ -69,7 +69,14 @@ export type AnalysisItem = {
       question: string;
       answer: string;
       correct: boolean;
+      questionAsked: boolean;
       analysis: string;
+      adminOverride?: {
+        correct?: boolean;
+        questionAsked?: boolean;
+        overriddenBy: string;
+        overriddenAt: string;
+      };
     }[];
   };
 };

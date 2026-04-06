@@ -40,7 +40,11 @@ const CompanyRegistrationScheme = z.object({
   adminEmail: z.email("Email inválido."),
   adminUsername: z
     .string()
-    .min(3, "O nome de usuário deve ter pelo menos 3 caracteres."),
+    .min(3, "O nome de usuário deve ter pelo menos 3 caracteres.")
+    .regex(
+      /^[a-zA-Z0-9._\-]+$/,
+      "O nome de usuário só pode conter letras, números, ponto (.), hífen (-) e underline (_).",
+    ),
   adminPassword: z
     .string()
     .refine(isValidPassword, { message: "Coloque uma senha válida" }),

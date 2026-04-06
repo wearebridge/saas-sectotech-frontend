@@ -71,7 +71,7 @@ type ServicesTableProps = {
 export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, authenticated } = useKeycloak();
+  const { token, authenticated, isCompanyAdmin } = useKeycloak();
 
   const [data, setData] = useState<ServiceType[]>([]);
 
@@ -155,8 +155,9 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
         setEditingService,
         setOpenDialog,
         serviceSubTypeId,
+        isCompanyAdmin,
       }),
-    [serviceSubTypeId, handleDelete],
+    [serviceSubTypeId, handleDelete, isCompanyAdmin],
   );
 
   useEffect(() => {
@@ -352,14 +353,16 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="sectotech"
-              size="sm"
-              onClick={() => setOpenDialog(true)}
-            >
-              <IconPlus className="h-4 w-4" />
-              <span className="hidden lg:inline">Novo serviço</span>
-            </Button>
+            {isCompanyAdmin && (
+              <Button
+                variant="sectotech"
+                size="sm"
+                onClick={() => setOpenDialog(true)}
+              >
+                <IconPlus className="h-4 w-4" />
+                <span className="hidden lg:inline">Novo serviço</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -390,7 +393,7 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                     Carregando...
                   </TableCell>
                 </TableRow>
-              ) : (
+              ) : table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
@@ -403,6 +406,15 @@ export function ServicesTable({ serviceSubTypeId }: ServicesTableProps) {
                     ))}
                   </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nenhum resultado encontrado.
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>

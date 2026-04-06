@@ -64,6 +64,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { columnsUsers } from "./users-columns";
 import { User } from "@/types/users";
@@ -73,7 +74,7 @@ import PasswordResetForm from "./password-reset-form";
 import { useKeycloak } from "@/lib/keycloak";
 import { getErrorMessage } from "@/lib/errors/error-utils";
 import { IconInput } from "@/components/ui/icon-input";
-import { disableUser } from "@/service/users";
+import { disableUser, enableUser } from "@/service/users";
 
 export function UsersTable() {
   const router = useRouter();
@@ -94,17 +95,25 @@ export function UsersTable() {
   );
   const [openDialog, setOpenDialog] = useState(false);
   const [openDisableDialog, setOpenDisableDialog] = useState(false);
+  const [openEnableDialog, setOpenEnableDialog] = useState(false);
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [userToDisable, setUserToDisable] = useState<User | null>(null);
+  const [userToEnable, setUserToEnable] = useState<User | null>(null);
   const [userToResetPassword, setUserToResetPassword] = useState<User | null>(
     null,
   );
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const { authenticated, token, currentUserId, isCompanyAdmin } = useKeycloak();
 
   const handleDisableUser = (user: User) => {
     setUserToDisable(user);
     setOpenDisableDialog(true);
+  };
+
+  const handleEnableUser = (user: User) => {
+    setUserToEnable(user);
+    setOpenEnableDialog(true);
   };
 
   const handleResetPassword = (user: User) => {
@@ -140,12 +149,41 @@ export function UsersTable() {
     }
   };
 
+  const confirmEnableUser = async () => {
+    if (!token || !userToEnable) return;
+
+    try {
+      const response = await enableUser({
+        userId: userToEnable.id,
+        token,
+      });
+
+      const errorMessage = getErrorMessage(response);
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+
+      toast.success(
+        `Usuário ${userToEnable.firstName} ${userToEnable.lastName} reativado com sucesso!`,
+      );
+      handleLoadUsers();
+    } catch (error) {
+      console.error("Erro ao ativar usuário:", error);
+      toast.error("Erro ao ativar usuário");
+    } finally {
+      setOpenEnableDialog(false);
+      setUserToEnable(null);
+    }
+  };
+
   const columns = useMemo<ColumnDef<User>[]>(
     () =>
       columnsUsers({
         setSeletedUser,
         setOpenDialog,
         onDisableUser: handleDisableUser,
+        onEnableUser: handleEnableUser,
         onResetPassword: handleResetPassword,
         currentUserId,
         isCompanyAdmin,
@@ -195,7 +233,7 @@ export function UsersTable() {
     }
   }, [authenticated, token]);
 
-  // Filtrar usuários baseado na busca
+  // Filtrar usuários baseado na busca e status
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const nameMatch =
@@ -206,9 +244,17 @@ export function UsersTable() {
       const emailMatch =
         emailSearch === "" ||
         user.email.toLowerCase().includes(emailSearch.toLowerCase());
-      return nameMatch && emailMatch;
+      
+      let statusMatch = true;
+      if (statusFilter === "active") {
+        statusMatch = user.enabled === true;
+      } else if (statusFilter === "inactive") {
+        statusMatch = user.enabled === false;
+      }
+      
+      return nameMatch && emailMatch && statusMatch;
     });
-  }, [users, nameSearch, emailSearch]);
+  }, [users, nameSearch, emailSearch, statusFilter]);
 
   const table = useReactTable({
     data: filteredUsers,
@@ -247,8 +293,16 @@ export function UsersTable() {
 
   return (
     <>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")} className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">Todos ({users.length})</TabsTrigger>
+          <TabsTrigger value="active">Ativos ({users.filter(u => u.enabled).length})</TabsTrigger>
+          <TabsTrigger value="inactive">Inativos ({users.filter(u => !u.enabled).length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={statusFilter} className="mt-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex item center flex-col md:flex-row gap-2 w-full">
             <IconInput
               className="h-8 text-sm"
@@ -329,18 +383,29 @@ export function UsersTable() {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Nenhum resultado encontrado.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
@@ -409,6 +474,8 @@ export function UsersTable() {
           </div>
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog para criar/editar usuário */}
       <Dialog
@@ -459,6 +526,31 @@ export function UsersTable() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmação para reativar usuário */}
+      <AlertDialog open={openEnableDialog} onOpenChange={setOpenEnableDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reativar usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja reativar o usuário{" "}
+              <strong>
+                {userToEnable?.firstName} {userToEnable?.lastName}
+              </strong>
+              ? Ele poderá acessar o sistema novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmEnableUser}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              Reativar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

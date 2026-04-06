@@ -1,6 +1,3 @@
-"use server";
-
-import { updateTag } from "next/cache";
 import { CustomError } from "@/lib/errors/custom-errors";
 import * as api from "@/service/api";
 import {
@@ -35,7 +32,6 @@ export async function createScript({
       return new CustomError("BAD_REQUEST", "Falha ao criar o script");
     }
 
-    updateTag("scripts");
     return "Script criado com sucesso";
   } catch (error) {
     console.error("Error creating script:", error);
@@ -65,7 +61,6 @@ export async function updateScript({
       return new CustomError("BAD_REQUEST", "Falha ao alterar o script");
     }
 
-    updateTag("scripts");
     return "Script alterado com sucesso";
   } catch (error) {
     console.error("Error updating script:", error);
@@ -89,11 +84,6 @@ export async function getScripts({
     const response = await api.GET(
       url,
       token,
-      {},
-      {
-        revalidate: 60,
-        tags: ["scripts"],
-      },
     );
 
     if (response instanceof CustomError || !response.ok) {
@@ -129,7 +119,6 @@ export async function deleteScript({
       return new CustomError("BAD_REQUEST", "Falha ao deletar o script");
     }
 
-    updateTag("scripts");
     return "Script deletado com sucesso";
   } catch (error) {
     console.error("Error deleting script:", error);

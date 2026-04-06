@@ -68,10 +68,9 @@ export function ClientForm({
       form.reset();
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error("Erro ao salvar cliente", {
-        description:
-          "Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao salvar cliente",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -235,7 +234,7 @@ export function ClientForm({
         <Button
           onClick={form.handleSubmit(handleSubmit)}
           variant={"sectotech"}
-          disabled={isSubmitting || loading}
+          isLoading={isSubmitting || loading}
           className="w-full"
         >
           {isSubmitting || loading

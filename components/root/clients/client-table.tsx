@@ -105,11 +105,29 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
       setLoading(true);
       try {
         await ClientService.delete(item.id, token);
-        toast.success("Cliente deletado com sucesso!");
+        toast.success("Cliente desativado com sucesso!");
         handleGetClients();
         setLoading(false);
       } catch (error) {
-        toast.error("Erro ao deletar cliente.");
+        toast.error("Erro ao desativar cliente.");
+        setLoading(false);
+      }
+    },
+    [token, handleGetClients],
+  );
+
+  const handleReactivate = useCallback(
+    async (item: ClientResponse) => {
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        await ClientService.reactivate(item.id, item, token);
+        toast.success("Cliente reativado com sucesso!");
+        handleGetClients();
+        setLoading(false);
+      } catch (error) {
+        toast.error("Erro ao reativar cliente.");
         setLoading(false);
       }
     },
@@ -142,10 +160,11 @@ export function ClientTable({ onClientCreated }: ClientTableProps) {
     () =>
       clientColumns({
         handleDelete,
+        handleReactivate,
         setEditingItem,
         setOpenDialog,
       }),
-    [handleDelete],
+    [handleDelete, handleReactivate],
   );
 
   useEffect(() => {
