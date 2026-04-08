@@ -41,6 +41,6 @@ RUN mkdir -p .next/cache && \
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["node", "server.js"]
