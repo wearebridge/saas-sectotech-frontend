@@ -24,7 +24,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=80
 ENV HOSTNAME=0.0.0.0
 
 # Segurança: usuário não-root
