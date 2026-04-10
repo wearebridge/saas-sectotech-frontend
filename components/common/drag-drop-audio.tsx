@@ -18,7 +18,7 @@ export function DragDropAudio({
   onFileSelect,
   isCalculatingCredits,
   selectedFileName,
-  accept = ".mp3,.ogg,.flac,.m4a,.mp4,.wav,.wma,audio/mpeg,audio/ogg,audio/flac,audio/mp4,audio/x-m4a,video/mp4,audio/wav,audio/x-wav,audio/wave,audio/x-ms-wma",
+  accept = ".mp3,.mpga,.ogg,.flac,.m4a,.mp4,.wav,.wma,.webm,audio/mpeg,audio/ogg,audio/flac,audio/mp4,audio/x-m4a,video/mp4,audio/wav,audio/x-wav,audio/wave,audio/x-ms-wma,audio/webm,video/webm",
   className,
 }: DragDropAudioProps) {
   const [isDragActive, setIsDragActive] = useState(false);
