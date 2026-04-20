@@ -55,6 +55,8 @@ export function ClientForm({
       phone: client?.phone || "",
       email: client?.email || "",
       gender: client?.gender || undefined,
+      representativeName: client?.representativeName || "",
+      representativeCpf: client?.representativeCpf || "",
       status: client ? (client.status ? "active" : "inactive") : "active",
     },
   });
@@ -175,6 +177,31 @@ export function ClientForm({
               </FormItem>
             )}
           />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="representativeName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Representante</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o nome do representante" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <InputMaskForm
+              form={form}
+              name="representativeCpf"
+              label="CPF do Representante"
+              placeholder="000.000.000-00"
+              formatter={CPFFormatter}
+              maxLength={14}
+            />
+          </div>
 
           <FormField
             control={form.control}

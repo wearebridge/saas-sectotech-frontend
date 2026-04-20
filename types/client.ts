@@ -8,6 +8,8 @@ export interface Client {
   phone?: string;
   email?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
+  representativeName?: string;
+  representativeCpf?: string;
   status: boolean;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +24,8 @@ export interface ClientRequest {
   phone: string;
   email?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
+  representativeName?: string;
+  representativeCpf?: string;
   status: "active" | "inactive";
 }
 
@@ -37,6 +41,8 @@ export type ClientFieldKey =
   | "phone"
   | "email"
   | "gender"
+  | "representativeName"
+  | "representativeCpf"
   | "yesResponse"
   | "noResponse";
 
@@ -49,6 +55,8 @@ export const CLIENT_FIELD_LABELS: Record<ClientFieldKey, string> = {
   phone: "Telefone",
   email: "E-mail",
   gender: "Sexo",
+  representativeName: "Nome do Representante",
+  representativeCpf: "CPF do Representante",
   yesResponse: "Resposta Sim",
   noResponse: "Resposta Não",
 };

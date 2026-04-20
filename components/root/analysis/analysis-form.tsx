@@ -154,6 +154,10 @@ export function AnalysisForm() {
         gender: client.gender
           ? (GENDER_LABELS[client.gender] ?? client.gender)
           : undefined,
+        representativeName: client.representativeName,
+        representativeCpf: client.representativeCpf
+          ? CPFFormatter(client.representativeCpf)
+          : client.representativeCpf,
         yesResponse: "Sim",
         noResponse: "Não",
       };
