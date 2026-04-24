@@ -214,9 +214,10 @@ export default function AnalysisDetailPage() {
       return;
     }
 
+    const ext = item.audioFilename?.split(".").pop() || "mp3";
     const link = document.createElement("a");
     link.href = result;
-    link.download = item.audioFilename || "audio";
+    link.download = `listen-${item.id}.${ext}`;
     link.target = "_blank";
     document.body.appendChild(link);
     link.click();
