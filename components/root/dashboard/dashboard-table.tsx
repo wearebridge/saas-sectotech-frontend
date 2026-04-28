@@ -141,13 +141,20 @@ export function DashboardTable({
       }
 
       const ext = item.audioFilename?.split(".").pop() || "mp3";
-      const link = document.createElement("a");
-      link.href = result;
-      link.download = `listen-${item.id}.${ext}`;
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        const response = await fetch(result);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `listen-${item.id}.${ext}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        toast.error("Falha ao baixar o áudio");
+      }
     },
     [token],
   );
