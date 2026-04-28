@@ -141,20 +141,13 @@ export function DashboardTable({
       }
 
       const ext = item.audioFilename?.split(".").pop() || "mp3";
-      try {
-        const response = await fetch(result);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = `listen-${item.id}.${ext}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      } catch {
-        toast.error("Falha ao baixar o áudio");
-      }
+      const link = document.createElement("a");
+      link.href = result;
+      link.download = `listen-${item.id}.${ext}`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     },
     [token],
   );
@@ -169,7 +162,7 @@ export function DashboardTable({
       if (!authenticated || !token) return;
 
       try {
-        let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results`;
+        let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/analysis-results/summary`;
         if (clientId) {
           url += `?clientId=${clientId}`;
         }
@@ -199,8 +192,6 @@ export function DashboardTable({
           executedBy: item.executedBy,
           audioFilename: item.audioFilename,
           audioUrl: item.audioUrl,
-          transcription: item.transcription,
-          aiOutput: item.aiOutput,
         }));
 
         // Ordenar por data (mais recente primeiro)
