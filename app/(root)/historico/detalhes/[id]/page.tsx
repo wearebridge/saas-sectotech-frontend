@@ -364,7 +364,7 @@ export default function AnalysisDetailPage() {
               />
               {regenerating ? "Re-gerando..." : "Re-gerar Análise"}
             </Button>
-            {isCompanyAdmin && analysis.audioUrl && (
+            {(isCompanyAdmin || analysis.approved) && analysis.audioUrl && (
               <Button
                 variant="outline"
                 onClick={() => handleDownloadAudio(analysis)}

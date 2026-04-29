@@ -71,7 +71,7 @@ const baseData = {
   ],
 };
 
-const adminOnlyUrls = ["/creditos", "/usuarios"];
+const adminOnlyUrls = ["/", "/scripts", "/subtipos-servicos", "/creditos", "/usuarios"];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isCompanyAdmin } = useKeycloak();
@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5! hover:bg-white! hover:text-inherit! active:bg-white! focus-visible:ring-0! transition-none! duration-0! animate-none!"
             >
-              <Link href="/" className="rounded-md bg-white px-2 py-1">
+              <Link href={isCompanyAdmin ? "/" : "/historico"} className="rounded-md bg-white px-2 py-1">
                 <Image
                   src="/logo.jpeg"
                   alt="Logo Listen Solution"

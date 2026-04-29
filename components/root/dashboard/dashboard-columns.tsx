@@ -116,7 +116,7 @@ export const dashboardColumns = ({
                 Ver análise
               </DropdownMenuItem>
             </Link>
-            {isCompanyAdmin && (
+            {(isCompanyAdmin || row.original.approved) && (
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => handleDownloadAudio(row.original)}

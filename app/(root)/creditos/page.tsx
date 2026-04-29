@@ -53,7 +53,7 @@ function Page() {
 
   useEffect(() => {
     if (!isCompanyAdmin) {
-      router.replace("/");
+      router.replace("/historico");
     }
   }, [isCompanyAdmin, router]);
 
